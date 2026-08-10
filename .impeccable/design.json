@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "title": "Portico Android / Warm editorial decision desk",
+  "extensions": {
+    "colorMeta": {
+      "background": { "role": "background", "displayName": "Off-white paper", "canonical": "#F8F1E7" },
+      "surface": { "role": "surface", "displayName": "Opaque card", "canonical": "#FFFCF7" },
+      "surfaceVariant": { "role": "surface-variant", "displayName": "Warm mist", "canonical": "#EDE2D4" },
+      "primary": { "role": "primary", "displayName": "Terracotta orange", "canonical": "#C85A20" },
+      "secondary": { "role": "secondary", "displayName": "Coffee brown", "canonical": "#8B5E45" },
+      "tertiary": { "role": "tertiary", "displayName": "Warm ochre", "canonical": "#A86F32" },
+      "critical": { "role": "error", "displayName": "Deep red", "canonical": "#B33B2E" }
+    },
+    "motion": [
+      { "name": "orbit-scan", "value": "slow transform and Canvas rotation", "purpose": "Show portfolio as a navigable spatial system." },
+      { "name": "trend-reveal", "value": "900ms line draw on report entry", "purpose": "Make the time-series progression legible." },
+      { "name": "button-press", "value": "native Material press elevation", "purpose": "Give action controls tactile state without decorative overlays." },
+      { "name": "route-fade", "value": "320ms Material crossfade", "purpose": "Maintain continuity between working surfaces." },
+      { "name": "reduced-motion", "value": "short fade or instant state change", "purpose": "Honor the system animation preference and the Profile preference." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "<600dp / NavigationBar" },
+      { "name": "expanded", "value": ">=600dp / NavigationRail" }
+    ],
+    "principles": [
+      "Make the next investment decision legible.",
+      "Use depth to explain relationships, not to decorate empty space.",
+      "Keep demo, offline, and illustrative financial states explicit.",
+      "Preserve Material 3 Android behavior under the expressive layer."
+    ]
+  }
+}
