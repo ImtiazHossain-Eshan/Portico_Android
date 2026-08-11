@@ -5,6 +5,10 @@
 /build/
 /app/build/
 /.codex/
-/.impeccable/config.local.json
 /.kotlin/
-/.impeccable/design.json
+
+# Tooling output
+/.impeccable/
+
+# Source documents (the assignment brief)
+/Project Details/
