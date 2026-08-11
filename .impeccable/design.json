@@ -1,32 +1,49 @@
 {
   "schemaVersion": 2,
-  "title": "Portico Android / Warm editorial decision desk",
+  "title": "Portico Android / Instrument field",
   "extensions": {
     "colorMeta": {
-      "background": { "role": "background", "displayName": "Off-white paper", "canonical": "#F8F1E7" },
-      "surface": { "role": "surface", "displayName": "Opaque card", "canonical": "#FFFCF7" },
-      "surfaceVariant": { "role": "surface-variant", "displayName": "Warm mist", "canonical": "#EDE2D4" },
-      "primary": { "role": "primary", "displayName": "Terracotta orange", "canonical": "#C85A20" },
-      "secondary": { "role": "secondary", "displayName": "Coffee brown", "canonical": "#8B5E45" },
-      "tertiary": { "role": "tertiary", "displayName": "Warm ochre", "canonical": "#A86F32" },
-      "critical": { "role": "error", "displayName": "Deep red", "canonical": "#B33B2E" }
+      "background": { "role": "background", "displayName": "Graphite ground", "canonical": "#0B0B0C" },
+      "backgroundLight": { "role": "background", "displayName": "Bone ground", "canonical": "#F6F5F3" },
+      "surface": { "role": "surface", "displayName": "Panel", "canonical": "#141416" },
+      "surfaceVariant": { "role": "surface-variant", "displayName": "Sunk well", "canonical": "#1C1C1F" },
+      "primary": { "role": "primary", "displayName": "Signal amber", "canonical": "#E8A33D" },
+      "primaryLight": { "role": "primary", "displayName": "Bronze", "canonical": "#9A6212" },
+      "gain": { "role": "success", "displayName": "Gain", "canonical": "#5FB981" },
+      "loss": { "role": "error", "displayName": "Loss", "canonical": "#E5675C" },
+      "neutral": { "role": "neutral", "displayName": "Warm grey", "canonical": "#9A948B" }
     },
+    "typography": [
+      { "name": "tabular-figures", "value": "fontFeatureSettings = tnum on every style except bodyLarge", "purpose": "Money columns align so figures can be compared by eye." },
+      { "name": "single-family", "value": "system sans throughout", "purpose": "Product UI needs one well-tuned face, not a display pairing." }
+    ],
     "motion": [
-      { "name": "orbit-scan", "value": "slow transform and Canvas rotation", "purpose": "Show portfolio as a navigable spatial system." },
-      { "name": "trend-reveal", "value": "900ms line draw on report entry", "purpose": "Make the time-series progression legible." },
-      { "name": "button-press", "value": "native Material press elevation", "purpose": "Give action controls tactile state without decorative overlays." },
-      { "name": "route-fade", "value": "320ms Material crossfade", "purpose": "Maintain continuity between working surfaces." },
-      { "name": "reduced-motion", "value": "short fade or instant state change", "purpose": "Honor the system animation preference and the Profile preference." }
+      { "name": "tick-flash", "value": "640ms tint decay on a changed row", "purpose": "The one authored moment; marks what just changed." },
+      { "name": "fade-through", "value": "180ms in / 120ms out between destinations", "purpose": "Material continuity without making a user in a task wait." },
+      { "name": "chart-reveal", "value": "900ms line draw, once per data change", "purpose": "Ends on the newest point so the motion explains chronology." },
+      { "name": "waterfall-settle", "value": "700ms proportional bar fill", "purpose": "Shows each deduction taking its share of gross." },
+      { "name": "reduced-motion", "value": "all reveals disabled", "purpose": "Honors the system animation setting and the Profile preference." }
     ],
     "breakpoints": [
-      { "name": "compact", "value": "<600dp / NavigationBar" },
-      { "name": "expanded", "value": ">=600dp / NavigationRail" }
+      { "name": "compact", "value": "<600dp / navigation bar / 2-up metrics" },
+      { "name": "medium", "value": ">=600dp / navigation rail / 3-up metrics" },
+      { "name": "expanded", "value": ">=840dp / rail + multi-column admin tables" }
     ],
     "principles": [
-      "Make the next investment decision legible.",
-      "Use depth to explain relationships, not to decorate empty space.",
-      "Keep demo, offline, and illustrative financial states explicit.",
-      "Preserve Material 3 Android behavior under the expressive layer."
-    ]
+      "Put the subtraction on screen: gross to net is the product's whole argument.",
+      "Panels and hairlines, never card-per-metric.",
+      "One accent for action; green and red mean only gain and loss.",
+      "Every rate is computed from records, never stored as a constant.",
+      "Empty states teach; error states name the recovery.",
+      "Label anything illustrative; never invent a commercial claim."
+    ],
+    "directionContract": {
+      "seedKey": "16363a61",
+      "scope": "direction",
+      "mode": "operate",
+      "assignedIndex": 3,
+      "form": "Trading-terminal instrument field, fused",
+      "recordedIn": "app/src/main/java/com/portico/android/ui/PorticoApp.kt"
+    }
   }
 }
