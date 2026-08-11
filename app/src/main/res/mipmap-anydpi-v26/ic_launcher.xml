@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/portico_paper" />
-    <foreground android:drawable="@drawable/portico_logo_mark_clean" />
+    <background android:drawable="@color/portico_void" />
+    <foreground android:drawable="@drawable/ic_portico_mark" />
+    <monochrome android:drawable="@drawable/ic_portico_mark_monochrome" />
 </adaptive-icon>

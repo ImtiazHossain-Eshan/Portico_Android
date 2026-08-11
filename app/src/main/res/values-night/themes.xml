@@ -1,0 +1,10 @@
+<resources>
+    <!-- Dark launch theme: the mark on graphite, matching the app's own ground. -->
+    <style name="Theme.Portico" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/portico_void</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

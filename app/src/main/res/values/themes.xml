@@ -1,9 +1,16 @@
 <resources>
+    <!--
+      Light launch theme. The splash shows the Portico mark on bone before
+      Compose takes over, so cold start never flashes an unbranded window.
+    -->
     <style name="Theme.Portico" parent="android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/portico_bone</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:statusBarColor">@color/portico_paper</item>
-        <item name="android:navigationBarColor">@color/portico_paper</item>
+        <!-- Navigation-bar icon contrast is set at runtime through
+             WindowCompat, which works below API 27 where the theme
+             attribute does not exist. -->
         <item name="android:windowActionModeOverlay">true</item>
     </style>
 </resources>

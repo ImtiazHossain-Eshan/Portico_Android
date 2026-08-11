@@ -1,0 +1,12 @@
+<resources>
+    <style name="Theme.Portico" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowSplashScreenBackground">@color/portico_void</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_portico_mark</item>
+        <item name="android:windowSplashScreenAnimationDuration">500</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

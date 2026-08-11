@@ -1,8 +1,11 @@
 <resources>
-    <color name="portico_navy">#21130F</color>
-    <color name="portico_paper">#F8F1E7</color>
-    <color name="portico_ink">#2A1D17</color>
-    <color name="portico_orange">#C85A20</color>
-    <color name="portico_teal">#C85A20</color>
-    <color name="portico_lilac">#8B5E45</color>
+    <!-- Mirrors ui/theme/Theme.kt. Only the values the platform needs before
+         Compose starts (launcher icon, splash, system bars) live here. -->
+    <color name="portico_void">#0B0B0C</color>
+    <color name="portico_panel_dark">#141416</color>
+    <color name="portico_bone">#F6F5F3</color>
+    <color name="portico_amber">#E8A33D</color>
+    <color name="portico_bronze">#9A6212</color>
+    <color name="portico_text_on_dark">#F5F4F2</color>
+    <color name="portico_text_on_light">#1A1917</color>
 </resources>

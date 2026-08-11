@@ -1,58 +1,106 @@
-# Portico Android
+# Portico
 
-Portico is a responsive Jetpack Compose real-estate investment portfolio tracker. It is built around a surveyor's field-book visual system so portfolio value, net return, cashflow, tax impact, and the next action remain clear on a phone or tablet.
+A real-estate investment portfolio platform for Android, built with Kotlin and
+Jetpack Compose against the Milestone 1 blueprint in `Project Details/`.
 
-## Included product surface
+Portico's argument is that a portfolio is not one number: gross rent falls
+through operating costs and tax to whatever actually survives. Every screen is
+built around making that subtraction visible, per property and across the
+register.
 
-- Dashboard with portfolio snapshot, value trend, financial summary, holdings, and recent activity.
-- Portfolio register with search, filters, property rows, and detailed property views.
-- Six-step add-property flow with purchase, income, expense, ROI, cap-rate, yield, cashflow, and review states.
-- Reports for performance, cashflow, allocation, comparison, and gross-versus-net analysis.
-- Private document library with upload, categories, and PDF viewer states.
-- Tax bridge for Uruguay and Argentina assumptions.
-- Portico intelligence assistant with property/portfolio/scenario context and demo responses.
-- Valuation and acquisition lab flows with explicit synthetic-data labeling.
-- Profile, appearance, security, privacy, subscription, and enterprise workspace surfaces.
-- Responsive Material navigation bar on compact widths and navigation rail at 600dp+.
+Imtiaz Hossain · 23101137 · CSE489
 
-## Run
+## What's in it
 
-Open this folder in Android Studio and run the `app` configuration on an emulator or Android device.
+**Portfolio** — register with search, filter and sort; property detail with
+overview, income, expenses, documents and tax tabs; six-step property capture
+with live analysis; edit and delete.
 
-From PowerShell, with Android Studio's bundled JDK available:
+**Analysis** — ROI, capital ROI, cash-on-cash, cap rate, gross and net yield,
+and monthly/annual cashflow, all computed from your records. Reports for
+performance, cashflow, allocation, property comparison and gross-vs-net.
 
-```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-$env:ANDROID_HOME = "C:\Users\IHE_OWN\AppData\Local\Android\Sdk"
-& "$env:USERPROFILE\.gradle\wrapper\dists\gradle-9.5.0-bin\bvnork1r7n8i6kp5cnkibsc9q\gradle-9.5.0\bin\gradle.bat" :app:assembleDebug
+**Tax** — a jurisdiction engine for Uruguay (Montevideo, Canelones, Maldonado)
+and Argentina (CABA, Buenos Aires, Córdoba). Every rate is an editable
+assumption with its own note, not a filed figure.
+
+**Documents** — private library with a real system file picker, category
+filing, viewer, and states for uploading, failed, unavailable and restricted.
+
+**Assistant** — answers questions about your own portfolio on-device, with the
+arithmetic shown. Handles extremes, comparisons, tax share, allocation, and
+what-if scenarios on rent or costs. No API key ships and none is called.
+
+**Valuation and acquisition** — comparable-based estimate against purchase
+price and recorded value; a search-to-decision flow that runs the same engine
+on a property you don't own yet.
+
+**Account** — preferences, currency, jurisdiction, appearance, reduce-motion,
+notifications, security, privacy, data export and erase, plans, workspace with
+roles and permissions, and a six-section admin platform.
+
+## Running it
+
+Open the folder in Android Studio and run the `app` configuration.
+
+From a shell, with Android Studio's bundled JDK:
+
+```bash
+JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$HOME/AppData/Local/Android/Sdk" gradle :app:assembleDebug
 ```
 
-The generated APK is written to `app/build/outputs/apk/debug/app-debug.apk`.
+The APK lands at `app/build/outputs/apk/debug/app-debug.apk`.
 
-## Real account access with Clerk
+## Signing in
 
-The login and sign-up routes use a custom Portico Compose surface backed by Clerk's native Android API. Email/password sign-in, account creation, email verification, password recovery, MFA, and the native session stay inside the app. Portico only receives the active session and gates the protected workspace from it.
+Three ways in:
 
-Before running the app:
+- **Email and password** via Clerk. Note the workspace policy requires a
+  **15-character minimum** — the app states this before you type and validates
+  against it.
+- **Google or GitHub**, both enabled on the Clerk instance.
+- **Demo data** — a sample portfolio, no account, works fully offline.
 
-1. Create or open a Clerk application.
-2. Enable the Native API and add the Android package `com.portico.android` in Clerk.
-3. Put the publishable key in Gradle properties or the environment:
+The Clerk publishable key lives in `gradle.properties`. Without it the app
+offers the demo path rather than a dead end.
 
-```properties
-CLERK_PUBLISHABLE_KEY=pk_test_your_key_here
+Clerk's development instance also accepts test addresses of the form
+`you+clerk_test@example.com` with verification code `424242`, which is the
+most reliable way to demonstrate sign-up without a real inbox.
+
+## What is real and what is illustrative
+
+Real: every return, yield, cap rate, cashflow and tax figure is computed by
+`domain/Finance.kt` and `domain/Tax.kt` from records in your workspace. Add a
+property and its analysis is produced the same way as the seeded ones.
+Everything persists across restart via DataStore.
+
+Illustrative, and labelled as such in the app: the three seeded properties,
+comparable properties, market signals, acquisition listings, organisation
+members, audit entries and admin platform metrics. Pro pricing is marked
+"Price not set" rather than invented.
+
+Not connected: any backend. Firebase, cloud document storage, payment
+processing, push delivery and external property data are integration seams, not
+shipped services. Records never leave the device.
+
+## Architecture
+
+```
+domain/     Models, Finance, Tax, Analyst, Seed — no Android dependencies
+data/       PorticoStore: single owner of state, persists to DataStore
+ui/theme/   Colour roles, semantic extensions, tabular-figure type scale
+ui/design/  Panels, rows, charts, icons, logo, the seven state patterns
+ui/screens/ One file per product area
 ```
 
-The key is intentionally not committed to this repository. Never place a Clerk secret key in the Android app. If the key is absent, the app shows a setup state instead of pretending that demo credentials are real.
-
-## Product boundary
-
-The app is intentionally usable offline with a local demo repository. Clerk account access is real when configured; portfolio records, documents, tax assumptions, assistant responses, and external property providers remain local illustrative data until their production backends are connected.
+Entities follow the schema delivered in Milestone 1 — user, portfolio,
+financial, document, subscription, enterprise, AI, external data, tax and
+system domains.
 
 ## Design record
 
-- Durable product truth: [PRODUCT.md](PRODUCT.md)
+- Product truth: [PRODUCT.md](PRODUCT.md)
 - Implemented visual system: [DESIGN.md](DESIGN.md)
-- Impeccable sidecar: [.impeccable/design.json](.impeccable/design.json)
-
-Imtiaz Hossain · 23101137
+- Sidecar: [.impeccable/design.json](.impeccable/design.json)
+- Direction contract: the header comment in `ui/PorticoApp.kt`

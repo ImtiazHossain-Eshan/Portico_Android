@@ -1,109 +1,185 @@
 ---
 name: Portico Android
-description: A responsive warm editorial desk for real-estate portfolio decisions.
-visual-world: Off-white paper / orange signals / brown dark mode
+description: A real-estate portfolio read as a financial instrument, not a brochure.
+visual-world: Neutral graphite and bone grounds / one amber accent / hairline-ruled panels
 platform: Android native / Kotlin / Jetpack Compose / Material 3
 ---
 
 # Portico design system
 
+Recorded from the built application, not from intention. Every value below is
+in `ui/theme/Theme.kt` or `ui/design/`.
+
 ## North star
 
-Portico is a flight deck for property capital. The investor should be able to scan the portfolio orbit, understand the instruments, and move from a number to the property, document, report, tax view, or scenario that explains it.
+A property portfolio is not one number. It is gross rent falling through
+operating costs and tax to whatever survives, per property and across the
+whole register. Portico puts that subtraction on screen and lets the investor
+open any figure to the records underneath it.
 
-This is a full visual replacement of the former field-book direction. The product truth stays the same: property register, six-step capture, return and cashflow calculations, reports, documents, Uruguay/Argentina tax context, valuation, acquisition, AI assistant, subscription, enterprise, and profile controls remain reachable.
+The category default — a card per metric, a donut, an accent gradient — hides
+that chain. This build refuses it.
 
 ## Visual world
 
-- Off-white paper surfaces with terracotta/orange decisions, not generic fintech gradients.
-- Faceted property/portfolio geometry, orbital rings, instrument arcs, and measured grid lines provide the 3D vocabulary.
-- Orange marks primary actions, positive movement, and completed state.
-- Warm brown marks comparative or analytical state.
-- Dark mode uses coffee-brown surfaces with lighter orange action contrast.
-- Critical red is reserved for destructive/error states.
-- Material 3 supplies Android-native navigation, fields, buttons, chips, dialogs, safe insets, and accessibility semantics.
+Grounds are neutral: graphite in dark, bone in light. Both are deliberately
+achromatic so the only saturated colour on screen is carrying information.
 
-The signature interaction is the portfolio scan: the faceted orbit rotates slowly while the portfolio value and three instrument gauges remain readable. Motion is spatial explanation, not decoration.
+One accent, amber, at two temperatures: `#E8A33D` on graphite and `#9A6212`
+bronze on bone. It marks action and selection only — never decoration — which
+is what frees green and red to mean exactly one thing each.
 
-## Tokens
+- **No blue anywhere.** The neutral used for gross totals and comparison marks
+  is a warm grey (`#9A948B` / `#6B665E`); a cool grey there picks up a blue
+  cast next to the amber and drags the surface toward generic fintech.
+- **No gradients, no glass, no glow, no drop shadows.** Depth is one 1dp
+  hairline plus a tonal step. That is the entire elevation system.
 
-### Warm palette
+### Palette
 
-| Role | Token | Value | Use |
-| --- | --- | --- | --- |
-| Background | `PorticoPaper` | `#F8F1E7` | Light canvas and launch surface |
-| Surface | `surface` | `#FFFCF7` | Opaque cards and auth surfaces |
-| Surface variant | `PorticoMist` | `#EDE2D4` | Cards, gauges, chips, navigation |
-| Primary | `PorticoOrange` | `#C85A20` | Primary action, selected state, positive value |
-| Secondary | `PorticoLilac` | `#8B5E45` | Analysis, comparisons, range markers |
-| Tertiary | warm ochre | `#A86F32` | Cost, caution, demo/local markers |
-| Text | `PorticoInk` | `#2A1D17` | High-priority readable text |
-| Muted | `PorticoMuted` | `#78685D` | Supporting information and timestamps |
-| Rule | `PorticoLine` | `#D7C6B5` | Geometry, separators, grid lines |
-| Critical | `PorticoCritical` | `#B33B2E` | Destructive/error states only |
+| Role | Dark | Light |
+| --- | --- | --- |
+| Ground | `#0B0B0C` | `#F6F5F3` |
+| Panel | `#141416` | `#FFFFFF` |
+| Sunk (fields, table headers) | `#1C1C1F` | `#EDEBE8` |
+| Hairline | `#2A2A2E` | `#DDDAD5` |
+| Rule (totals, borders) | `#3A3A40` | `#B8B4AE` |
+| Text | `#F5F4F2` | `#1A1917` |
+| Secondary text | `#A8A5A0` | `#5E5B56` |
+| Tertiary text | `#726F6A` | `#8A867F` |
+| Accent | `#E8A33D` | `#9A6212` |
+| Gain | `#5FB981` | `#1F7A4D` |
+| Loss | `#E5675C` | `#B3392E` |
+| Neutral | `#9A948B` | `#6B665E` |
 
-Light mode is the default: it is calm, paper-like, and orange-led. Dark mode is a brown reading environment rather than a blue-black inversion.
+Gain and loss never carry meaning alone — every delta pairs the colour with a
+direction arrow and a sign, so the reading survives colour-blindness.
 
 ## Typography
 
-Android `SansSerif` is used with a tight hierarchy and strong weight contrast. Financial values are bold and large; labels are compact and tracked; supporting copy remains readable at Dynamic Type sizes. No monospace costume or gradient text is used.
+System sans (Roboto) throughout — one family carries headings, data, labels and
+prose. The decisive choice is `fontFeatureSettings = "tnum"` on **every style
+except `bodyLarge`**: tabular figures are what let a column of money be compared
+by eye. Without them `1,240,500` and `184,200` set to different widths and the
+ledger stops aligning.
 
-- Display: 42sp / 46sp, semibold, for dominant portfolio values.
-- Display medium: 34sp / 40sp, semibold, for secondary anchors.
-- Headline: 24–30sp, semibold, for screen theses.
-- Title: 20sp / 26sp, semibold, for sections and property names.
-- Body: 14–16sp, regular, for explanation and decision context.
-- Label: 11–14sp, medium, for controls, instruments, and navigation.
+`bodyLarge` stays proportional — it is the one style reserved for running prose
+(assistant replies, explanations).
 
-## Geometry and depth
+Scale: display 46/36/28 · headline 26/22/19 · title 18/15/13 · body 16/14/12 ·
+label 14/12/11. Tracking runs from −1.6sp on display to +0.6sp on the smallest
+label; labels are set in caps by `SectionLabel`.
 
-- Page gutters: 20dp on compact width; wider content breathes inside the expanded layout.
-- Panel radius: 20–24dp for primary cockpit surfaces; 16–20dp for secondary surfaces.
-- Instrument arcs and plot previews use crisp Canvas geometry with semantic descriptions.
-- Depth is expressed through tonal planes, restrained 1dp borders, and small native shadow elevation on emphasized surfaces.
-- Buttons use clean, opaque Material 3 fills and outlines with restrained press elevation; large content surfaces remain legible and opaque.
+## Composition
 
-## Navigation and responsive behavior
+The unit is the **panel**, not the card: a hairline-bounded region with a
+tracked-caps header strip and rows inside it. Panels butt against one another,
+so a phone carries roughly a dozen figures where card-per-metric carried four.
 
-- Compact width uses a five-destination Material NavigationBar: Overview, Portfolio, Reports, Assistant, Profile.
-- Expanded width at 600dp and above uses the same destinations as a NavigationRail and gives the content a wider working area.
-- Child surfaces use a contextual top app bar and a system-compatible back action.
-- Horizontal action rows scroll instead of forcing fragile grids.
-- Safe drawing and navigation-bar insets are respected; controls use Material minimum touch targets.
-- The six-step Add Property workflow remains a vertical, keyboard-safe sequence on phone and a wider working surface on expanded layouts.
+- Panel radius 12dp; control radius 10dp. Pills are for small controls only.
+- Spacing scale 4 / 8 / 12 / 16 / 24 / 32dp. Gutters 16dp compact, 24dp medium,
+  32dp expanded.
+- Rows are 44dp minimum, 48dp when tappable, hairline-separated and inset to
+  the text column.
+- `TotalRule` is a double rule — the ledger convention for a closed total.
 
-## Icon and logo system
+### The waterfall
 
-The Portico mark is a faceted architectural portico/facade core crossed by two orbital rings and finished with a single signal node. It appears in the Android launcher, launch splash, splash screen, top bar, assistant, and profile surfaces.
+The signature composition. Gross income, then each deduction as an indented
+negative row with a bar proportional to gross and a "% of gross" caption,
+closing under a double rule on a net figure marked in the accent.
 
-`PorticoGlyph` is the custom canvas icon language used for primary navigation, controls, commands, and system actions. Glyphs are geometric, high-contrast, and semantic: orbit, portfolio, reports, assistant, profile, add, documents, tax, valuation, back, search, forward, income, expense, location, check, security, and more.
+One component (`WaterfallLedger`) renders at four scales: dashboard summary,
+property detail, tax module, and the gross-vs-net report. One idea, four
+places, never re-drawn.
+
+## Charts
+
+Drawn geometry, never pictures. Gridlines are hairlines at the same weight as
+panel rules; the series is a single 2dp stroke; the only fill is a flat 10%
+wash under the line.
+
+- `ValueChart` — value over time with a **scrub**: press or drag to read the
+  value at any point, release to return to latest. Range selector 1M/6M/1Y/5Y/All.
+  Bottom corners are labelled "Low"/"High" so they don't misread as a time axis.
+- `AllocationDonut` — share by country, region and type.
+- `CashflowColumns` — monthly columns with a real zero baseline, so negative
+  months render below it.
+- `MagnitudeBar` — takes a `format` lambda, because the same bar carries money
+  in one panel and a percentage in the next.
+
+Every chart carries a spoken summary via `contentDescription`; a screen-reader
+user gets the trend, not the pixels.
+
+## Icons and logo
+
+`Glyph` is a single drawn set: 24-unit grid, 1.75dp stroke, butt caps, mitre
+joins. No emoji, no characters standing in for pictures, no second icon family.
+
+The **Portico mark** is a lintel and stylobate framing three bays that rise to
+different heights, the middle one in the accent. Read one way it is the
+architectural portico the product is named for; read the other the bays are a
+bar chart of holdings. The gap under the lintel is what makes the second
+reading work. It runs from 24dp in a top bar to the adaptive launcher icon
+without a separate drawing.
 
 ## Motion
 
-- Logo orbit: slow, continuous rotation during entry and key cockpit surfaces.
-- Portfolio orbit: bounded 3D `graphicsLayer` tilt plus slow Canvas rings and property nodes.
-- Trend chart: a one-time line reveal on report entry, ending on the latest point so the motion explains chronology.
-- Button press: native Material elevation and touch feedback keep actions tactile without decorative stripes or overlays.
-- Route change: Material-style crossfade, 320ms.
-- Entry flow: splash handoff, onboarding fade-through, and explicit state transitions.
-- Assistant: short loading interval so the state change is legible; local answer appears with a clear offline label.
-- System animation scale and the Profile reduced-motion preference disable continuous orbit and shorten transitions.
+One authored moment: `rememberTickFlash` — a value that changes tints its own
+row for 640ms, then settles. Nothing else animates on its own.
 
-Motion is kept on transforms/alpha/Canvas geometry and does not animate long lists. The first viewport remains usable if all animation is disabled.
+Supporting motion is functional only: 180ms fade-through between destinations,
+a single chart draw-in per data change, and the waterfall bars settling once.
+The Profile "Reduce motion" preference disables reveals; the system
+"Remove animations" setting is honoured before any motion runs.
 
-## States and accessibility
+## Responsive behaviour
 
-Every major surface carries its required state language: local/demo, empty, loading, error/recovery, success, permission/privacy, and offline. Financial examples are labeled illustrative.
+Structural, never fluid type — text follows the system font scale instead.
 
-Interactive controls expose content descriptions, use Material components where appropriate, and retain 48dp targets. Charts and orbital views have semantic descriptions. Password fields use secure transformations. The assistant explicitly says when it is offline and keeps demo responses on-device.
+| Width | Navigation | Content |
+| --- | --- | --- |
+| < 600dp | Navigation bar | Single column, 2-up metric grid |
+| ≥ 600dp | Navigation rail | Single column, 3-up metric grid |
+| ≥ 840dp | Navigation rail | Wider working area; Admin gets its own section rail and multi-column tables |
+
+Width is measured with `BoxWithConstraints` from the actual container, not from
+screen metrics, so split-screen and freeform windows get the layout that fits
+the space they were given.
+
+Admin is reachable on a phone (single column) as well as expanded, so §27 is
+demonstrable on any device.
+
+## States
+
+Seven reusable patterns in `ui/design/States.kt`, applied rather than
+improvised per screen: loading skeleton, empty, error, success, offline,
+permission denied, session expired. Plus three product-specific: plan limit
+reached, assistant offline, document unavailable.
+
+Two rules hold across all of them. **Empty states teach the next action** rather
+than announcing absence. **Error states name both the problem and the way out** —
+a message with no recovery is a dead end.
+
+## Honesty
+
+Illustrative figures are labelled where a user could mistake them for their
+own: seeded properties, comparables, market signals, listings, platform
+metrics, and every tax rate. `TAX_DISCLAIMER` appears on every tax surface.
+Pro pricing ships marked "Price not set" rather than as a plausible invention.
 
 ## Quality bar
 
-The app is not considered finished until:
+The build is finished when:
 
-1. Cold launch shows Portico branding before Compose content.
-2. Onboarding, sign-in, registration, verification, demo entry, and sign-out are reachable.
-3. Dashboard, portfolio, property detail, add-property steps, reports, documents, tax, assistant, valuation, acquisition, subscription, enterprise, and profile routes are reachable.
-4. Build and lint pass with no errors.
-5. Phone and expanded layouts preserve the same information hierarchy.
-6. Reduced motion, offline, demo-data, and sensitive-data copy remain explicit.
+1. `assembleDebug` and `lintDebug` both pass with zero errors.
+2. Cold launch shows the Portico mark before Compose content, in both themes.
+3. Onboarding, sign-in, registration, verification, recovery, OAuth, demo entry
+   and sign-out are all reachable.
+4. Every blueprint section has a working surface — no control is a dead-end
+   snackbar.
+5. Every displayed rate is computed by `Finance.kt` from records in the store,
+   never stored as a constant.
+6. Phone and expanded layouts preserve the same information hierarchy.
+7. Both themes clear 4.5:1 on body text, touch targets are 48dp, and charts
+   carry spoken summaries.
