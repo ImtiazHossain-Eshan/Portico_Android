@@ -71,7 +71,10 @@ private fun PerformanceReport(state: PorticoState, results: List<PropertyFinanci
             }
             Spacer(Modifier.height(Space.md))
             ValueChart(
-                series = Finance.portfolioValueSeries(store.properties.toList(), pointsFor(state.chartRange)),
+                series = Finance.portfolioValueSeries(
+                    store.properties.toList(), pointsFor(state.chartRange),
+                    store.exchangeRates, store.profile.currency
+                ),
                 currency = currency,
                 rangeLabel = state.chartRange.label,
                 animate = !store.preferences.reducedMotion
@@ -172,9 +175,11 @@ private fun AllocationReport(state: PorticoState, results: List<PropertyFinancia
     val properties = store.properties.toList()
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
-        AllocationPanel("By country", Finance.allocation(properties) { it.country })
-        AllocationPanel("By region", Finance.allocation(properties) { it.region })
-        AllocationPanel("By property type", Finance.allocation(properties) { it.type })
+        val rates = store.exchangeRates
+        val display = store.profile.currency
+        AllocationPanel("By country", Finance.allocation(properties, rates, display) { it.country })
+        AllocationPanel("By region", Finance.allocation(properties, rates, display) { it.region })
+        AllocationPanel("By property type", Finance.allocation(properties, rates, display) { it.type })
     }
 }
 

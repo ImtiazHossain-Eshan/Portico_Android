@@ -32,9 +32,11 @@ data class PorticoSnapshot(
     val activity: List<ActivityEvent> = emptyList(),
     val notifications: List<Notification> = emptyList(),
     val conversations: List<AiConversation> = emptyList(),
+    val payments: List<Payment> = emptyList(),
     val profile: UserProfile = UserProfile(Seed.DEMO_USER_ID, "", ""),
     val preferences: UserPreferences = UserPreferences(),
     val taxProfile: TaxProfile = TaxProfile(),
+    val exchangeRates: ExchangeRates = ExchangeRates(),
     val subscription: Subscription = Subscription(),
     val seeded: Boolean = false
 )
@@ -61,12 +63,15 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     val activity: SnapshotStateList<ActivityEvent> = mutableStateListOf()
     val notifications: SnapshotStateList<Notification> = mutableStateListOf()
     val conversations: SnapshotStateList<AiConversation> = mutableStateListOf()
+    val payments: SnapshotStateList<Payment> = mutableStateListOf()
 
     var profile by mutableStateOf(UserProfile(Seed.DEMO_USER_ID, "Portico member", ""))
         private set
     var preferences by mutableStateOf(UserPreferences())
         private set
     var taxProfile by mutableStateOf(TaxProfile())
+        private set
+    var exchangeRates by mutableStateOf(ExchangeRates())
         private set
     var subscription by mutableStateOf(Subscription())
         private set
@@ -117,9 +122,11 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         activity.replaceAll(snapshot.activity)
         notifications.replaceAll(snapshot.notifications)
         conversations.replaceAll(snapshot.conversations)
+        payments.replaceAll(snapshot.payments)
         profile = snapshot.profile
         preferences = snapshot.preferences
         taxProfile = snapshot.taxProfile
+        exchangeRates = snapshot.exchangeRates
         subscription = snapshot.subscription
     }
 
@@ -132,9 +139,11 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         activity = activity.toList(),
         notifications = notifications.toList(),
         conversations = conversations.toList(),
+        payments = payments.toList(),
         profile = profile,
         preferences = preferences,
         taxProfile = taxProfile,
+        exchangeRates = exchangeRates,
         subscription = subscription,
         seeded = true
     )
@@ -171,6 +180,26 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         expenses.removeAll { it.propertyId == propertyId }
         documents.removeAll { it.propertyId == propertyId }
         valuations.removeAll { it.propertyId == propertyId }
+        persist()
+    }
+
+    /** Bulk insert from an import. One activity entry, not one per row. */
+    fun importProperties(
+        newProperties: List<Property>,
+        newIncome: List<IncomeEntry>,
+        newExpenses: List<ExpenseEntry>
+    ) {
+        if (newProperties.isEmpty()) return
+        properties.addAll(newProperties)
+        income.addAll(newIncome)
+        expenses.addAll(newExpenses)
+        logActivity(
+            ActivityKind.PROPERTY_ADDED,
+            "Bulk import",
+            "${newProperties.size} properties added from CSV",
+            null,
+            null
+        )
         persist()
     }
 
@@ -240,16 +269,78 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     fun setProfile(update: (UserProfile) -> UserProfile) { profile = update(profile); persist() }
     fun setPreferences(update: (UserPreferences) -> UserPreferences) { preferences = update(preferences); persist() }
     fun setTaxProfile(update: (TaxProfile) -> TaxProfile) { taxProfile = update(taxProfile); persist() }
+    fun setExchangeRates(update: (ExchangeRates) -> ExchangeRates) { exchangeRates = update(exchangeRates); persist() }
 
-    fun setPlan(tier: PlanTier) {
-        subscription = subscription.copy(
-            planTier = tier.name,
+    /**
+     * Activates a paid plan against a settled payment. Both move together —
+     * a subscription is never activated without the payment that paid for it.
+     */
+    fun activatePlan(plan: SubscriptionPlan, payment: Payment) {
+        payments.add(0, payment)
+        if (!payment.succeeded) {
+            logActivity(
+                ActivityKind.PLAN_CHANGED,
+                "Payment ${payment.paymentStatus.name.lowercase()}",
+                "${plan.name} · ${payment.displayAmount} · ${payment.cardBrand} ending ${payment.cardLast4}",
+                null, null
+            )
+            persist()
+            return
+        }
+        subscription = Subscription(
+            planTier = PlanTier.PRO.name,
+            planId = plan.id,
             status = "Active",
             startDate = SimpleDate.today().format(),
-            renewsOn = if (tier == PlanTier.PRO) "in 12 months" else null
+            renewsOn = nextRenewal(plan.interval),
+            cancelAtPeriodEnd = false
+        )
+        logActivity(
+            ActivityKind.PLAN_CHANGED,
+            "Subscribed to ${plan.name}",
+            "${payment.displayAmount} · ${payment.cardBrand} ending ${payment.cardLast4}",
+            null, null
+        )
+        persist()
+    }
+
+    /** Cancel keeps access to the end of the period, as a real one would. */
+    fun cancelSubscription() {
+        if (!subscription.isPaid) return
+        subscription = subscription.copy(status = "Cancels at period end", cancelAtPeriodEnd = true)
+        logActivity(ActivityKind.PLAN_CHANGED, "Subscription cancelled", "Access continues until ${subscription.renewsOn ?: "the period ends"}", null, null)
+        persist()
+    }
+
+    fun resumeSubscription() {
+        if (!subscription.cancelAtPeriodEnd) return
+        subscription = subscription.copy(status = "Active", cancelAtPeriodEnd = false)
+        logActivity(ActivityKind.PLAN_CHANGED, "Subscription resumed", "Renews ${subscription.renewsOn ?: "next period"}", null, null)
+        persist()
+    }
+
+    /** Immediate downgrade, used by the Free option. */
+    fun setPlan(tier: PlanTier) {
+        subscription = Subscription(
+            planTier = tier.name,
+            planId = if (tier == PlanTier.PRO) SubscriptionPlan.PRO_MONTHLY.id else SubscriptionPlan.FREE.id,
+            status = "Active",
+            startDate = SimpleDate.today().format(),
+            renewsOn = if (tier == PlanTier.PRO) nextRenewal("month") else null
         )
         logActivity(ActivityKind.PLAN_CHANGED, "Plan changed", "Now on ${tier.label}", null, null)
         persist()
+    }
+
+    private fun nextRenewal(interval: String): String {
+        val today = SimpleDate.today()
+        return if (interval == "year") {
+            SimpleDate(today.year + 1, today.month, today.day).format()
+        } else {
+            val month = if (today.month == 12) 1 else today.month + 1
+            val year = if (today.month == 12) today.year + 1 else today.year
+            SimpleDate(year, month, today.day).format()
+        }
     }
 
     /** Free tier caps the register; Pro removes the cap. */
@@ -295,12 +386,17 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     // ------------------------------------------------------------ analysis
 
-    fun financials(): List<PropertyFinancials> =
-        Finance.analyseAll(properties.toList(), income.toList(), expenses.toList(), taxProfile)
+    fun financials(): List<PropertyFinancials> = Finance.analyseAll(
+        properties.toList(), income.toList(), expenses.toList(),
+        taxProfile, exchangeRates, profile.currency
+    )
 
     fun financialsFor(propertyId: String?): PropertyFinancials? =
         propertyById(propertyId)?.let {
-            Finance.analyse(it, income.toList(), expenses.toList(), taxProfile)
+            Finance.analyse(
+                it, income.toList(), expenses.toList(), taxProfile,
+                SimpleDate.today(), exchangeRates, profile.currency
+            )
         }
 
     fun portfolio(): PortfolioFinancials = Finance.portfolio(financials())

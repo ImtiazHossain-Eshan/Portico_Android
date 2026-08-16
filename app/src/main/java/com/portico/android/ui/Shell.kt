@@ -228,6 +228,7 @@ private fun ShellTopBar(state: PorticoState) {
         Route.VALUATION -> "Valuation"
         Route.ACQUISITION -> "Acquisition"
         Route.SUBSCRIPTION -> "Plans"
+        Route.CHECKOUT -> "Checkout"
         Route.ENTERPRISE -> "Workspace"
         Route.NOTIFICATIONS -> "Notifications"
         Route.SETTINGS_PREFERENCES -> "Preferences"
@@ -334,6 +335,7 @@ private fun ShellContent(
                 Route.VALUATION -> ValuationScreen(state, pageModifier)
                 Route.ACQUISITION -> AcquisitionScreen(state, pageModifier)
                 Route.SUBSCRIPTION -> SubscriptionScreen(state, pageModifier)
+                Route.CHECKOUT -> CheckoutScreen(state, pageModifier)
                 Route.ENTERPRISE -> EnterpriseScreen(state, pageModifier)
                 Route.NOTIFICATIONS -> NotificationsScreen(state, pageModifier)
                 Route.SETTINGS_PREFERENCES -> PreferencesScreen(state, pageModifier)

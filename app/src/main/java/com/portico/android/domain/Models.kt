@@ -64,6 +64,8 @@ data class Property(
     val initialInvestment: Double,
     val financingAmount: Double = 0.0,
     val currentValue: Double,
+    /** The currency this property's figures were entered in. */
+    val currency: String = "USD",
     val photoUris: List<String> = emptyList(),
     val note: String = ""
 ) {
@@ -188,11 +190,15 @@ enum class PlanTier(val label: String, val propertyLimit: Int) {
 @Serializable
 data class Subscription(
     val planTier: String = PlanTier.FREE.name,
+    val planId: String = "plan_free",
     val status: String = "Active",
     val startDate: String = "",
-    val renewsOn: String? = null
+    val renewsOn: String? = null,
+    /** Set when the user cancels: access runs to the end of the paid period. */
+    val cancelAtPeriodEnd: Boolean = false
 ) {
     val tier: PlanTier get() = runCatching { PlanTier.valueOf(planTier) }.getOrDefault(PlanTier.FREE)
+    val isPaid: Boolean get() = tier == PlanTier.PRO
 }
 
 // ------------------------------------------------------- enterprise domain

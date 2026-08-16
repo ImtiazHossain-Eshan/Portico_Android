@@ -12,7 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.clerk.api.Clerk
+import com.clerk.api.network.serialization.ClerkResult
+import kotlinx.coroutines.launch
+import com.portico.android.data.PorticoExport
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
 import com.portico.android.ui.Route
@@ -74,7 +79,7 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Account")
             NavRow("Preferences", glyph = Glyph.SETTINGS, value = profile.currency,
-                supporting = "Currency, jurisdiction, language, appearance") {
+                supporting = "Currency, exchange rates, jurisdiction, appearance") {
                 state.navigate(Route.SETTINGS_PREFERENCES)
             }
             Hairline()
@@ -164,6 +169,7 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
 @Composable
 fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
+    val semantic = PorticoTheme.semantic
     val profile = store.profile
     val preferences = store.preferences
     var editingName by remember { mutableStateOf(profile.name) }
@@ -197,6 +203,69 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
+            PanelHeader(
+                "Exchange rates",
+                supporting = "Units per 1 USD. Used whenever a property is held in another currency.",
+                action = if (store.exchangeRates.isEdited) "Reset" else null,
+                onAction = if (store.exchangeRates.isEdited) {
+                    {
+                        store.setExchangeRates { it.reset() }
+                        state.notify("Exchange rates reset to defaults")
+                    }
+                } else null
+            )
+            store.exchangeRates.rows().forEachIndexed { index, row ->
+                if (index > 0) Hairline()
+                if (row.isBase) {
+                    DataRow(
+                        "${row.currency} ${row.symbol}",
+                        "base",
+                        supporting = "Every other rate is quoted against this"
+                    )
+                } else {
+                    var draft by remember(row.currency, row.perUsd) {
+                        mutableStateOf(formatRate(row.perUsd))
+                    }
+                    Row(
+                        Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.sm),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("${row.currency} ${row.symbol}", style = MaterialTheme.typography.titleMedium)
+                            Text(
+                                "${row.symbol}${formatRate(row.perUsd)} per \u00241",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = semantic.tertiaryText
+                            )
+                        }
+                        Spacer(Modifier.width(Space.md))
+                        PorticoField(
+                            value = draft,
+                            onValueChange = { raw ->
+                                draft = raw.filter { c -> c.isDigit() || c == '.' }
+                                draft.toDoubleOrNull()?.let { parsed ->
+                                    if (parsed > 0) {
+                                        store.setExchangeRates {
+                                            it.withRate(row.currency, parsed, SimpleDate.today().format())
+                                        }
+                                    }
+                                }
+                            },
+                            label = "per USD",
+                            keyboardType = KeyboardType.Decimal,
+                            modifier = Modifier.width(150.dp)
+                        )
+                    }
+                }
+            }
+            if (store.exchangeRates.updated.isNotBlank()) {
+                Hairline()
+                DataRow("You last set these", store.exchangeRates.updated)
+            }
+            SyntheticNote(FX_NOTICE)
+        }
+
+        Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Tax jurisdiction")
             NavRow(
                 store.taxProfile.jurisdiction.name,
@@ -219,20 +288,6 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 glyph = Glyph.APPEARANCE,
                 onCheckedChange = { value -> store.setPreferences { it.copy(reducedMotion = value) } }
             )
-        }
-
-        Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Language")
-            SegmentedRow(
-                listOf("English", "Español", "Português"),
-                preferences.language
-            ) { language ->
-                store.setPreferences { it.copy(language = language) }
-                if (language != "English") {
-                    state.notify("$language is selected. Translations are not bundled in this build.")
-                }
-            }
-            Spacer(Modifier.height(Space.md))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
@@ -265,12 +320,24 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
     }
 }
 
+/** Rates read better without trailing zeros: 122 rather than 122.00. */
+private fun formatRate(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else "%.4f".format(value).trimEnd('0').trimEnd('.')
+
 // ---------------------------------------------------------------- security
 
 @Composable
 fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val semantic = PorticoTheme.semantic
+    val scope = rememberCoroutineScope()
+    var revoking by remember { mutableStateOf(false) }
+
+    // Sessions are the identity provider's truth, so they are read live rather
+    // than mirrored into local state.
+    val sessions by Clerk.sessionsFlow.collectAsState(initial = emptyList())
+    val currentSessionId = Clerk.session?.id
+    val otherSessions = sessions.filter { it.id != currentSessionId }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -288,6 +355,47 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
+            PanelHeader(
+                "Active sessions",
+                supporting = if (sessions.isEmpty()) "Nothing signed in remotely"
+                else "${sessions.size} session${if (sessions.size == 1) "" else "s"} on your account"
+            )
+            if (sessions.isEmpty()) {
+                DataRow(
+                    "This device",
+                    if (state.demoMode) "Demo" else "Local",
+                    supporting = "No remote session to revoke"
+                )
+            } else {
+                sessions.forEachIndexed { index, session ->
+                    if (index > 0) Hairline()
+                    val activity = session.latestActivity
+                    val where = listOfNotNull(activity?.deviceType, activity?.city, activity?.country)
+                        .joinToString(" · ").ifBlank { "Unknown device" }
+                    val isCurrent = session.id == currentSessionId
+                    DataRow(
+                        label = if (isCurrent) "This device" else where,
+                        value = if (isCurrent) "Current" else "Revoke",
+                        supporting = if (isCurrent) where else session.status.name.lowercase(),
+                        valueColor = if (isCurrent) semantic.tertiaryText else MaterialTheme.colorScheme.error,
+                        onClick = if (isCurrent) null else {
+                            {
+                                scope.launch {
+                                    revoking = true
+                                    when (Clerk.auth.revokeSession(session)) {
+                                        is ClerkResult.Success -> state.notify("Session on $where revoked")
+                                        is ClerkResult.Failure<*> -> state.notify("Couldn't revoke that session.")
+                                    }
+                                    revoking = false
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Manage")
             NavRow(
                 "Change password",
@@ -302,11 +410,47 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
             }
             Hairline()
             NavRow(
-                "Sign out everywhere",
+                "Sign out everywhere else",
                 glyph = Glyph.LOGOUT,
-                supporting = "Ends every session except this one",
-                tint = MaterialTheme.colorScheme.error
-            ) { state.notify("Session revocation needs the account portal.") }
+                supporting = if (otherSessions.isEmpty()) "No other sessions to end"
+                else "Ends ${otherSessions.size} other session${if (otherSessions.size == 1) "" else "s"}",
+                tint = if (otherSessions.isEmpty()) semantic.tertiaryText else MaterialTheme.colorScheme.error
+            ) {
+                if (otherSessions.isEmpty()) {
+                    state.notify("You're only signed in on this device.")
+                    return@NavRow
+                }
+                scope.launch {
+                    revoking = true
+                    var revoked = 0
+                    var failed = 0
+                    otherSessions.forEach { session ->
+                        when (Clerk.auth.revokeSession(session)) {
+                            is ClerkResult.Success -> revoked++
+                            is ClerkResult.Failure<*> -> failed++
+                        }
+                    }
+                    revoking = false
+                    state.notify(
+                        when {
+                            failed == 0 -> "Signed out of $revoked other session${if (revoked == 1) "" else "s"}"
+                            revoked == 0 -> "Couldn't reach the session service."
+                            else -> "$revoked ended, $failed could not be reached."
+                        }
+                    )
+                }
+            }
+            if (revoking) {
+                Hairline()
+                Row(
+                    Modifier.fillMaxWidth().padding(Space.lg),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Space.sm)
+                ) {
+                    CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
+                    Text("Contacting the session service", style = MaterialTheme.typography.bodySmall, color = semantic.tertiaryText)
+                }
+            }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
@@ -332,6 +476,7 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
 @Composable
 fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
+    val context = LocalContext.current
     val semantic = PorticoTheme.semantic
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
@@ -351,8 +496,18 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Your data")
-            NavRow("Export everything", glyph = Glyph.DOCUMENT, supporting = "A copy of every record in this workspace") {
-                state.notify("Prepared ${store.properties.size} properties and ${store.income.size + store.expenses.size} financial records for export.")
+            NavRow(
+                "Export everything",
+                glyph = Glyph.DOCUMENT,
+                supporting = "${PorticoExport.recordCount(store)} records as CSV"
+            ) {
+                val intent = PorticoExport.shareIntent(context, store)
+                if (intent == null) {
+                    state.notify("Couldn't write the export files to this device.")
+                } else {
+                    runCatching { context.startActivity(Intent.createChooser(intent, "Export portfolio")) }
+                        .onFailure { state.notify("No app on this device can receive the export.") }
+                }
             }
             Hairline()
             NavRow("Restore sample portfolio", glyph = Glyph.REFRESH, supporting = "Replaces current records with the demo set") {

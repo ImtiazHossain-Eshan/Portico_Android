@@ -9,6 +9,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import com.portico.android.data.PorticoExport
+import com.portico.android.data.PorticoImport
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
 import com.portico.android.ui.Route
@@ -26,6 +32,8 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
     val current = store.subscription.tier
     val semantic = PorticoTheme.semantic
+    var showPlanHistory by remember { mutableStateOf(false) }
+    val planEvents = store.activity.filter { it.kind == ActivityKind.PLAN_CHANGED }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -81,7 +89,28 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 Hairline()
                 DataRow("Started", store.subscription.startDate.ifBlank { "—" })
                 Hairline()
-                DataRow("Renews", store.subscription.renewsOn ?: "—")
+                DataRow(
+                    if (store.subscription.cancelAtPeriodEnd) "Access until" else "Renews",
+                    store.subscription.renewsOn ?: "—"
+                )
+                Hairline()
+                Box(Modifier.padding(Space.lg)) {
+                    if (store.subscription.cancelAtPeriodEnd) {
+                        PrimaryButton("Resume subscription", Modifier.fillMaxWidth()) {
+                            store.resumeSubscription()
+                            state.notify("Subscription resumed")
+                        }
+                    } else {
+                        SecondaryButton(
+                            "Cancel subscription",
+                            Modifier.fillMaxWidth(),
+                            destructive = true
+                        ) {
+                            store.cancelSubscription()
+                            state.notify("Cancelled — access continues to the end of the period")
+                        }
+                    }
+                }
             }
         }
 
@@ -116,15 +145,39 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 "On-device assistant" to true
             ),
             onSelect = {
-                store.setPlan(PlanTier.PRO)
-                state.notify("Pro features unlocked")
+                state.checkoutPlanId = SubscriptionPlan.PRO_MONTHLY.id
+                state.checkoutStage = com.portico.android.ui.CheckoutStage.DETAILS
+                state.navigate(Route.CHECKOUT)
             }
         )
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Manage")
-            NavRow("Billing history", glyph = Glyph.CURRENCY, supporting = "No payments recorded") {
-                state.notify("No billing provider is connected in this build.")
+            NavRow(
+                "Billing history",
+                glyph = Glyph.CURRENCY,
+                value = "${store.payments.size}",
+                supporting = "Every sandbox charge, successful or not"
+            ) { showPlanHistory = !showPlanHistory }
+            if (showPlanHistory) {
+                if (store.payments.isEmpty()) {
+                    EmptyState(
+                        title = "No charges yet",
+                        body = "Subscribing records a receipt here — including declines, so failed attempts are auditable too.",
+                        glyph = Glyph.CURRENCY
+                    )
+                } else {
+                    store.payments.forEach { payment ->
+                        Hairline()
+                        DataRow(
+                            label = SubscriptionPlan.byId(payment.planId)?.name ?: "Subscription",
+                            value = payment.displayAmount,
+                            supporting = "${payment.date} · ${payment.cardBrand} ending ${payment.cardLast4}" +
+                                (payment.failureReason?.let { " · $it" } ?: ""),
+                            valueColor = if (payment.succeeded) semantic.gain else semantic.loss
+                        )
+                    }
+                }
             }
             Hairline()
             NavRow("Workspace and team", glyph = Glyph.ENTERPRISE, supporting = "Organisations, roles and export") {
@@ -132,10 +185,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
             }
         }
 
-        SyntheticNote(
-            "Pricing is not set in this build and no payment provider is connected. " +
-                "Switching plans changes feature access locally so the restriction behaviour can be reviewed."
-        )
+        SyntheticNote(SANDBOX_NOTICE)
     }
 
     if (state.showPaywall) {
@@ -169,8 +219,12 @@ private fun PlanPanel(
             }
             if (tier == PlanTier.PRO) {
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Price not set", style = MaterialTheme.typography.titleMedium, color = semantic.tertiaryText)
-                    Text("placeholder", style = MaterialTheme.typography.labelSmall, color = semantic.tertiaryText)
+                    Text(
+                        SubscriptionPlan.PRO_MONTHLY.displayPrice,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text("per month · sandbox", style = MaterialTheme.typography.labelSmall, color = semantic.tertiaryText)
                 }
             }
         }
@@ -200,8 +254,9 @@ private fun PlanPanel(
                 SecondaryButton("Current plan", Modifier.fillMaxWidth(), enabled = false) {}
             } else {
                 PrimaryButton(
-                    if (tier == PlanTier.PRO) "Switch to Pro" else "Switch to Free",
+                    if (tier == PlanTier.PRO) "Subscribe" else "Switch to Free",
                     Modifier.fillMaxWidth(),
+                    glyph = if (tier == PlanTier.PRO) Glyph.LOCK else null,
                     onClick = onSelect
                 )
             }
@@ -236,9 +291,28 @@ private fun ModalBottomSheetPaywall(state: PorticoState, onDismiss: () -> Unit) 
 @Composable
 fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
+    val context = LocalContext.current
     val semantic = PorticoTheme.semantic
     val organization = Seed.organization
     var selectedRole by remember { mutableStateOf(OrgRole.ANALYST) }
+    var importResult by remember { mutableStateOf<PorticoImport.Result?>(null) }
+
+    val importPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val result = PorticoImport.read(context, uri, store.properties.toList())
+        if (result == null) {
+            state.notify("That file couldn't be read as CSV.")
+        } else {
+            store.importProperties(result.imported, result.income, result.expenses)
+            importResult = result
+            state.notify(
+                if (result.hasAnything) "Imported ${result.summary}"
+                else "Nothing imported — ${result.summary}"
+            )
+        }
+    }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -304,12 +378,50 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Operations")
-            NavRow("Bulk property import", glyph = Glyph.UPLOAD, supporting = "Bring a normalised register in as CSV") {
-                state.notify("Bulk import needs a backend service. Not connected in this build.")
+            NavRow(
+                "Bulk property import",
+                glyph = Glyph.UPLOAD,
+                supporting = "Bring a register in as CSV"
+            ) {
+                importResult = null
+                runCatching { importPicker.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) }
+                    .onFailure { state.notify("No file picker available on this device.") }
+            }
+            importResult?.let { result ->
+                Hairline()
+                Column(Modifier.padding(horizontal = Space.lg, vertical = Space.md)) {
+                    Text(result.summary, style = MaterialTheme.typography.titleMedium)
+                    if (result.errors.isNotEmpty()) {
+                        Spacer(Modifier.height(Space.sm))
+                        result.errors.take(5).forEach { rowError ->
+                            Text(
+                                "Line ${rowError.line}: ${rowError.reason}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = semantic.loss
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(Space.sm))
+                    Text(
+                        "Expected header: ${PorticoImport.expectedHeader}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = semantic.tertiaryText
+                    )
+                }
             }
             Hairline()
-            NavRow("Export portfolio data", glyph = Glyph.DOCUMENT, supporting = "Every property, income, expense and tax line") {
-                state.notify("Export prepared locally — ${store.properties.size} properties, ${store.income.size + store.expenses.size} records.")
+            NavRow(
+                "Export portfolio data",
+                glyph = Glyph.DOCUMENT,
+                supporting = "Every property, income, expense and tax line as CSV"
+            ) {
+                val intent = PorticoExport.shareIntent(context, store)
+                if (intent == null) {
+                    state.notify("Couldn't write the export files to this device.")
+                } else {
+                    runCatching { context.startActivity(Intent.createChooser(intent, "Export portfolio")) }
+                        .onFailure { state.notify("No app on this device can receive the export.") }
+                }
             }
             Hairline()
             NavRow("Admin platform", glyph = Glyph.ADMIN, supporting = "Users, organisations, subscriptions and audit") {

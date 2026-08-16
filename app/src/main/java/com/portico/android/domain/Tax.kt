@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * Every rate below ships as an editable default carrying its own note, and the
  * UI states plainly that these are modelling assumptions rather than tax
- * advice. That framing is what lets the product be useful in two countries
+ * advice. That framing is what lets the product be useful across countries
  * without pretending to be a filing tool.
  *
  * Adding a country means adding a [Country] with its jurisdictions and rules.
@@ -25,6 +25,9 @@ object Jurisdiction {
     const val ARGENTINA_CABA = "AR-CABA"
     const val ARGENTINA_BUENOS_AIRES = "AR-BA"
     const val ARGENTINA_CORDOBA = "AR-CBA"
+    const val BANGLADESH_DHAKA_NORTH = "BD-DNCC"
+    const val BANGLADESH_DHAKA_SOUTH = "BD-DSCC"
+    const val BANGLADESH_CHATTOGRAM = "BD-CCC"
 }
 
 /** What a rate is charged against. Determines which figure it multiplies. */
@@ -242,9 +245,63 @@ object TaxCatalog {
         }
     )
 
+    /*
+     * Bangladesh. Rental income is taxed as "income from house property":
+     * a standard 25% repair-and-maintenance allowance comes off gross rent
+     * first, then the balance is taxed at the individual's slab rate. Both
+     * rates below are therefore expressed as effective rates on gross rent,
+     * with the working written into each note so the assumption is auditable.
+     */
+    val bangladeshDhakaNorth = TaxJurisdiction(
+        id = Jurisdiction.BANGLADESH_DHAKA_NORTH,
+        name = "Dhaka North (DNCC)",
+        countryCode = "BD",
+        countryName = "Bangladesh",
+        currency = "BDT",
+        rules = listOf(
+            rule(
+                "bd-income-tax", "Income tax on house property", 11.25,
+                TaxBasis.GROSS_INCOME, TaxCategory.INCOME_TAX,
+                "Gross rent less the standard 25% repair allowance, taxed at a 15% slab: 0.75 × 15% ≈ 11.25% effective. Change this if your slab differs."
+            ),
+            rule(
+                "bd-holding-tax", "Holding tax (City Corporation)", 9.0,
+                TaxBasis.GROSS_INCOME, TaxCategory.PROPERTY_TAX,
+                "City Corporation holding tax is 12% of annual value, and annual value is assessed after a 25% maintenance allowance: 0.75 × 12% = 9% of gross rent."
+            ),
+            rule(
+                "bd-land-dev-tax", "Land development tax", 0.03,
+                TaxBasis.PROPERTY_VALUE, TaxCategory.LOCAL_TAX,
+                "Assessed per katha of land rather than on value; modelled here as a nominal share of property value."
+            ),
+            rule(
+                "bd-capital-gains", "Capital gains on transfer", 15.0,
+                TaxBasis.CAPITAL_GAIN, TaxCategory.CAPITAL_GAINS,
+                "Individuals disposing of immovable property held over five years. Often collected at source on the deed value at registration. Excluded from annual net income."
+            )
+        )
+    )
+
+    val bangladeshDhakaSouth = bangladeshDhakaNorth.copy(
+        id = Jurisdiction.BANGLADESH_DHAKA_SOUTH,
+        name = "Dhaka South (DSCC)"
+    )
+
+    val bangladeshChattogram = bangladeshDhakaNorth.copy(
+        id = Jurisdiction.BANGLADESH_CHATTOGRAM,
+        name = "Chattogram (CCC)",
+        rules = bangladeshDhakaNorth.rules.map {
+            if (it.id == "bd-holding-tax") it.copy(
+                ratePct = 8.25,
+                note = "Chattogram City Corporation assesses at 11% of annual value: 0.75 × 11% = 8.25% of gross rent."
+            ) else it
+        }
+    )
+
     val all = listOf(
         uruguayMontevideo, uruguayCanelones, uruguayMaldonado,
-        argentinaCaba, argentinaBuenosAires, argentinaCordoba
+        argentinaCaba, argentinaBuenosAires, argentinaCordoba,
+        bangladeshDhakaNorth, bangladeshDhakaSouth, bangladeshChattogram
     )
 
     /** Grouped for the country -> jurisdiction picker. */

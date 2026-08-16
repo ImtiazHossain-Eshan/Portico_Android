@@ -129,30 +129,47 @@ object Finance {
         income: List<IncomeEntry>,
         expenses: List<ExpenseEntry>,
         taxProfile: TaxProfile,
-        today: SimpleDate = SimpleDate.today()
+        today: SimpleDate = SimpleDate.today(),
+        rates: ExchangeRates = ExchangeRates(),
+        displayCurrency: String = property.currency
     ): PropertyFinancials {
         val mine = { id: String -> id == property.id }
 
+        /*
+         * Conversion happens once, here at the boundary. Everything downstream
+         * (the waterfall, the rates, the roll-up) then works in a single
+         * currency without knowing conversion exists. Rates and yields are
+         * ratios and come out identical either way; only the money moves.
+         */
+        val fx = { amount: Double -> rates.convert(amount, property.currency, displayCurrency) }
+        val converted = property.copy(
+            purchasePrice = fx(property.purchasePrice),
+            initialInvestment = fx(property.initialInvestment),
+            financingAmount = fx(property.financingAmount),
+            currentValue = fx(property.currentValue),
+            currency = displayCurrency
+        )
+
         val monthlyGross = income.filter { mine(it.propertyId) }
-            .sumOf { if (it.recurring) it.amount else it.amount / MONTHS }
+            .sumOf { fx(if (it.recurring) it.amount else it.amount / MONTHS) }
         val annualGross = monthlyGross * MONTHS
 
         val propertyExpenses = expenses.filter { mine(it.propertyId) }
 
         val monthlyOperating = propertyExpenses
             .filter { ExpenseCategory.from(it.category).isOperating }
-            .sumOf { if (it.recurring) it.amount else it.amount / MONTHS }
+            .sumOf { fx(if (it.recurring) it.amount else it.amount / MONTHS) }
 
         // Taxes the user actually recorded.
         val recordedAnnualTax = propertyExpenses
             .filter { !ExpenseCategory.from(it.category).isOperating }
-            .sumOf { if (it.recurring) it.amount * MONTHS else it.amount }
+            .sumOf { fx(if (it.recurring) it.amount * MONTHS else it.amount) }
 
         // Taxes the jurisdiction implies, used only where nothing was recorded.
         val assumedAnnualTax = taxProfile.annualTaxFor(
             grossAnnualIncome = annualGross,
             operatingExpenses = monthlyOperating * MONTHS,
-            propertyValue = property.currentValue
+            propertyValue = converted.currentValue
         )
         val annualTax = if (recordedAnnualTax > 0.0) recordedAnnualTax else assumedAnnualTax
 
@@ -164,7 +181,7 @@ object Finance {
             ?.let { maxOf(it.yearsUntil(today), 0.08) } ?: 1.0
 
         return PropertyFinancials(
-            property = property,
+            property = converted,
             monthlyGrossIncome = monthlyGross,
             annualGrossIncome = annualGross,
             monthlyOperatingExpenses = monthlyOperating,
@@ -174,13 +191,13 @@ object Finance {
             monthlyNetIncome = annualNet / MONTHS,
             annualNetIncome = annualNet,
             netOperatingIncome = noi,
-            capRate = pct(noi, property.currentValue),
-            grossYield = pct(annualGross, property.currentValue),
-            netYield = pct(annualNet, property.currentValue),
-            capitalRoi = pct(property.appreciation, property.initialInvestment),
-            cashOnCash = pct(annualNet, property.initialInvestment),
-            totalRoi = pct(property.appreciation + annualNet, property.initialInvestment),
-            appreciation = property.appreciation,
+            capRate = pct(noi, converted.currentValue),
+            grossYield = pct(annualGross, converted.currentValue),
+            netYield = pct(annualNet, converted.currentValue),
+            capitalRoi = pct(converted.appreciation, converted.initialInvestment),
+            cashOnCash = pct(annualNet, converted.initialInvestment),
+            totalRoi = pct(converted.appreciation + annualNet, converted.initialInvestment),
+            appreciation = converted.appreciation,
             holdingYears = holdingYears
         )
     }
@@ -189,9 +206,13 @@ object Finance {
         properties: List<Property>,
         income: List<IncomeEntry>,
         expenses: List<ExpenseEntry>,
-        taxProfile: TaxProfile
+        taxProfile: TaxProfile,
+        rates: ExchangeRates = ExchangeRates(),
+        displayCurrency: String = ExchangeRates.BASE
     ): List<PropertyFinancials> =
-        properties.map { analyse(it, income, expenses, taxProfile) }
+        properties.map {
+            analyse(it, income, expenses, taxProfile, SimpleDate.today(), rates, displayCurrency)
+        }
 
     /** Roll individual results up. Rates are recomputed from totals, not averaged. */
     fun portfolio(results: List<PropertyFinancials>): PortfolioFinancials {
@@ -230,10 +251,16 @@ object Finance {
      * the purchase date and current value now. It is an interpolation, not a
      * price history, and the UI says so.
      */
-    fun valueSeries(property: Property, points: Int = 24): List<Double> {
-        if (points <= 1) return listOf(property.currentValue)
-        val from = property.purchasePrice
-        val to = property.currentValue
+    fun valueSeries(
+        property: Property,
+        points: Int = 24,
+        rates: ExchangeRates = ExchangeRates(),
+        displayCurrency: String = property.currency
+    ): List<Double> {
+        val fx = { amount: Double -> rates.convert(amount, property.currency, displayCurrency) }
+        if (points <= 1) return listOf(fx(property.currentValue))
+        val from = fx(property.purchasePrice)
+        val to = fx(property.currentValue)
         return List(points) { index ->
             val t = index.toDouble() / (points - 1)
             // Slight ease so the line reads as a market, not a ruler.
@@ -242,22 +269,30 @@ object Finance {
         }
     }
 
-    fun portfolioValueSeries(properties: List<Property>, points: Int = 24): List<Double> {
+    fun portfolioValueSeries(
+        properties: List<Property>,
+        points: Int = 24,
+        rates: ExchangeRates = ExchangeRates(),
+        displayCurrency: String = ExchangeRates.BASE
+    ): List<Double> {
         if (properties.isEmpty()) return List(points) { 0.0 }
-        val series = properties.map { valueSeries(it, points) }
+        val series = properties.map { valueSeries(it, points, rates, displayCurrency) }
         return List(points) { index -> series.sumOf { it[index] } }
     }
 
     /** Allocation shares that always total 1, grouped by an arbitrary key. */
     fun <T> allocation(
         properties: List<Property>,
+        rates: ExchangeRates = ExchangeRates(),
+        displayCurrency: String = ExchangeRates.BASE,
         key: (Property) -> T
     ): List<Pair<T, Double>> {
-        val total = properties.sumOf { it.currentValue }
+        fun value(p: Property) = rates.convert(p.currentValue, p.currency, displayCurrency)
+        val total = properties.sumOf { value(it) }
         if (total <= 0.0) return emptyList()
         return properties
             .groupBy(key)
-            .map { (group, items) -> group to items.sumOf { it.currentValue } / total }
+            .map { (group, items) -> group to items.sumOf { value(it) } / total }
             .sortedByDescending { it.second }
     }
 }
@@ -356,9 +391,10 @@ object Money {
         "EUR" -> "€"
         "UYU" -> "\$U"
         "ARS" -> "AR$"
+        "BDT" -> "৳"
         "GBP" -> "£"
         else -> "$"
     }
 
-    val currencies = listOf("USD", "EUR", "UYU", "ARS", "GBP")
+    val currencies = listOf("USD", "EUR", "BDT", "UYU", "ARS", "GBP")
 }
