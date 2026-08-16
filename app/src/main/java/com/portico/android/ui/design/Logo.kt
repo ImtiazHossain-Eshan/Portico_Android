@@ -25,7 +25,7 @@ import com.portico.android.ui.theme.PorticoTheme
 /*
  * The Portico mark: a lintel over three columns of unequal height.
  *
- * Read one way it is an architectural facade — the portico the product is
+ * Read one way it is an architectural facade, the portico the product is
  * named for. Read the other way the columns are a bar chart of holdings, and
  * the tallest one carries the accent. That double reading is the whole
  * identity, and it is why the mark works at 24dp in a top bar and at 96dp on
@@ -56,7 +56,7 @@ fun PorticoMark(
 
         // Three bays rising off the base to different heights. The gap under
         // the lintel is what lets them read as measured quantities rather than
-        // structural columns — the whole point of the mark.
+        // structural columns, the whole point of the mark.
         drawLine(tint, p(6.2f, 19.5f), p(6.2f, 8.2f), column, StrokeCap.Butt)
         drawLine(accent, p(12f, 19.5f), p(12f, 11.6f), column, StrokeCap.Butt)
         drawLine(tint, p(17.8f, 19.5f), p(17.8f, 9.8f), column, StrokeCap.Butt)

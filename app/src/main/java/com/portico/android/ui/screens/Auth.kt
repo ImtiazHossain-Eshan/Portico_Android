@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
  * Sign-in on the product's own ground rather than a generic centred card.
  *
  * The rules this instance actually enforces are stated before the user types,
- * not discovered after a rejected submit — the previous build advertised an
+ * not discovered after a rejected submit. The previous build advertised an
  * eight-character minimum against a server requiring fifteen, which made
  * account creation impossible for anyone who followed its own instructions.
  */
@@ -131,7 +131,7 @@ private fun AuthBrandPanel(modifier: Modifier = Modifier) {
         )
         Spacer(Modifier.height(Space.lg))
         Text(
-            "Portico works out ROI, cap rate, yields and cashflow from your own records — then shows what survives expenses and tax.",
+            "Portico works out ROI, cap rate, yields and cashflow from your own records, then shows what survives expenses and tax.",
             style = MaterialTheme.typography.bodyLarge,
             color = semantic.tertiaryText,
             modifier = Modifier.widthIn(max = 420.dp)
@@ -206,7 +206,7 @@ private fun AuthForm(
                 .any { throwableMessage.contains(it, ignoreCase = true) }
             if (looksOffline) {
                 recoveryAction = "Continue with demo data" to onUseDemo
-                return "Can't reach the sign-in service. Check your connection — your saved records are still available offline."
+                return "Can't reach the sign-in service. Check your connection. Your saved records are still available offline."
             }
         }
 

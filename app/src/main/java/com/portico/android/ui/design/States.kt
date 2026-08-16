@@ -31,7 +31,7 @@ import com.portico.android.ui.theme.PorticoTheme
  *
  * Two rules run through all of them. Empty states teach the next action rather
  * than announcing absence, and error states name both the problem and the way
- * out — a message with no recovery is a dead end, which is what most of the
+ * out. A message with no recovery is a dead end, which is what most of the
  * old build's placeholder snackbars were.
  */
 
@@ -252,7 +252,7 @@ fun SuccessState(
 
 // ------------------------------------------------------------------ offline
 
-/** Persistent strip, not a dialog — the user can keep working while offline. */
+/** Persistent strip, not a dialog, so the user can keep working while offline. */
 @Composable
 fun OfflineBanner(modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) {
     val semantic = PorticoTheme.semantic

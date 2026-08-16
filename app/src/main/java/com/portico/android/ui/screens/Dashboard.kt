@@ -195,7 +195,7 @@ private fun FirstRunDashboard(state: PorticoState, modifier: Modifier = Modifier
         Spacer(Modifier.height(Space.xl))
         EmptyState(
             title = "Add your first property",
-            body = "Portico works out ROI, cap rate, yields and cashflow from what you enter — purchase price, rent, and running costs. It takes about two minutes.",
+            body = "Portico works out ROI, cap rate, yields and cashflow from what you enter: purchase price, rent, and running costs. It takes about two minutes.",
             glyph = Glyph.PORTFOLIO,
             actionLabel = "Add a property",
             onAction = {

@@ -4,7 +4,7 @@ import kotlin.math.abs
 
 /*
  * Every figure Portico shows is derived here. Nothing in the UI stores a
- * return, a yield, or a cap rate — the screens read this file's output, so a
+ * return, a yield, or a cap rate. The screens read this file's output, so a
  * property the user types in on Tuesday is analysed by exactly the same rules
  * as the seeded ones.
  *
@@ -29,8 +29,8 @@ private fun pct(numerator: Double, denominator: Double): Double = ratio(numerato
  * A single property resolved into every figure the product displays.
  *
  * Yields are expressed against **current value** rather than purchase price so
- * that gross and net yield answer the same question — "what is this asset
- * returning now" — and stay comparable across properties bought years apart.
+ * that gross and net yield answer the same question ("what is this asset
+ * returning now") and stay comparable across properties bought years apart.
  * Returns are expressed against **initial investment**, the cash actually put
  * in, which is what the investor is measuring performance of.
  */
@@ -348,7 +348,7 @@ data class SimpleDate(val year: Int, val month: Int, val day: Int) {
 // ------------------------------------------------------------- formatting
 
 object Money {
-    /** "$1,240,500" — no cents, because no figure in this product needs them. */
+    /** "$1,240,500", with no cents, because no figure in this product needs them. */
     fun format(value: Double, currency: String = "USD"): String {
         val symbol = symbolFor(currency)
         val sign = if (value < 0) "-" else ""

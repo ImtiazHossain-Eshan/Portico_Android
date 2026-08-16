@@ -272,7 +272,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     fun setExchangeRates(update: (ExchangeRates) -> ExchangeRates) { exchangeRates = update(exchangeRates); persist() }
 
     /**
-     * Activates a paid plan against a settled payment. Both move together —
+     * Activates a paid plan against a settled payment. Both move together,
      * a subscription is never activated without the payment that paid for it.
      */
     fun activatePlan(plan: SubscriptionPlan, payment: Payment) {

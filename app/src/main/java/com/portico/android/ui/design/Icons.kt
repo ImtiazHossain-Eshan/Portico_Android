@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
  * caps and mitre joins, which is what makes the set read as instrument
  * markings rather than assorted clip art. Nothing here is an emoji or a
  * character standing in for a picture, and no glyph is borrowed from a
- * different icon family — the mixed custom-plus-Material set this replaces was
+ * different icon family. The mixed custom-plus-Material set this replaces was
  * the most visible inconsistency in the old build.
  */
 
@@ -97,7 +97,7 @@ private fun DrawScope.drawGlyph(glyph: Glyph, tint: Color, extent: Float) {
 
     when (glyph) {
         // ---------------------------------------------------- navigation
-        /* A facade read as three bays under a lintel — Portico's own mark. */
+        /* A facade read as three bays under a lintel, Portico's own mark. */
         Glyph.OVERVIEW -> {
             line(3f, 7f, 21f, 7f)
             line(5f, 7f, 5f, 20f); line(12f, 7f, 12f, 20f); line(19f, 7f, 19f, 20f)

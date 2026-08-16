@@ -9,7 +9,7 @@ import java.io.File
 /*
  * Data export, for real.
  *
- * The blueprint asks for export twice — once under privacy (section 24) and
+ * The blueprint asks for export twice: once under privacy (section 24) and
  * once as an enterprise operation (section 26). Reporting a record count in a
  * snackbar is not export, so this writes an actual file and hands it to the
  * share sheet. It runs entirely on-device: no backend, no storage permission,

@@ -17,7 +17,7 @@ import com.portico.android.ui.theme.PorticoTheme
 /*
  * The tax module answers one question: how much of what this portfolio earns
  * does the investor actually keep? It runs the same waterfall as everywhere
- * else, then shows which rule took which slice — and lets the user change any
+ * else, then shows which rule took which slice, and lets the user change any
  * of those rules, because they are assumptions the user owns.
  */
 @Composable

@@ -24,7 +24,7 @@ import com.portico.android.ui.theme.PorticoTheme
  * The admin platform is desk work, so it gets a desk layout: a section list
  * beside multi-column tables when the window is wide enough, and the same
  * content as stacked rows when it is not. It is reachable on a phone
- * deliberately — an operator checking one number should not need a tablet.
+ * deliberately: an operator checking one number should not need a tablet.
  *
  * Every figure on these screens is illustrative platform data. This build has
  * no server, so nothing here reflects real users.
@@ -172,7 +172,7 @@ private data class AdminUser(
 
 /*
  * Illustrative platform accounts. Held in app state rather than as a constant
- * so the admin actions below actually change something the operator can see —
+ * so the admin actions below actually change something the operator can see,
  * a control that only reports is the pattern this build set out to remove.
  */
 private val seedAdminUsers = listOf(
@@ -254,7 +254,7 @@ private fun AdminUsers(state: PorticoState) {
                 glyph = Glyph.KEY,
                 enabled = target != null && target.status != "Active"
             ) {
-                target?.let { setStatus(it, "Active", "${it.name} unlocked — sign-in counter cleared") }
+                target?.let { setStatus(it, "Active", "${it.name} unlocked, sign-in counter cleared") }
             }
             SecondaryButton(
                 "Suspend",

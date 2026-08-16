@@ -19,7 +19,7 @@ Imtiaz Hossain · 23101137 · CSE489
 A property portfolio is not one number.
 
 It is gross rent falling through operating costs and tax to whatever actually
-survives — and most property apps show you the rent. Portico is built around
+survives, and most property apps show you the rent. Portico is built around
 making that subtraction visible, on every property and across the whole
 register.
 
@@ -29,7 +29,7 @@ register.
 </div>
 
 The gross-to-net waterfall on the right is the product's whole argument, and it
-is the same component at four scales — dashboard summary, property detail, tax
+is the same component at four scales: dashboard summary, property detail, tax
 module, gross-vs-net report. Each deduction shows a bar proportional to gross
 and its share as a percentage, closing under a double rule on the net figure.
 
@@ -46,7 +46,7 @@ you add is analysed by exactly the same rules as the seeded ones.
 | Portfolio register | Property detail |
 | --- | --- |
 | <img src="docs/screenshots/04-portfolio.png" width="290" alt="Portfolio register with search, filter and sort" /> | <img src="docs/screenshots/05-property.png" width="290" alt="Property detail with value chart and return metrics" /> |
-| Search, filter by country, region, type and performance, and sort — all operating on computed financials, so *sort by net yield* ranks by the same number the property page shows. | Value over time with a scrub interaction, then return and yield, the monthly chain, acquisition facts, income, expenses, documents and tax. |
+| Search, filter by country, region, type and performance, and sort, all operating on computed financials, so *sort by net yield* ranks by the same number the property page shows. | Value over time with a scrub interaction, then return and yield, the monthly chain, acquisition facts, income, expenses, documents and tax. |
 
 ### Analysis
 
@@ -60,7 +60,7 @@ you add is analysed by exactly the same rules as the seeded ones.
 | Bangladesh tax rules | Sandbox checkout |
 | --- | --- |
 | <img src="docs/screenshots/06-tax-bangladesh.png" width="290" alt="Editable Bangladesh tax rates with their working shown" /> | <img src="docs/screenshots/11-checkout.png" width="290" alt="Sandbox checkout with order summary and test cards" /> |
-| Every rate is a draggable assumption carrying its own working — `0.75 × 12% = 9% of gross rent` makes the 25% maintenance allowance auditable. | Card validation, processing, decline paths, receipts and billing history. Nothing is charged and no provider is contacted. |
+| Every rate is a draggable assumption carrying its own working. `0.75 × 12% = 9% of gross rent` makes the 25% maintenance allowance auditable. | Card validation, processing, decline paths, receipts and billing history. Nothing is charged and no provider is contacted. |
 
 ### Entry and theme
 
@@ -78,48 +78,48 @@ wider working area with three-column metrics from 840dp.
 <img src="docs/screenshots/13-tablet-admin.png" width="420" alt="Admin platform with section rail and multi-column user table" />
 </div>
 
-The admin platform gets a desk layout — its own section rail and real
-multi-column tables — and is reachable on a phone too, so it is demonstrable on
-any device.
+The admin platform gets a desk layout, with its own section rail and real
+multi-column tables, and it is reachable on a phone too, so it is demonstrable
+on any device.
 
 ---
 
 ## What's in it
 
-**Portfolio** — register with search, filter and sort; property detail across
+**Portfolio.** Register with search, filter and sort; property detail across
 overview, income, expenses, documents and tax; a six-step capture flow with
 live analysis at step five; edit and delete.
 
-**Analysis** — ROI, capital ROI, cash-on-cash, cap rate, gross and net yield,
+**Analysis.** ROI, capital ROI, cash-on-cash, cap rate, gross and net yield,
 monthly and annual cashflow. Reports for performance, cashflow, allocation,
 property comparison and gross-vs-net.
 
-**Tax** — a jurisdiction engine covering **Bangladesh** (Dhaka North, Dhaka
+**Tax.** A jurisdiction engine covering **Bangladesh** (Dhaka North, Dhaka
 South, Chattogram), **Uruguay** (Montevideo, Canelones, Maldonado) and
 **Argentina** (CABA, Buenos Aires, Córdoba). Nine jurisdictions, every rate an
 editable assumption with its reasoning attached.
 
-**Multi-currency** — each property records the currency its figures were
+**Multi-currency.** Each property records the currency its figures were
 entered in, and everything converts before it is summed.
 
-**Documents** — private library with a real system file picker, category
+**Documents.** Private library with a real system file picker, category
 filing, a viewer, and states for uploading, failed, unavailable and restricted.
 
-**Assistant** — on-device analysis with the working shown. Handles extremes,
+**Assistant.** On-device analysis with the working shown. Handles extremes,
 comparisons, tax share, allocation, and what-if scenarios on rent or costs.
 
-**Valuation and acquisition** — comparable-based estimates against purchase
+**Valuation and acquisition.** Comparable-based estimates against purchase
 price and recorded value; a search-to-decision flow that runs the same engine on
 a property you don't own yet.
 
-**Subscription** — sandbox checkout, receipts, billing history, cancel and
+**Subscription.** Sandbox checkout, receipts, billing history, cancel and
 resume.
 
-**Account** — preferences, currency, exchange rates, jurisdiction, appearance,
+**Account.** Preferences, currency, exchange rates, jurisdiction, appearance,
 reduce-motion, notifications, security with live session management, privacy,
 workspace with roles and permissions, and a six-section admin platform.
 
-**Import and export** — the register round-trips as CSV. Export writes a
+**Import and export.** The register round-trips as CSV. Export writes a
 portfolio summary and a full income/expense ledger to the share sheet; import
 reads the same shape back, skipping duplicates and reporting rejected rows by
 line number.
@@ -136,7 +136,7 @@ Each property carries its own currency. Conversion happens **once**, at the
 boundary of `Finance.analyse`, so everything downstream works in a single
 currency without knowing conversion exists.
 
-Rates are expressed as units per 1 USD and are **your assumptions, not a feed** —
+Rates are expressed as units per 1 USD and are **your assumptions, not a feed**,
 the same philosophy as the tax rates. A stale rate you set and can see beats a
 plausible-looking one you cannot check.
 
@@ -165,7 +165,7 @@ the published, non-functional test card numbers, tappable in the app:
 | `4000 0000 0000 0119` | Processing error |
 
 Any future expiry and any 3-digit code work. Only the card brand and last four
-digits are ever persisted — never the full number, and there is a test asserting
+digits are ever persisted, never the full number, and there is a test asserting
 it. Pro is priced at $12.00/month as **sandbox pricing**, labelled as such in
 the UI. Swapping in a real processor means replacing `SandboxProcessor.authorise`
 and nothing else.
@@ -177,10 +177,10 @@ and nothing else.
 Three ways in:
 
 - **Email and password** via Clerk. The workspace policy requires a
-  **15-character minimum** — the app states this before you type, with a live
+  **15-character minimum**. The app states this before you type, with a live
   character counter, and validates against it.
 - **Google or GitHub**, both enabled on the Clerk instance.
-- **Demo data** — a sample portfolio, no account, works fully offline.
+- **Demo data.** A sample portfolio, no account, works fully offline.
 
 The Clerk publishable key lives in `gradle.properties`. Without it the app
 offers the demo path rather than a dead end.
@@ -226,7 +226,7 @@ JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" gradle :app:testDebugUni
 
 ```
 domain/     Models, Finance, Tax, Exchange, Payments, Analyst, Seed
-            — pure Kotlin, no Android dependencies, fully unit-tested
+            pure Kotlin, no Android dependencies, fully unit-tested
 data/       PorticoStore: single owner of state, persists to DataStore
             PorticoExport / PorticoImport: CSV round-trip
 ui/theme/   Colour roles, semantic extensions, tabular-figure type scale
@@ -234,7 +234,7 @@ ui/design/  Panels, rows, charts, icons, logo, the seven state patterns
 ui/screens/ One file per product area
 ```
 
-Entities follow the schema delivered in Milestone 1 — user, portfolio,
+Entities follow the schema delivered in Milestone 1: user, portfolio,
 financial, document, subscription, enterprise, AI, external data, tax and system
 domains.
 
@@ -275,7 +275,7 @@ extraction to `strings.xml` plus a `values-bn` or `values-es` set is mechanical.
 
 ## Design record
 
-- Durable product truth — [PRODUCT.md](PRODUCT.md)
-- Implemented visual system — [DESIGN.md](DESIGN.md)
-- Direction contract — the header comment in `ui/PorticoApp.kt`
-- Milestone 1 wireframes and schema — `diagrams/`
+- Durable product truth: [PRODUCT.md](PRODUCT.md)
+- Implemented visual system: [DESIGN.md](DESIGN.md)
+- Direction contract: the header comment in `ui/PorticoApp.kt`
+- Milestone 1 wireframes and schema: `diagrams/`

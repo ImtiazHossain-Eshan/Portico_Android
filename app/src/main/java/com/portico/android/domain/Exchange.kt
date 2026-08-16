@@ -10,14 +10,14 @@ import kotlinx.serialization.Serializable
  * nothing. This converts every property into the display currency before any
  * aggregation happens.
  *
- * Rates are *the user's assumptions*, exactly like tax rates — editable, dated,
+ * Rates are *the user's assumptions*, exactly like tax rates: editable, dated,
  * and never presented as a live feed, because no market data provider is
  * connected. A stale rate the user set and can see beats a plausible-looking
  * one they cannot check.
  */
 
 const val FX_NOTICE =
-    "Rates are yours to set, not a live feed. Update them when they drift — every converted figure moves with them."
+    "Rates are yours to set, not a live feed. Update them when they drift. Every converted figure moves with them."
 
 /**
  * Rates expressed as units of the currency per 1 USD, which keeps the table

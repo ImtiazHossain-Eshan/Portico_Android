@@ -77,7 +77,7 @@ private val onboardingPages = listOf(
     OnboardingPage(
         Glyph.PORTFOLIO,
         "Every property in one register",
-        "Purchase price, current value, rent and running costs — the facts each decision rests on, kept together."
+        "Purchase price, current value, rent and running costs, the facts each decision rests on, kept together."
     ),
     OnboardingPage(
         Glyph.REPORTS,

@@ -21,8 +21,8 @@ import androidx.compose.ui.unit.sp
  *
  * Grounds are neutral graphite (dark) and bone (light) so that the only
  * saturated colour on screen is carrying information. One amber accent marks
- * action and selection at two temperatures — bright on graphite, bronze on
- * bone — which leaves green and red free to mean exactly one thing each:
+ * action and selection at two temperatures (bright on graphite, bronze on
+ * bone), which leaves green and red free to mean exactly one thing each:
  * money gained and money lost. Nothing here gradients, glows, or tints for
  * decoration; depth comes from tonal steps and hairlines.
  */
@@ -46,7 +46,7 @@ val AmberOnContainer = Color(0xFFFFD9A0)
 
 // --------------------------------------------------------------- light scheme
 
-/** Bone. A warm-neutral near-white — not paper cream, not blue-white. */
+/** Bone. A warm-neutral near-white, not paper cream, not blue-white. */
 val BoneGround = Color(0xFFF6F5F3)
 val BonePanel = Color(0xFFFFFFFF)
 val BonePanelSunk = Color(0xFFEDEBE8)
@@ -75,7 +75,7 @@ val LossLight = Color(0xFFB3392E)
 
 /*
  * Neither gain nor loss: unchanged values, gross totals, comparison marks.
- * Deliberately a warm grey — a cool grey here picks up a blue cast next to the
+ * Deliberately a warm grey. A cool grey here picks up a blue cast next to the
  * amber accent and drags the whole surface toward generic fintech.
  */
 val NeutralDark = Color(0xFF9A948B)
@@ -196,7 +196,7 @@ private val LightColors = lightColorScheme(
  * Tabular figures are the reason a column of money in Portico can be compared
  * by eye. Roboto ships `tnum`; without it "1,240,500" and "184,200" set to
  * different widths and the decimal alignment that makes a ledger legible falls
- * apart. Applied to every style that can carry a number — which is all of them
+ * apart. Applied to every style that can carry a number, which is all of them
  * except bodyLarge, the one style reserved for running prose.
  */
 private const val TABULAR = "tnum"

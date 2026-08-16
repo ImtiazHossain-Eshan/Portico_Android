@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
  * Modelled on a real one down to the decline paths, because those are the
  * states a payment screen actually lives or dies on. Nothing is charged and no
  * provider is contacted; the banner says so on every step, and the card is held
- * in composition only — only the brand and last four are ever persisted.
+ * in composition only; only the brand and last four are ever persisted.
  */
 @Composable
 fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
@@ -73,7 +73,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 OrderSummary(plan)
 
                 Panel(Modifier.padding(horizontal = Space.lg)) {
-                    PanelHeader("Card details", supporting = "Test cards only — never a real card")
+                    PanelHeader("Card details", supporting = "Test cards only, never a real card")
                     Column(
                         Modifier.padding(horizontal = Space.lg, vertical = Space.sm),
                         verticalArrangement = Arrangement.spacedBy(Space.md)
@@ -175,7 +175,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 val payment = (outcome as? PaymentResult.Succeeded)?.payment
                 SuccessState(
                     title = "You're on ${plan.name}",
-                    body = "Your register is unlimited and every report is unlocked. Nothing was charged — this is sandbox mode.",
+                    body = "Your register is unlimited and every report is unlocked. Nothing was charged. This is sandbox mode.",
                     actionLabel = "Back to Portico",
                     onAction = {
                         state.checkoutStage = CheckoutStage.DETAILS
@@ -295,7 +295,7 @@ private fun TestCardTable(onPick: (String) -> Unit) {
 private fun ReceiptPanel(payment: Payment, plan: SubscriptionPlan, renewsOn: String?) {
     val semantic = PorticoTheme.semantic
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Receipt", supporting = "Sandbox — no funds moved")
+        PanelHeader("Receipt", supporting = "Sandbox, no funds moved")
         DataRow("Reference", payment.id.takeLast(12).uppercase())
         Hairline()
         DataRow("Plan", plan.name)

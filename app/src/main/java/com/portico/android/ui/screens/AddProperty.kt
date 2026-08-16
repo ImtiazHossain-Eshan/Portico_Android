@@ -23,7 +23,7 @@ private val stepTitles = listOf("Property", "Purchase", "Income", "Expenses", "A
 /*
  * Six steps, one vertical column, keyboard-safe. Step 5 is the point of the
  * whole flow: the moment the numbers the user just typed become a return they
- * can judge — computed live, so changing rent on step 3 moves the yield here.
+ * can judge, computed live, so changing rent on step 3 moves the yield here.
  */
 @Composable
 fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
@@ -214,7 +214,7 @@ private fun StepPurchase(state: PorticoState, currency: String) {
             { v -> state.updateDraft { it.copy(initialInvestment = v) } },
             "Cash invested",
             currency,
-            supporting = "Your own money in. Leave blank if you paid the full price in cash — return is measured against this."
+            supporting = "Your own money in. Leave blank if you paid the full price in cash. Return is measured against this."
         )
         CurrencyField(
             draft.financing,
@@ -354,9 +354,9 @@ private fun StepReview(state: PorticoState, currency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Property", action = "Edit", onAction = { state.addStep = 0 })
-            DataRow("Name", draft.name.ifBlank { "—" })
+            DataRow("Name", draft.name.ifBlank { "-" })
             Hairline()
-            DataRow("Address", draft.address.ifBlank { "—" }, supporting = draft.region)
+            DataRow("Address", draft.address.ifBlank { "-" }, supporting = draft.region)
             Hairline()
             DataRow("Country", draft.country)
             Hairline()
