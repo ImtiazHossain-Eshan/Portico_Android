@@ -165,8 +165,8 @@ a message with no recovery is a dead end.
 
 Illustrative figures are labelled where a user could mistake them for their
 own: seeded properties, comparables, market signals, listings, platform
-metrics, and every tax rate. `TAX_DISCLAIMER` appears on every tax surface.
-Pro pricing ships marked "Price not set" rather than as a plausible invention.
+metrics, every tax rate, and every exchange rate. `TAX_DISCLAIMER` appears on every tax surface.
+Pro pricing is real but sandbox-only, and every payment surface says SANDBOX.
 
 ## Quality bar
 

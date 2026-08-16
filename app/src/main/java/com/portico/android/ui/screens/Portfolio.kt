@@ -148,6 +148,7 @@ fun PortfolioScreen(state: PorticoState, modifier: Modifier = Modifier) {
 private fun FilterSheet(state: PorticoState, onDismiss: () -> Unit) {
     val store = state.store
     val countries = listOf("All") + store.properties.map { it.country }.distinct()
+    val regions = listOf("All") + store.properties.map { it.region }.distinct()
     val types = listOf("All") + PropertyType.entries.map { it.label }
 
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = PorticoTheme.semantic.panel) {
@@ -161,6 +162,7 @@ private fun FilterSheet(state: PorticoState, onDismiss: () -> Unit) {
                 modifier = Modifier.padding(horizontal = Space.lg)
             )
             ChoiceRow("Country", countries, state.filterCountry) { state.filterCountry = it }
+            ChoiceRow("Region", regions, state.filterRegion) { state.filterRegion = it }
             ChoiceRow("Property type", types, state.filterType) { state.filterType = it }
             ChoiceRow(
                 "Performance",

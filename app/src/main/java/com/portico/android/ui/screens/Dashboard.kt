@@ -89,7 +89,9 @@ fun DashboardScreen(state: PorticoState, modifier: Modifier = Modifier) {
             ValueChart(
                 series = Finance.portfolioValueSeries(
                     store.properties.toList(),
-                    points = pointsFor(state.chartRange)
+                    points = pointsFor(state.chartRange),
+                    rates = store.exchangeRates,
+                    displayCurrency = currency
                 ),
                 currency = currency,
                 rangeLabel = state.chartRange.label,

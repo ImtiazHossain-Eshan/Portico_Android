@@ -8,7 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -170,7 +170,12 @@ private data class AdminUser(
     val lastActive: String
 )
 
-private val adminUsers = listOf(
+/*
+ * Illustrative platform accounts. Held in app state rather than as a constant
+ * so the admin actions below actually change something the operator can see —
+ * a control that only reports is the pattern this build set out to remove.
+ */
+private val seedAdminUsers = listOf(
     AdminUser("Imtiaz Hossain", "imtiaz@ramblacapital.uy", "Pro", 3, "Active", "Today"),
     AdminUser("Sofía Márquez", "sofia@ramblacapital.uy", "Pro", 7, "Active", "Today"),
     AdminUser("Diego Ferrer", "diego@ramblacapital.uy", "Free", 2, "Active", "Yesterday"),
@@ -182,19 +187,35 @@ private val adminUsers = listOf(
 @Composable
 private fun AdminUsers(state: PorticoState) {
     val semantic = PorticoTheme.semantic
+    val users = remember { mutableStateListOf<AdminUser>().apply { addAll(seedAdminUsers) } }
+    var selected by remember { mutableStateOf<AdminUser?>(null) }
+
+    fun setStatus(user: AdminUser, status: String, message: String) {
+        val index = users.indexOfFirst { it.email == user.email }
+        if (index >= 0) {
+            users[index] = users[index].copy(status = status)
+            selected = users[index]
+            state.notify(message)
+        }
+    }
+
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Users", supporting = "${adminUsers.size} accounts")
+        PanelHeader(
+            "Users",
+            supporting = "${users.size} accounts · ${users.count { it.status == "Locked" }} locked"
+        )
         AdminTable(
             headers = listOf("Name", "Plan", "Properties", "Status", "Last active"),
             weights = listOf(2.4f, 1f, 1.2f, 1.2f, 1.3f),
-            rows = adminUsers.map { user ->
+            rows = users.map { user ->
                 listOf(user.name, user.plan, user.properties.toString(), user.status, user.lastActive)
             },
-            supportingByRow = adminUsers.map { it.email },
+            supportingByRow = users.map { it.email },
             statusColumn = 3,
             statusTone = { value ->
                 when (value) {
                     "Locked" -> semantic.loss
+                    "Suspended" -> semantic.loss
                     "Dormant" -> semantic.tertiaryText
                     else -> semantic.gain
                 }
@@ -203,13 +224,47 @@ private fun AdminUsers(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Account actions")
-        NavRow("Unlock an account", glyph = Glyph.KEY, supporting = "Clears the failed sign-in counter") {
-            state.notify("Account actions need a backend service.")
+        PanelHeader(
+            "Account actions",
+            supporting = selected?.let { "${it.name} · ${it.status}" } ?: "Choose an account below"
+        )
+        users.forEach { user ->
+            DataRow(
+                label = user.name,
+                value = user.status,
+                supporting = user.email,
+                valueColor = when (user.status) {
+                    "Locked", "Suspended" -> semantic.loss
+                    "Dormant" -> semantic.tertiaryText
+                    else -> semantic.gain
+                },
+                onClick = { selected = user }
+            )
+            Hairline()
         }
-        Hairline()
-        NavRow("Suspend an account", glyph = Glyph.LOCK, tint = MaterialTheme.colorScheme.error) {
-            state.notify("Account actions need a backend service.")
+
+        val target = selected
+        Row(
+            Modifier.fillMaxWidth().padding(Space.lg),
+            horizontalArrangement = Arrangement.spacedBy(Space.sm)
+        ) {
+            SecondaryButton(
+                "Unlock",
+                Modifier.weight(1f),
+                glyph = Glyph.KEY,
+                enabled = target != null && target.status != "Active"
+            ) {
+                target?.let { setStatus(it, "Active", "${it.name} unlocked — sign-in counter cleared") }
+            }
+            SecondaryButton(
+                "Suspend",
+                Modifier.weight(1f),
+                glyph = Glyph.LOCK,
+                destructive = true,
+                enabled = target != null && target.status != "Suspended"
+            ) {
+                target?.let { setStatus(it, "Suspended", "${it.name} suspended") }
+            }
         }
     }
 }

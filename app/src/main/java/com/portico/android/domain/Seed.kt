@@ -117,21 +117,32 @@ object Seed {
         ComparableProperty("c-1", "Bulevar España 2210", "Montevideo · Pocitos", "Residential", 176.0, 452_000.0, 0.4),
         ComparableProperty("c-2", "Br. Artigas 1180", "Montevideo · Pocitos", "Residential", 195.0, 498_000.0, 1.1),
         ComparableProperty("c-3", "Av. Brasil 2740", "Montevideo · Pocitos", "Residential", 168.0, 441_500.0, 0.9),
-        ComparableProperty("c-4", "Chaná 2050", "Montevideo · Cordón", "Residential", 181.0, 409_000.0, 2.6)
+        ComparableProperty("c-4", "Chaná 2050", "Montevideo · Cordón", "Residential", 181.0, 409_000.0, 2.6),
+        ComparableProperty("c-5", "Road 11, Banani", "Dhaka · Banani", "Residential", 204.0, 351_000.0, 0.6),
+        ComparableProperty("c-6", "Road 27, Dhanmondi", "Dhaka · Dhanmondi", "Residential", 186.0, 298_000.0, 1.4),
+        ComparableProperty("c-7", "Gulshan Avenue", "Dhaka · Gulshan", "Residential", 232.0, 437_000.0, 1.1),
+        ComparableProperty("c-8", "Bashundhara Block C", "Dhaka · Bashundhara", "Residential", 167.0, 214_000.0, 5.2)
     )
 
     val marketSignals = listOf(
         MarketSignal("Montevideo · Pocitos", "Median price / m²", 2_540.0, 4.2, "12 months"),
         MarketSignal("Montevideo · Pocitos", "Median rent / month", 1_180.0, 6.8, "12 months"),
         MarketSignal("Canelones · Costa", "Median price / m²", 1_680.0, 5.6, "12 months"),
-        MarketSignal("Buenos Aires · Palermo", "Median price / m²", 2_890.0, -1.8, "12 months")
+        MarketSignal("Buenos Aires · Palermo", "Median price / m²", 2_890.0, -1.8, "12 months"),
+        MarketSignal("Dhaka · Gulshan", "Median price / m²", 1_880.0, 7.4, "12 months"),
+        MarketSignal("Dhaka · Gulshan", "Median rent / month", 1_240.0, 9.1, "12 months"),
+        MarketSignal("Dhaka · Dhanmondi", "Median price / m²", 1_600.0, 5.9, "12 months"),
+        MarketSignal("Chattogram · Khulshi", "Median price / m²", 1_140.0, 4.3, "12 months")
     )
 
     val listings = listOf(
         PropertyListing("l-1", "Rambla República del Perú 1420", "Montevideo · Pocitos", "Uruguay", "Residential", 142.0, 395_000.0, 2_450.0),
         PropertyListing("l-2", "Av. Italia 3890", "Montevideo · Malvín", "Uruguay", "Multi-family", 210.0, 318_000.0, 2_310.0),
         PropertyListing("l-3", "Solís 640", "Maldonado · Punta del Este", "Uruguay", "Short stay", 88.0, 268_000.0, 1_980.0),
-        PropertyListing("l-4", "Thames 1870", "Buenos Aires · Palermo", "Argentina", "Residential", 96.0, 189_000.0, 1_240.0)
+        PropertyListing("l-4", "Thames 1870", "Buenos Aires · Palermo", "Argentina", "Residential", 96.0, 189_000.0, 1_240.0),
+        PropertyListing("l-5", "Road 12, Banani", "Dhaka · Banani", "Bangladesh", "Residential", 195.0, 336_000.0, 1_450.0),
+        PropertyListing("l-6", "Satmasjid Road, Dhanmondi", "Dhaka · Dhanmondi", "Bangladesh", "Multi-family", 240.0, 372_000.0, 1_920.0),
+        PropertyListing("l-7", "Khulshi Hills", "Chattogram · Khulshi", "Bangladesh", "Residential", 178.0, 198_000.0, 940.0)
     )
 
     val organization = Organization("org-1", "Rambla Capital", 4, 3, "12 Jan 2025")

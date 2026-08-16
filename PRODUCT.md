@@ -33,7 +33,7 @@ The primary use scene is mobile, often between property decisions or during a fi
 - Add-property flow: property, purchase, income, expenses, analysis, and review steps with calculations.
 - Reports: performance, cashflow, allocation, property comparison, and gross-versus-net analysis.
 - Documents: private library, upload flow, categories, viewer states, and recovery states.
-- Tax: gross income → expenses → taxes/fees → net income → net yield → net ROI; initial country support is Uruguay and Argentina.
+- Tax: gross income → expenses → taxes/fees → net income → net yield → net ROI; country support covers Bangladesh, Uruguay and Argentina, and the rules table takes more without touching the property model.
 - AI assistant: portfolio/property/scenario context, suggested questions, financial analysis, conversation history, loading, error, offline, and disclaimer states.
 - Valuation and acquisition: property inputs, estimate/comparable views, market signals, search-to-decision flow.
 - Profile/settings: currency, tax jurisdiction, language, notifications, appearance, security, privacy, subscription, logout, and account deletion.

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Exports are written to the cache and shared by content URI, so no
+         storage permission is needed and nothing is left in shared storage. -->
+    <cache-path name="exports" path="exports/" />
+</paths>

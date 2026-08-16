@@ -24,13 +24,13 @@ object Route {
 
     const val PROPERTY = "property"
     const val ADD_PROPERTY = "add"
-    const val EDIT_PROPERTY = "edit"
     const val DOCUMENTS = "documents"
     const val TAX = "tax"
     const val TAX_ASSUMPTIONS = "tax-assumptions"
     const val VALUATION = "valuation"
     const val ACQUISITION = "acquisition"
     const val SUBSCRIPTION = "subscription"
+    const val CHECKOUT = "checkout"
     const val ENTERPRISE = "enterprise"
     const val NOTIFICATIONS = "notifications"
     const val SETTINGS_PREFERENCES = "settings-preferences"
@@ -75,6 +75,7 @@ data class PropertyDraft(
     val country: String = "Uruguay",
     val region: String = "",
     val type: String = PropertyType.RESIDENTIAL.label,
+    val currency: String = "USD",
     val sizeSqm: String = "",
     val purchaseDate: String = "",
     val purchasePrice: String = "",
@@ -112,6 +113,9 @@ data class PropertyDraft(
         else -> null
     }
 }
+
+/** Checkout: card entry, authorising, then the outcome. */
+enum class CheckoutStage { DETAILS, PROCESSING, SUCCESS, DECLINED }
 
 /** Steps of the upload flow: select property, pick file, upload, confirm. */
 enum class UploadStage { PROPERTY, FILE, UPLOADING, DONE, FAILED }
@@ -175,6 +179,7 @@ class PorticoState(val store: PorticoStore) {
     var portfolioQuery by mutableStateOf("")
     var sortMode by mutableStateOf(SortMode.VALUE)
     var filterCountry by mutableStateOf("All")
+    var filterRegion by mutableStateOf("All")
     var filterType by mutableStateOf("All")
     var filterPerformance by mutableStateOf("All")
 
@@ -215,6 +220,8 @@ class PorticoState(val store: PorticoStore) {
     var showDeleteAccountDialog by mutableStateOf(false)
     var showDiscardDraftDialog by mutableStateOf(false)
     var showPaywall by mutableStateOf(false)
+    var checkoutStage by mutableStateOf(CheckoutStage.DETAILS)
+    var checkoutPlanId by mutableStateOf(SubscriptionPlan.PRO_MONTHLY.id)
     var pendingDeletePropertyId by mutableStateOf<String?>(null)
 
     var toast by mutableStateOf<String?>(null)
@@ -246,6 +253,7 @@ class PorticoState(val store: PorticoStore) {
             country = property.country,
             region = property.region,
             type = property.type,
+            currency = property.currency,
             sizeSqm = property.sizeSqm.toInt().toString(),
             purchaseDate = property.purchaseDate,
             purchasePrice = property.purchasePrice.toInt().toString(),
@@ -279,6 +287,7 @@ class PorticoState(val store: PorticoStore) {
             initialInvestment = draft.investmentValue,
             financingAmount = draft.number(draft.financing),
             currentValue = draft.purchasePriceValue,
+            currency = draft.currency,
             photoUris = draft.photoUris
         )
         val draftIncome = buildList {
@@ -317,6 +326,7 @@ class PorticoState(val store: PorticoStore) {
             initialInvestment = draft.investmentValue,
             financingAmount = draft.number(draft.financing),
             currentValue = store.propertyById(id)?.currentValue ?: draft.purchasePriceValue,
+            currency = draft.currency,
             photoUris = draft.photoUris,
             note = ""
         )
@@ -365,13 +375,14 @@ class PorticoState(val store: PorticoStore) {
                     property.region.contains(portfolioQuery, ignoreCase = true) ||
                     property.address.contains(portfolioQuery, ignoreCase = true)
                 val matchesCountry = filterCountry == "All" || property.country == filterCountry
+                val matchesRegion = filterRegion == "All" || property.region == filterRegion
                 val matchesType = filterType == "All" || property.type == filterType
                 val matchesPerformance = when (filterPerformance) {
                     "Positive cashflow" -> result.monthlyCashflow >= 0
                     "Negative cashflow" -> result.monthlyCashflow < 0
                     else -> true
                 }
-                matchesQuery && matchesCountry && matchesType && matchesPerformance
+                matchesQuery && matchesCountry && matchesRegion && matchesType && matchesPerformance
             }
             .sortedWith(
                 when (sortMode) {
@@ -385,10 +396,12 @@ class PorticoState(val store: PorticoStore) {
     }
 
     val hasActiveFilters: Boolean
-        get() = filterCountry != "All" || filterType != "All" || filterPerformance != "All"
+        get() = filterCountry != "All" || filterRegion != "All" ||
+            filterType != "All" || filterPerformance != "All"
 
     fun clearFilters() {
         filterCountry = "All"
+        filterRegion = "All"
         filterType = "All"
         filterPerformance = "All"
     }

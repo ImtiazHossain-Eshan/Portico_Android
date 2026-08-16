@@ -139,7 +139,7 @@ private fun AuthBrandPanel(modifier: Modifier = Modifier) {
         Spacer(Modifier.height(Space.xxl))
         listOf(
             "Gross to net, on every property",
-            "Uruguay and Argentina tax modelling",
+            "Tax modelling for Bangladesh, Uruguay and Argentina",
             "Documents and records stay on your device"
         ).forEach { line ->
             Row(Modifier.padding(vertical = Space.sm), verticalAlignment = Alignment.CenterVertically) {

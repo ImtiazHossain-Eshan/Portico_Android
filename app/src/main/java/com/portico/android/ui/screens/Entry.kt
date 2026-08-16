@@ -87,7 +87,7 @@ private val onboardingPages = listOf(
     OnboardingPage(
         Glyph.TAX,
         "What you keep, not what you collect",
-        "Gross rent falls through expenses and tax to a net figure, modelled for Uruguay and Argentina and editable by you."
+        "Gross rent falls through expenses and tax to a net figure, modelled for Bangladesh, Uruguay and Argentina, and editable by you."
     ),
     OnboardingPage(
         Glyph.ASSISTANT,

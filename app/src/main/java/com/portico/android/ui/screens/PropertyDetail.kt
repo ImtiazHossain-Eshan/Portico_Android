@@ -145,7 +145,10 @@ private fun PropertyOverviewTab(state: PorticoState, result: PropertyFinancials)
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Performance", supporting = "Interpolated from purchase to current value")
             ValueChart(
-                series = Finance.valueSeries(property, pointsFor(state.chartRange)),
+                series = Finance.valueSeries(
+                    property, pointsFor(state.chartRange),
+                    store.exchangeRates, currency
+                ),
                 currency = currency,
                 rangeLabel = state.chartRange.label,
                 animate = !reduceMotion

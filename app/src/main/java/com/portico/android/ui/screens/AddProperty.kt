@@ -177,6 +177,16 @@ private fun StepProperty(state: PorticoState) {
     ChoiceRow("Property type", PropertyType.entries.map { it.label }, draft.type) { v ->
         state.updateDraft { it.copy(type = v) }
     }
+    Spacer(Modifier.height(Space.md))
+    ChoiceRow("Figures entered in", Money.currencies, draft.currency) { v ->
+        state.updateDraft { it.copy(currency = v) }
+    }
+    if (draft.currency != state.store.profile.currency) {
+        SyntheticNote(
+            "Entered in ${draft.currency}; the portfolio displays ${state.store.profile.currency}. " +
+                "Conversion uses the rate you set in Preferences."
+        )
+    }
 }
 
 @Composable
