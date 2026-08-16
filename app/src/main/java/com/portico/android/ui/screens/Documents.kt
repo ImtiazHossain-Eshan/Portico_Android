@@ -173,7 +173,7 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
 
                     document.storagePath.isBlank() -> ErrorState(
                         title = "No file attached",
-                        body = "This record has details but no stored file — it came from the sample portfolio. Upload a file to attach one.",
+                        body = "This record has details but no stored file. It came from the sample portfolio. Upload a file to attach one.",
                         retryLabel = "Upload a file",
                         onRetry = {
                             state.uploadPropertyId = document.propertyId

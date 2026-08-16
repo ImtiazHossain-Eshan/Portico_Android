@@ -22,7 +22,7 @@ import com.portico.android.ui.theme.PorticoTheme
 
 /*
  * Rows shared across surfaces. A property reads the same on the dashboard, in
- * the register and in a report — same figures in the same order — because
+ * the register and in a report (same figures in the same order) because
  * recognising a holding at a glance matters more than variety.
  */
 

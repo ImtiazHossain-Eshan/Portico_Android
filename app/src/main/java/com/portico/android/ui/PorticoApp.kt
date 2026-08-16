@@ -1,7 +1,7 @@
 package com.portico.android.ui
 
 /*
- * PORTICO — DIRECTION CONTRACT
+ * PORTICO: DIRECTION CONTRACT
  *
  * THESIS: A property portfolio read as an instrument, not a brochure. Portico
  * refuses the category's card-per-metric dashboard and puts the arithmetic on
@@ -10,14 +10,14 @@ package com.portico.android.ui
  *
  * OWN-WORLD: Neutral graphite and bone grounds, hairline-ruled panels instead
  * of floating cards, tabular figures so money columns align, and one amber
- * accent — bright on graphite, bronze on bone — reserved for action and
+ * accent (bright on graphite, bronze on bone) reserved for action and
  * selection so green and red mean only gain and loss.
  *
  * STORY: The investor lands on their position, opens any figure to the records
  * beneath it, and leaves knowing which property to act on.
  *
  * FIRST VIEWPORT: Portfolio value set large in tabular figures, a signed delta
- * beneath it, a hairline value chart, then the gross-to-net waterfall — the
+ * beneath it, a hairline value chart, then the gross-to-net waterfall, the
  * product's whole argument above the fold.
  *
  * FORM: Trading-terminal instrument field, fused. Candidate 3 of the grounded

@@ -80,7 +80,7 @@ data class PropertyValuation(
     val propertyId: String,
     val estimatedValue: Double,
     val valuationDate: String,
-    /** "Owner estimate", "Comparable model", "Broker" — never a fabricated provider. */
+    /** "Owner estimate", "Comparable model", "Broker". Never a fabricated provider. */
     val source: String
 )
 

@@ -9,7 +9,7 @@ import kotlin.math.abs
  * that returns prose it cannot justify, this answers from the portfolio the
  * user actually has: it reads intent from the question, computes the figure,
  * and returns the working so the answer can be checked. When it cannot answer
- * a question it says so and offers what it can do instead — which is more
+ * a question it says so and offers what it can do instead, which is more
  * useful than a confident guess about someone's money.
  */
 
@@ -83,7 +83,7 @@ object Analyst {
                 allocationReply(results, portfolio, currency)
 
             else -> AnalystReply(
-                "I can't answer that one from your records. I work with the figures in this workspace — value, return, yield, cashflow, tax, and simple what-if scenarios on rent or costs.",
+                "I can't answer that one from your records. I work with the figures in this workspace: value, return, yield, cashflow, tax, and simple what-if scenarios on rent or costs.",
                 followUps = defaultQuestions(results),
                 understood = false
             )
@@ -145,7 +145,7 @@ object Analyst {
         return AnalystReply(
             text = buildString {
                 append("At ${Money.format(newRent, currency)} a month, ${property.name} would net ")
-                append("${Money.format(projected.monthlyCashflow, currency)} a month after costs and tax — ")
+                append("${Money.format(projected.monthlyCashflow, currency)} a month after costs and tax, ")
                 append(
                     if (deltaCashflow >= 0) "${Money.signed(deltaCashflow, currency)} better than today. "
                     else "${Money.signed(deltaCashflow, currency)} against today. "
@@ -214,7 +214,7 @@ object Analyst {
                 append("${pick.property.name} is your ${if (best) "strongest" else "weakest"} holding on net yield at ${Money.percent(pick.netYield)}, ")
                 append("returning ${Money.format(pick.monthlyCashflow, currency)} a month after costs and tax. ")
                 if (!best && pick.monthlyCashflow < 0) {
-                    append("It currently costs you money each month — the value has still grown ${Money.format(pick.appreciation, currency)}, so it may be worth holding, but it draws on cash. ")
+                    append("It currently costs you money each month, but the value has still grown ${Money.format(pick.appreciation, currency)}, so it may be worth holding, but it draws on cash. ")
                 }
                 append("For contrast, ${other.property.name} sits at ${Money.percent(other.netYield)}.")
             },
@@ -245,8 +245,8 @@ object Analyst {
         )
         return AnalystReply(
             text = buildString {
-                append("Tax takes ${Money.format(portfolio.annualTaxes, currency)} a year — ")
-                append("${Money.percent(share)} of your gross rental income — under ${taxProfile.jurisdiction.name} assumptions. ")
+                append("Tax takes ${Money.format(portfolio.annualTaxes, currency)} a year, ")
+                append("${Money.percent(share)} of your gross rental income, under ${taxProfile.jurisdiction.name} assumptions. ")
                 append("That's the gap between a ${Money.percent(portfolio.grossYield)} gross yield and ${Money.percent(portfolio.netYield)} net.")
             },
             workings = lines.map { line ->
@@ -329,7 +329,7 @@ object Analyst {
 
     private fun returnReply(portfolio: PortfolioFinancials, currency: String) = AnalystReply(
         text = "You've put ${Money.format(portfolio.investedCapital, currency)} in and the portfolio is worth ${Money.format(portfolio.portfolioValue, currency)}. " +
-            "That's ${Money.signed(portfolio.appreciation, currency)} of value growth plus ${Money.format(portfolio.annualNetIncome, currency)} of net income a year — " +
+            "That's ${Money.signed(portfolio.appreciation, currency)} of value growth plus ${Money.format(portfolio.annualNetIncome, currency)} of net income a year, " +
             "a total return of ${Money.percent(portfolio.totalRoi)} on the cash you invested.",
         workings = listOf(
             "Invested       ${Money.format(portfolio.investedCapital, currency)}",
@@ -346,7 +346,7 @@ object Analyst {
         results: List<PropertyFinancials>,
         currency: String
     ) = AnalystReply(
-        text = "Portfolio cap rate is ${Money.percent(portfolio.capRate)} — net operating income of " +
+        text = "Portfolio cap rate is ${Money.percent(portfolio.capRate)}: net operating income of " +
             "${Money.format(portfolio.annualGrossIncome - portfolio.annualOperatingExpenses, currency)} against " +
             "${Money.format(portfolio.portfolioValue, currency)} of value. Cap rate ignores financing and income tax, so it compares the assets themselves.",
         workings = results.map {

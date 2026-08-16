@@ -37,7 +37,7 @@ import kotlin.math.roundToInt
 /*
  * Charts are drawn geometry, not pictures. Every mark carries data: gridlines
  * are hairlines at the same weight as the panel rules, the series is a single
- * stroke, and the only fill is a flat low-alpha wash under the line — no
+ * stroke, and the only fill is a flat low-alpha wash under the line, with no
  * gradients, no glow, no shadow.
  *
  * Each chart also carries a spoken summary, because a screen reader user needs
@@ -259,7 +259,7 @@ fun ValueChart(
  * Bars are proportional to gross, so "tax takes a fifth of this" is legible
  * without reading a single figure. Deductions indent, the total closes under a
  * double rule. This same component renders on the dashboard, on a property, in
- * the tax module and in reports — one idea at four scales.
+ * the tax module and in reports: one idea at four scales.
  */
 @Composable
 fun WaterfallLedger(
@@ -286,7 +286,7 @@ fun WaterfallLedger(
         steps.forEach { append("${it.label}: ${Money.format(it.amount, currency)}. ") }
         append(
             if (net >= 0) "Net income is positive."
-            else "Net income is negative — this loses money after costs."
+            else "Net income is negative. This loses money after costs."
         )
     }
 

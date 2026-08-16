@@ -5,7 +5,7 @@ import android.net.Uri
 import com.portico.android.domain.*
 
 /*
- * Bulk property import — the mirror of PorticoExport.
+ * Bulk property import, the mirror of PorticoExport.
  *
  * This needs no server: a register arrives as CSV, gets parsed and validated
  * row by row, and lands as real properties with their income and expense

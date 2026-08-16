@@ -21,8 +21,8 @@ import kotlin.math.abs
 /*
  * Valuation compares three numbers that investors habitually conflate: what
  * was paid, what the market suggests, and what the owner believes. The estimate
- * is a transparent model — median price per square metre from the comparables
- * on file — and the screen says so, because an unexplained valuation is worth
+ * is a transparent model (median price per square metre from the comparables
+ * on file) and the screen says so, because an unexplained valuation is worth
  * nothing to someone deciding whether to sell.
  */
 @Composable

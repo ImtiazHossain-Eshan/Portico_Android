@@ -87,11 +87,11 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(Space.md))
             } else {
                 Hairline()
-                DataRow("Started", store.subscription.startDate.ifBlank { "—" })
+                DataRow("Started", store.subscription.startDate.ifBlank { "-" })
                 Hairline()
                 DataRow(
                     if (store.subscription.cancelAtPeriodEnd) "Access until" else "Renews",
-                    store.subscription.renewsOn ?: "—"
+                    store.subscription.renewsOn ?: "-"
                 )
                 Hairline()
                 Box(Modifier.padding(Space.lg)) {
@@ -107,7 +107,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                             destructive = true
                         ) {
                             store.cancelSubscription()
-                            state.notify("Cancelled — access continues to the end of the period")
+                            state.notify("Cancelled. Access continues to the end of the period")
                         }
                     }
                 }
@@ -163,7 +163,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 if (store.payments.isEmpty()) {
                     EmptyState(
                         title = "No charges yet",
-                        body = "Subscribing records a receipt here — including declines, so failed attempts are auditable too.",
+                        body = "Subscribing records a receipt here, including declines, so failed attempts are auditable too.",
                         glyph = Glyph.CURRENCY
                     )
                 } else {
@@ -284,7 +284,7 @@ private fun ModalBottomSheetPaywall(state: PorticoState, onDismiss: () -> Unit) 
 
 /*
  * The workspace view: who is in the organisation, what their role permits, and
- * the operations a team needs that an individual does not — bulk import and
+ * the operations a team needs that an individual does not: bulk import and
  * export. Permissions are derived from the role model rather than listed by
  * hand, so the table cannot drift from the rules.
  */
@@ -309,7 +309,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
             importResult = result
             state.notify(
                 if (result.hasAnything) "Imported ${result.summary}"
-                else "Nothing imported — ${result.summary}"
+                else "Nothing imported. ${result.summary}"
             )
         }
     }

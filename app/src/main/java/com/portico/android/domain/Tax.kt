@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
  * without pretending to be a filing tool.
  *
  * Adding a country means adding a [Country] with its jurisdictions and rules.
- * Nothing in the property model changes — which is the extensibility the
+ * Nothing in the property model changes, which is the extensibility the
  * blueprint asks for in section 31.
  */
 

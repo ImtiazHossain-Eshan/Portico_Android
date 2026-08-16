@@ -6,8 +6,8 @@ import kotlinx.serialization.Serializable
  * Sandbox payments.
  *
  * No money moves here and no payment provider is contacted. What this does is
- * model a real checkout faithfully — validation, the round trip, the decline
- * paths, the receipt, the subscription lifecycle — so the product's §25 and
+ * model a real checkout faithfully: validation, the round trip, the decline
+ * paths, the receipt, the subscription lifecycle, so the product's §25 and
  * §38 surfaces can be built and reviewed against something that behaves like
  * the real thing.
  *
@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
  */
 
 const val SANDBOX_NOTICE =
-    "Sandbox mode — no card is charged and no payment provider is contacted. Use one of the test cards below."
+    "Sandbox mode. No card is charged and no payment provider is contacted. Use one of the test cards below."
 
 @Serializable
 data class SubscriptionPlan(
@@ -195,12 +195,12 @@ object SandboxProcessor {
             PaymentStatus.DECLINED -> PaymentResult.Declined(
                 payment,
                 reason = label,
-                recovery = "Your bank turned this down. Try another card — nothing was charged."
+                recovery = "Your bank turned this down, and nothing was charged. Try another card."
             )
             else -> PaymentResult.Declined(
                 payment,
                 reason = label,
-                recovery = "The payment could not be processed. Try again shortly — nothing was charged."
+                recovery = "The payment could not be processed, and nothing was charged. Try again shortly."
             )
         }
     }

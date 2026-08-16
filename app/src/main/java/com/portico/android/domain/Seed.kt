@@ -1,8 +1,8 @@
 package com.portico.android.domain
 
 /*
- * Illustrative portfolio. Every figure here is an *input* — purchase price,
- * rent, an expense line — never a result. ROI, yields, cap rate and cashflow
+ * Illustrative portfolio. Every figure here is an *input*: purchase price,
+ * rent, an expense line. Never a result. ROI, yields, cap rate and cashflow
  * are computed from these by Finance.kt, which is why the seeded properties
  * and a property the user adds behave identically.
  *
@@ -70,19 +70,19 @@ object Seed {
     )
 
     val expenses = listOf(
-        // Harbor House — unleveraged, well managed.
+        // Harbor House: unleveraged, well managed.
         ExpenseEntry("e-1", "p-harbor", 420.0, ExpenseCategory.MAINTENANCE.label, "05 Mar 2026"),
         ExpenseEntry("e-2", "p-harbor", 145.0, ExpenseCategory.INSURANCE.label, "05 Mar 2026"),
         ExpenseEntry("e-3", "p-harbor", 190.0, ExpenseCategory.MANAGEMENT.label, "05 Mar 2026"),
         ExpenseEntry("e-4", "p-harbor", 265.0, ExpenseCategory.HOA.label, "05 Mar 2026"),
 
-        // Lakeside — two units, modest running cost.
+        // Lakeside: two units, modest running cost.
         ExpenseEntry("e-5", "p-lakeside", 310.0, ExpenseCategory.MAINTENANCE.label, "05 Mar 2026"),
         ExpenseEntry("e-6", "p-lakeside", 120.0, ExpenseCategory.INSURANCE.label, "05 Mar 2026"),
         ExpenseEntry("e-7", "p-lakeside", 150.0, ExpenseCategory.MANAGEMENT.label, "05 Mar 2026"),
         ExpenseEntry("e-8", "p-lakeside", 160.0, ExpenseCategory.UTILITIES.label, "05 Mar 2026"),
 
-        // Northline — servicing plus debt is what turns this one negative.
+        // Northline: servicing plus debt is what turns this one negative.
         ExpenseEntry("e-9", "p-northline", 280.0, ExpenseCategory.MAINTENANCE.label, "05 Mar 2026"),
         ExpenseEntry("e-10", "p-northline", 320.0, ExpenseCategory.MANAGEMENT.label, "05 Mar 2026", "Short-stay operator"),
         ExpenseEntry("e-11", "p-northline", 130.0, ExpenseCategory.UTILITIES.label, "05 Mar 2026"),

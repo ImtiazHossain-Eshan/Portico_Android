@@ -39,8 +39,8 @@ import com.portico.android.ui.theme.PorticoTheme
 /*
  * Portico's component vocabulary.
  *
- * The unit of composition here is the *panel* — a hairline-bounded region with
- * a label strip and rows inside it — not the card. Cards float, need shadows to
+ * The unit of composition here is the *panel*, a hairline-bounded region with
+ * a label strip and rows inside it, not the card. Cards float, need shadows to
  * separate, and cost roughly half a screen of vertical space each; panels butt
  * up against one another and let a phone carry a dozen figures instead of four.
  * There is exactly one elevation declaration in the system (a 1dp hairline) and
@@ -64,8 +64,8 @@ object Space {
 }
 
 /**
- * Responsive behaviour in Portico is structural — which navigation, how many
- * columns, how dense a table — never fluid type. Text follows the system font
+ * Responsive behaviour in Portico is structural: which navigation, how many
+ * columns, how dense a table. Never fluid type. Text follows the system font
  * scale instead, so a user who has enlarged their font gets larger text rather
  * than a differently proportioned screen.
  */
@@ -116,7 +116,7 @@ val ControlShape = RoundedCornerShape(10.dp)
 // ------------------------------------------------------------------- panels
 
 /**
- * The base surface. One hairline, one radius, no shadow — the whole depth
+ * The base surface. One hairline, one radius, no shadow. The whole depth
  * system in three lines.
  */
 @Composable
@@ -630,7 +630,7 @@ fun SegmentedRow(
     }
 }
 
-/** Status marker. Never the only carrier of its meaning — always has a word. */
+/** Status marker. Never the only carrier of its meaning; always has a word. */
 @Composable
 fun StatusChip(
     text: String,

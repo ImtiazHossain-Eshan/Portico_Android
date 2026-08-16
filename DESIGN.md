@@ -17,7 +17,7 @@ operating costs and tax to whatever survives, per property and across the
 whole register. Portico puts that subtraction on screen and lets the investor
 open any figure to the records underneath it.
 
-The category default — a card per metric, a donut, an accent gradient — hides
+The category default (a card per metric, a donut, an accent gradient) hides
 that chain. This build refuses it.
 
 ## Visual world
@@ -26,7 +26,7 @@ Grounds are neutral: graphite in dark, bone in light. Both are deliberately
 achromatic so the only saturated colour on screen is carrying information.
 
 One accent, amber, at two temperatures: `#E8A33D` on graphite and `#9A6212`
-bronze on bone. It marks action and selection only — never decoration — which
+bronze on bone. It marks action and selection only, never decoration, which
 is what frees green and red to mean exactly one thing each.
 
 - **No blue anywhere.** The neutral used for gross totals and comparison marks
@@ -52,18 +52,18 @@ is what frees green and red to mean exactly one thing each.
 | Loss | `#E5675C` | `#B3392E` |
 | Neutral | `#9A948B` | `#6B665E` |
 
-Gain and loss never carry meaning alone — every delta pairs the colour with a
+Gain and loss never carry meaning alone. Every delta pairs the colour with a
 direction arrow and a sign, so the reading survives colour-blindness.
 
 ## Typography
 
-System sans (Roboto) throughout — one family carries headings, data, labels and
+System sans (Roboto) throughout: one family carries headings, data, labels and
 prose. The decisive choice is `fontFeatureSettings = "tnum"` on **every style
 except `bodyLarge`**: tabular figures are what let a column of money be compared
 by eye. Without them `1,240,500` and `184,200` set to different widths and the
 ledger stops aligning.
 
-`bodyLarge` stays proportional — it is the one style reserved for running prose
+`bodyLarge` stays proportional. It is the one style reserved for running prose
 (assistant replies, explanations).
 
 Scale: display 46/36/28 · headline 26/22/19 · title 18/15/13 · body 16/14/12 ·
@@ -81,7 +81,7 @@ so a phone carries roughly a dozen figures where card-per-metric carried four.
   32dp expanded.
 - Rows are 44dp minimum, 48dp when tappable, hairline-separated and inset to
   the text column.
-- `TotalRule` is a double rule — the ledger convention for a closed total.
+- `TotalRule` is a double rule, the ledger convention for a closed total.
 
 ### The waterfall
 
@@ -99,13 +99,13 @@ Drawn geometry, never pictures. Gridlines are hairlines at the same weight as
 panel rules; the series is a single 2dp stroke; the only fill is a flat 10%
 wash under the line.
 
-- `ValueChart` — value over time with a **scrub**: press or drag to read the
+- `ValueChart` draws value over time with a **scrub**: press or drag to read the
   value at any point, release to return to latest. Range selector 1M/6M/1Y/5Y/All.
   Bottom corners are labelled "Low"/"High" so they don't misread as a time axis.
-- `AllocationDonut` — share by country, region and type.
-- `CashflowColumns` — monthly columns with a real zero baseline, so negative
+- `AllocationDonut` shows share by country, region and type.
+- `CashflowColumns` draws monthly columns with a real zero baseline, so negative
   months render below it.
-- `MagnitudeBar` — takes a `format` lambda, because the same bar carries money
+- `MagnitudeBar` takes a `format` lambda, because the same bar carries money
   in one panel and a percentage in the next.
 
 Every chart carries a spoken summary via `contentDescription`; a screen-reader
@@ -125,7 +125,7 @@ without a separate drawing.
 
 ## Motion
 
-One authored moment: `rememberTickFlash` — a value that changes tints its own
+One authored moment: `rememberTickFlash`. A value that changes tints its own
 row for 640ms, then settles. Nothing else animates on its own.
 
 Supporting motion is functional only: 180ms fade-through between destinations,
@@ -135,7 +135,7 @@ The Profile "Reduce motion" preference disables reveals; the system
 
 ## Responsive behaviour
 
-Structural, never fluid type — text follows the system font scale instead.
+Structural, never fluid type. Text follows the system font scale instead.
 
 | Width | Navigation | Content |
 | --- | --- | --- |
@@ -158,8 +158,8 @@ permission denied, session expired. Plus three product-specific: plan limit
 reached, assistant offline, document unavailable.
 
 Two rules hold across all of them. **Empty states teach the next action** rather
-than announcing absence. **Error states name both the problem and the way out** —
-a message with no recovery is a dead end.
+than announcing absence. **Error states name both the problem and the way out**.
+A message with no recovery is a dead end.
 
 ## Honesty
 
@@ -176,7 +176,7 @@ The build is finished when:
 2. Cold launch shows the Portico mark before Compose content, in both themes.
 3. Onboarding, sign-in, registration, verification, recovery, OAuth, demo entry
    and sign-out are all reachable.
-4. Every blueprint section has a working surface — no control is a dead-end
+4. Every blueprint section has a working surface, and no control is a dead-end
    snackbar.
 5. Every displayed rate is computed by `Finance.kt` from records in the store,
    never stored as a constant.
