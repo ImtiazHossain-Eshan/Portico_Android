@@ -180,6 +180,8 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         expenses.removeAll { it.propertyId == propertyId }
         documents.removeAll { it.propertyId == propertyId }
         valuations.removeAll { it.propertyId == propertyId }
+        activity.removeAll { it.propertyId == propertyId }
+        conversations.removeAll { it.propertyId == propertyId }
         persist()
     }
 
@@ -403,8 +405,23 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     // --------------------------------------------------------------- reset
 
-    /** Account deletion and "reset demo data" share this path. */
-    fun resetToSeed() { apply(seedSnapshot()); persist() }
+    /**
+     * Restore only the illustrative portfolio. Account identity, preferences,
+     * tax choices, exchange rates, subscription and payment history belong to
+     * the member and must survive a demo-data reset.
+     */
+    fun resetToSeed() {
+        val seed = seedSnapshot().copy(
+            profile = profile,
+            preferences = preferences,
+            taxProfile = taxProfile,
+            exchangeRates = exchangeRates,
+            subscription = subscription,
+            payments = payments.toList()
+        )
+        apply(seed)
+        persist()
+    }
 
     fun clearEverything() {
         apply(PorticoSnapshot(profile = profile.copy(name = profile.name), seeded = true))

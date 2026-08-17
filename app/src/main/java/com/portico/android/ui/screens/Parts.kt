@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.portico.android.domain.*
+import com.portico.android.ui.PorticoState
+import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
 
@@ -38,6 +42,8 @@ fun PropertyRow(
     currency: String = "USD",
     shareOfPortfolio: Double = 0.0,
     detailed: Boolean = false,
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     val semantic = PorticoTheme.semantic
@@ -132,11 +138,76 @@ fun PropertyRow(
             }
         }
 
+        if (onEdit != null || onDelete != null) {
+            Spacer(Modifier.height(Space.md))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Space.sm)
+            ) {
+                if (onEdit != null) {
+                    SecondaryButton(
+                        label = "Edit",
+                        modifier = Modifier.weight(1f),
+                        glyph = Glyph.EDIT,
+                        onClick = onEdit
+                    )
+                }
+                if (onDelete != null) {
+                    SecondaryButton(
+                        label = "Delete",
+                        modifier = Modifier.weight(1f),
+                        glyph = Glyph.DELETE,
+                        destructive = true,
+                        onClick = onDelete
+                    )
+                }
+            }
+        }
+
         if (cashflow < 0) {
             Spacer(Modifier.height(Space.md))
             StatusChip("Negative cashflow", tone = semantic.loss, glyph = Glyph.WARNING)
         }
     }
+}
+
+/**
+ * One confirmation path for property deletion, whether the action starts in
+ * the register or the property detail. The property is resolved from the
+ * pending id so the dialog can never name or delete the wrong row.
+ */
+@Composable
+fun PropertyDeleteDialog(state: PorticoState) {
+    val propertyId = state.pendingDeletePropertyId ?: return
+    val property = state.store.propertyById(propertyId) ?: return
+
+    AlertDialog(
+        onDismissRequest = { state.pendingDeletePropertyId = null },
+        title = { Text("Delete ${property.name}?") },
+        text = {
+            Text(
+                "This permanently removes the property and all income, expenses, valuations, documents, activity and assistant conversations attached to it."
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    state.store.deleteProperty(propertyId)
+                    state.pendingDeletePropertyId = null
+                    state.selectDestination(Route.PORTFOLIO)
+                    state.notify("${property.name} deleted")
+                }
+            ) {
+                Text("Delete property", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { state.pendingDeletePropertyId = null }) {
+                Text("Keep property")
+            }
+        },
+        containerColor = PorticoTheme.semantic.panel
+    )
 }
 
 @Composable

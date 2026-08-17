@@ -42,23 +42,33 @@ fun PropertyDetailScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         // ---- headline -------------------------------------------------------
         Column(Modifier.padding(horizontal = Space.lg)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    SectionLabel("${property.location} · ${property.type}")
-                    Spacer(Modifier.height(Space.xs))
-                    Text(
-                        Money.format(property.currentValue, currency),
-                        style = MaterialTheme.typography.displayMedium
-                    )
-                    Spacer(Modifier.height(Space.xs))
-                    DeltaLine(
-                        delta = result.appreciation,
-                        text = "${Money.signed(result.appreciation, currency)}   ${Money.signedPercent(result.capitalRoi)} on cash in"
-                    )
-                }
-                SecondaryButton("Edit", glyph = Glyph.EDIT) {
+            SectionLabel("${property.location} · ${property.type}")
+            Spacer(Modifier.height(Space.xs))
+            Text(
+                Money.format(property.currentValue, currency),
+                style = MaterialTheme.typography.displayMedium
+            )
+            Spacer(Modifier.height(Space.xs))
+            DeltaLine(
+                delta = result.appreciation,
+                text = "${Money.signed(result.appreciation, currency)}   ${Money.signedPercent(result.capitalRoi)} on cash in"
+            )
+            Spacer(Modifier.height(Space.md))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Space.sm)
+            ) {
+                SecondaryButton("Edit property", Modifier.weight(1f), glyph = Glyph.EDIT) {
                     state.loadDraftFrom(property)
                     state.navigate(Route.ADD_PROPERTY)
+                }
+                SecondaryButton(
+                    "Delete",
+                    Modifier.weight(1f),
+                    glyph = Glyph.DELETE,
+                    destructive = true
+                ) {
+                    state.pendingDeletePropertyId = property.id
                 }
             }
         }
@@ -106,29 +116,7 @@ fun PropertyDetailScreen(state: PorticoState, modifier: Modifier = Modifier) {
     if (state.showUploadSheet) {
         UploadSheet(state) { state.showUploadSheet = false }
     }
-    state.pendingDeletePropertyId?.let { pendingId ->
-        AlertDialog(
-            onDismissRequest = { state.pendingDeletePropertyId = null },
-            title = { Text("Delete ${property.name}?") },
-            text = {
-                Text(
-                    "This removes the property and every income, expense, valuation and document attached to it. It cannot be undone."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    store.deleteProperty(pendingId)
-                    state.pendingDeletePropertyId = null
-                    state.selectDestination(Route.PORTFOLIO)
-                    state.notify("${property.name} deleted")
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
-            },
-            dismissButton = {
-                TextButton(onClick = { state.pendingDeletePropertyId = null }) { Text("Keep") }
-            },
-            containerColor = PorticoTheme.semantic.panel
-        )
-    }
+    PropertyDeleteDialog(state)
 }
 
 // ------------------------------------------------------------------ overview
@@ -230,13 +218,6 @@ private fun PropertyOverviewTab(state: PorticoState, result: PropertyFinancials)
                 state.assistantContextPropertyId = property.id
                 state.selectDestination(Route.ASSISTANT)
             }
-            Hairline()
-            NavRow(
-                "Delete property",
-                glyph = Glyph.DELETE,
-                tint = MaterialTheme.colorScheme.error,
-                supporting = "Removes all records attached to it"
-            ) { state.pendingDeletePropertyId = property.id }
         }
     }
 }
