@@ -13,7 +13,8 @@
 # Source documents (the assignment brief)
 /Project Details/
 
-# Firebase server credentials and local tooling
+# Firebase client/server credentials and local tooling
+/app/google-services.json
 **/*service-account*.json
 .firebase/
 firebase-debug.log
