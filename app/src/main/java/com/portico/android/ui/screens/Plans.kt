@@ -20,6 +20,7 @@ import com.portico.android.ui.PorticoState
 import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
+import kotlinx.coroutines.launch
 
 /*
  * Plans are presented as a comparison, not a sales page: what each tier does,
@@ -30,6 +31,7 @@ import com.portico.android.ui.theme.PorticoTheme
 @Composable
 fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
+    val scope = rememberCoroutineScope()
     val current = store.subscription.tier
     val semantic = PorticoTheme.semantic
     var showPlanHistory by remember { mutableStateOf(false) }
@@ -97,8 +99,11 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 Box(Modifier.padding(Space.lg)) {
                     if (store.subscription.cancelAtPeriodEnd) {
                         PrimaryButton("Resume subscription", Modifier.fillMaxWidth()) {
-                            store.resumeSubscription()
-                            state.notify("Subscription resumed")
+                            scope.launch {
+                                runCatching { store.resumeSubscription() }
+                                    .onSuccess { state.notify("Subscription resumed") }
+                                    .onFailure { state.notify(it.message ?: "Subscription could not be resumed") }
+                            }
                         }
                     } else {
                         SecondaryButton(
@@ -106,8 +111,11 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                             Modifier.fillMaxWidth(),
                             destructive = true
                         ) {
-                            store.cancelSubscription()
-                            state.notify("Cancelled. Access continues to the end of the period")
+                            scope.launch {
+                                runCatching { store.cancelSubscription() }
+                                    .onSuccess { state.notify("Cancelled. Access continues to the end of the period") }
+                                    .onFailure { state.notify(it.message ?: "Subscription could not be cancelled") }
+                            }
                         }
                     }
                 }
@@ -127,8 +135,11 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 "On-device assistant" to false
             ),
             onSelect = {
-                store.setPlan(PlanTier.FREE)
-                state.notify("Switched to Free")
+                scope.launch {
+                    runCatching { store.setPlan(PlanTier.FREE) }
+                        .onSuccess { state.notify("Switched to Free") }
+                        .onFailure { state.notify(it.message ?: "Plan could not be changed") }
+                }
             }
         )
 
@@ -273,6 +284,7 @@ private fun PlanPanel(
 @Composable
 fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val semantic = PorticoTheme.semantic
     val organization = Seed.organization
@@ -287,12 +299,22 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
         if (result == null) {
             state.notify("That file couldn't be read as CSV.")
         } else {
-            store.importProperties(result.imported, result.income, result.expenses)
-            importResult = result
-            state.notify(
-                if (result.hasAnything) "Imported ${result.summary}"
-                else "Nothing imported. ${result.summary}"
-            )
+            scope.launch {
+                runCatching { store.importProperties(result.imported, result.income, result.expenses) }
+                    .onSuccess {
+                        importResult = result
+                        state.notify(
+                            if (result.hasAnything) "Imported ${result.summary}"
+                            else "Nothing imported. ${result.summary}"
+                        )
+                    }
+                    .onFailure { error ->
+                        if (error is com.portico.android.data.PorticoBackendException &&
+                            error.code == "plan_limit_reached"
+                        ) state.showPaywall = true
+                        else state.notify(error.message ?: "Import could not be completed")
+                    }
+            }
         }
     }
 

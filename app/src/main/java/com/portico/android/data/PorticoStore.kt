@@ -270,7 +270,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
      * collections. Existing schema-v1 snapshot blobs migrate on first sign-in;
      * demo data is never uploaded.
      */
-    suspend fun syncCloud(): Boolean {
+    suspend fun syncCloud(force: Boolean = false): Boolean {
         val ownerId = activeOwnerId?.takeUnless { it == "demo" } ?: return false
         return runCatching {
             val cloudWorkspace = FirebaseBackend.loadWorkspace(ownerId)
@@ -278,7 +278,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
             if (
                 cloudSnapshot != null &&
-                cloudSnapshot.updatedAtEpochMillis > activeUpdatedAtEpochMillis
+                (force || cloudSnapshot.updatedAtEpochMillis > activeUpdatedAtEpochMillis)
             ) {
                 val safeSnapshot = cloudSnapshot.copy(
                     profile = cloudSnapshot.profile.copy(userId = ownerId),
@@ -378,12 +378,19 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     // ----------------------------------------------------------- properties
 
-    fun addProperty(property: Property, incomeEntries: List<IncomeEntry>, expenseEntries: List<ExpenseEntry>) {
-        properties.add(property)
-        income.addAll(incomeEntries)
-        expenses.addAll(expenseEntries)
-        logActivity(ActivityKind.PROPERTY_ADDED, "Property added", property.name, null, property.id)
-        persist()
+    suspend fun addProperty(property: Property, incomeEntries: List<IncomeEntry>, expenseEntries: List<ExpenseEntry>) {
+        if (usesSecureBackend) {
+            PorticoBackend.createProperties(
+                listOf(PropertyCreateBundle(property, incomeEntries, expenseEntries))
+            )
+            check(syncCloud(force = true)) { "Property was saved but the workspace could not refresh" }
+        } else {
+            properties.add(property)
+            income.addAll(incomeEntries)
+            expenses.addAll(expenseEntries)
+            logActivity(ActivityKind.PROPERTY_ADDED, "Property added", property.name, null, property.id)
+            persist()
+        }
     }
 
     fun updateProperty(property: Property) {
@@ -395,36 +402,53 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         }
     }
 
-    fun deleteProperty(propertyId: String) {
-        deleteStoredFiles(documents.filter { it.propertyId == propertyId }.map { it.storagePath })
-        properties.removeAll { it.id == propertyId }
-        income.removeAll { it.propertyId == propertyId }
-        expenses.removeAll { it.propertyId == propertyId }
-        documents.removeAll { it.propertyId == propertyId }
-        valuations.removeAll { it.propertyId == propertyId }
-        activity.removeAll { it.propertyId == propertyId }
-        conversations.removeAll { it.propertyId == propertyId }
-        persist()
+    suspend fun deleteProperty(propertyId: String) {
+        if (usesSecureBackend) {
+            PorticoBackend.deleteProperty(propertyId)
+            check(syncCloud(force = true)) { "Property was deleted but the workspace could not refresh" }
+        } else {
+            deleteStoredFiles(documents.filter { it.propertyId == propertyId }.map { it.storagePath })
+            properties.removeAll { it.id == propertyId }
+            income.removeAll { it.propertyId == propertyId }
+            expenses.removeAll { it.propertyId == propertyId }
+            documents.removeAll { it.propertyId == propertyId }
+            valuations.removeAll { it.propertyId == propertyId }
+            activity.removeAll { it.propertyId == propertyId }
+            conversations.removeAll { it.propertyId == propertyId }
+            persist()
+        }
     }
 
     /** Bulk insert from an import. One activity entry, not one per row. */
-    fun importProperties(
+    suspend fun importProperties(
         newProperties: List<Property>,
         newIncome: List<IncomeEntry>,
         newExpenses: List<ExpenseEntry>
     ) {
         if (newProperties.isEmpty()) return
-        properties.addAll(newProperties)
-        income.addAll(newIncome)
-        expenses.addAll(newExpenses)
-        logActivity(
-            ActivityKind.PROPERTY_ADDED,
-            "Bulk import",
-            "${newProperties.size} properties added from CSV",
-            null,
-            null
-        )
-        persist()
+        if (usesSecureBackend) {
+            val records = newProperties.map { property ->
+                PropertyCreateBundle(
+                    property,
+                    newIncome.filter { it.propertyId == property.id },
+                    newExpenses.filter { it.propertyId == property.id }
+                )
+            }
+            PorticoBackend.createProperties(records)
+            check(syncCloud(force = true)) { "Import completed but the workspace could not refresh" }
+        } else {
+            properties.addAll(newProperties)
+            income.addAll(newIncome)
+            expenses.addAll(newExpenses)
+            logActivity(
+                ActivityKind.PROPERTY_ADDED,
+                "Bulk import",
+                "${newProperties.size} properties added from CSV",
+                null,
+                null
+            )
+            persist()
+        }
     }
 
     fun propertyById(id: String?): Property? = properties.firstOrNull { it.id == id }
@@ -504,7 +528,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
      * Activates a paid plan against a settled payment. Both move together,
      * a subscription is never activated without the payment that paid for it.
      */
-    fun activatePlan(plan: SubscriptionPlan, payment: Payment) {
+    private fun activatePlanLocally(plan: SubscriptionPlan, payment: Payment) {
         payments.add(0, payment)
         if (!payment.succeeded) {
             logActivity(
@@ -534,31 +558,72 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     }
 
     /** Cancel keeps access to the end of the period, as a real one would. */
-    fun cancelSubscription() {
-        if (!subscription.isPaid) return
-        subscription = subscription.copy(status = "Cancels at period end", cancelAtPeriodEnd = true)
-        logActivity(ActivityKind.PLAN_CHANGED, "Subscription cancelled", "Access continues until ${subscription.renewsOn ?: "the period ends"}", null, null)
-        persist()
+    suspend fun checkout(plan: SubscriptionPlan, card: CardInput): PaymentResult {
+        if (!usesSecureBackend) {
+            val result = SandboxProcessor.authorise(card, plan, newId("pay"))
+            activatePlanLocally(
+                plan,
+                (result as? PaymentResult.Succeeded)?.payment
+                    ?: (result as PaymentResult.Declined).payment
+            )
+            return result
+        }
+
+        val billing = PorticoBackend.checkout(plan, card)
+        syncCloud(force = true)
+        val payment = billing.payment ?: error("Billing service returned no payment")
+        return if (payment.succeeded) {
+            PaymentResult.Succeeded(payment)
+        } else {
+            PaymentResult.Declined(
+                payment,
+                payment.failureReason ?: "Payment could not be processed",
+                "Nothing was charged. Use another sandbox card and try again."
+            )
+        }
     }
 
-    fun resumeSubscription() {
+    suspend fun cancelSubscription() {
+        if (!subscription.isPaid) return
+        if (usesSecureBackend) {
+            PorticoBackend.changeSubscription("cancel")
+            syncCloud(force = true)
+        } else {
+            subscription = subscription.copy(status = "Cancels at period end", cancelAtPeriodEnd = true)
+            logActivity(ActivityKind.PLAN_CHANGED, "Subscription cancelled", "Access continues until ${subscription.renewsOn ?: "the period ends"}", null, null)
+            persist()
+        }
+    }
+
+    suspend fun resumeSubscription() {
         if (!subscription.cancelAtPeriodEnd) return
-        subscription = subscription.copy(status = "Active", cancelAtPeriodEnd = false)
-        logActivity(ActivityKind.PLAN_CHANGED, "Subscription resumed", "Renews ${subscription.renewsOn ?: "next period"}", null, null)
-        persist()
+        if (usesSecureBackend) {
+            PorticoBackend.changeSubscription("resume")
+            syncCloud(force = true)
+        } else {
+            subscription = subscription.copy(status = "Active", cancelAtPeriodEnd = false)
+            logActivity(ActivityKind.PLAN_CHANGED, "Subscription resumed", "Renews ${subscription.renewsOn ?: "next period"}", null, null)
+            persist()
+        }
     }
 
     /** Immediate downgrade, used by the Free option. */
-    fun setPlan(tier: PlanTier) {
-        subscription = Subscription(
-            planTier = tier.name,
-            planId = if (tier == PlanTier.PRO) SubscriptionPlan.PRO_MONTHLY.id else SubscriptionPlan.FREE.id,
-            status = "Active",
-            startDate = SimpleDate.today().format(),
-            renewsOn = if (tier == PlanTier.PRO) nextRenewal("month") else null
-        )
-        logActivity(ActivityKind.PLAN_CHANGED, "Plan changed", "Now on ${tier.label}", null, null)
-        persist()
+    suspend fun setPlan(tier: PlanTier) {
+        require(tier == PlanTier.FREE) { "Paid plans must go through checkout" }
+        if (usesSecureBackend) {
+            PorticoBackend.changeSubscription("downgrade")
+            syncCloud(force = true)
+        } else {
+            subscription = Subscription(
+                planTier = tier.name,
+                planId = SubscriptionPlan.FREE.id,
+                status = "Active",
+                startDate = SimpleDate.today().format(),
+                renewsOn = null
+            )
+            logActivity(ActivityKind.PLAN_CHANGED, "Plan changed", "Now on ${tier.label}", null, null)
+            persist()
+        }
     }
 
     private fun nextRenewal(interval: String): String {
@@ -575,6 +640,9 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     /** Free tier caps the register; Pro removes the cap. */
     val canAddProperty: Boolean
         get() = properties.size < subscription.tier.propertyLimit
+
+    private val usesSecureBackend: Boolean
+        get() = activeOwnerId != null && activeOwnerId != "demo"
 
     // ----------------------------------------------------------- assistant
 
@@ -638,6 +706,9 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
      * the member and must survive a demo-data reset.
      */
     fun resetToSeed() {
+        check(!usesSecureBackend) {
+            "The sample portfolio stays in the demo cockpit so it cannot be mixed with your private records."
+        }
         deleteStoredFiles(documents.map { it.storagePath })
         val seed = seedSnapshot().copy(
             profile = profile,
@@ -651,10 +722,15 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         persist()
     }
 
-    fun clearEverything() {
-        deleteStoredFiles(documents.map { it.storagePath })
-        apply(PorticoSnapshot(profile = profile.copy(name = profile.name), seeded = true))
-        persist()
+    suspend fun clearEverything() {
+        if (usesSecureBackend) {
+            PorticoBackend.eraseWorkspace()
+            check(syncCloud(force = true)) { "Records were erased but the workspace could not refresh" }
+        } else {
+            deleteStoredFiles(documents.map { it.storagePath })
+            apply(PorticoSnapshot(profile = profile.copy(name = profile.name), seeded = true))
+            persist()
+        }
     }
 
     private fun deleteStoredFiles(paths: List<String>) {

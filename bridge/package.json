@@ -12,7 +12,11 @@
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",
+    "firebase-admin": "^14.2.0",
     "jose": "4.15.9"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   },
   "devDependencies": {
     "@vercel/node": "^5.5.14",

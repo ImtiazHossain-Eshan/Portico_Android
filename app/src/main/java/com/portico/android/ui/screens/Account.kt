@@ -477,6 +477,7 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
     val context = LocalContext.current
     val semantic = PorticoTheme.semantic
+    val scope = rememberCoroutineScope()
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -509,9 +510,17 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 }
             }
             Hairline()
-            NavRow("Restore sample portfolio", glyph = Glyph.REFRESH, supporting = "Replaces current records with the demo set") {
-                store.resetToSeed()
-                state.notify("Sample portfolio restored")
+            NavRow(
+                "Sample portfolio",
+                glyph = Glyph.REFRESH,
+                supporting = if (state.demoMode) "Restore the demonstration records" else "Available separately from the demo cockpit"
+            ) {
+                if (state.demoMode) {
+                    store.resetToSeed()
+                    state.notify("Sample portfolio restored")
+                } else {
+                    state.notify("Sign out and choose Enter the demo cockpit to explore sample records")
+                }
             }
             Hairline()
             NavRow(
@@ -556,10 +565,15 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    store.clearEverything()
-                    state.showDeleteAccountDialog = false
-                    state.selectDestination(Route.DASHBOARD)
-                    state.notify("All records erased")
+                    scope.launch {
+                        runCatching { store.clearEverything() }
+                            .onSuccess {
+                                state.showDeleteAccountDialog = false
+                                state.selectDestination(Route.DASHBOARD)
+                                state.notify("All records erased")
+                            }
+                            .onFailure { state.notify(it.message ?: "Records could not be erased") }
+                    }
                 }) { Text("Erase everything", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {

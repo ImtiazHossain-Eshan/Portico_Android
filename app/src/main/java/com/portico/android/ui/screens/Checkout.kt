@@ -49,17 +49,33 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         state.checkoutStage = CheckoutStage.PROCESSING
         scope.launch {
-            // A real authorisation takes a beat; the UI must survive the wait.
-            delay(1_600)
-            val result = SandboxProcessor.authorise(card, plan, PorticoStore.newId("pay"))
-            store.activatePlan(plan, (result as? PaymentResult.Succeeded)?.payment
-                ?: (result as PaymentResult.Declined).payment)
-            outcome = result
-            state.checkoutStage = when (result) {
-                is PaymentResult.Succeeded -> CheckoutStage.SUCCESS
-                is PaymentResult.Declined -> CheckoutStage.DECLINED
-            }
-            // The card leaves memory the moment it is no longer needed.
+            delay(500)
+            runCatching { store.checkout(plan, card) }
+                .onSuccess { result ->
+                    outcome = result
+                    state.checkoutStage = when (result) {
+                        is PaymentResult.Succeeded -> CheckoutStage.SUCCESS
+                        is PaymentResult.Declined -> CheckoutStage.DECLINED
+                    }
+                }
+                .onFailure { error ->
+                    outcome = PaymentResult.Declined(
+                        payment = Payment(
+                            id = PorticoStore.newId("pay"),
+                            planId = plan.id,
+                            amountMinor = plan.priceMinor,
+                            currency = plan.currency,
+                            status = PaymentStatus.FAILED.name,
+                            date = SimpleDate.today().format(),
+                            cardLast4 = card.last4,
+                            cardBrand = card.brand,
+                            failureReason = error.message
+                        ),
+                        reason = "Checkout unavailable",
+                        recovery = error.message ?: "Nothing was charged. Check your connection and try again."
+                    )
+                    state.checkoutStage = CheckoutStage.DECLINED
+                }
             card = CardInput()
         }
     }

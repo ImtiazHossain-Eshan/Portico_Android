@@ -311,7 +311,7 @@ class PorticoState(val store: PorticoStore) {
     }
 
     /** Commit the draft as a new property, or as an edit of an existing one. */
-    fun commitDraft() {
+    suspend fun commitDraft() {
         val id = editingPropertyId ?: PorticoStore.newId("p")
         val property = Property(
             id = id,

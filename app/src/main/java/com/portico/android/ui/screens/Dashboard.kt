@@ -216,13 +216,10 @@ private fun FirstRunDashboard(state: PorticoState, modifier: Modifier = Modifier
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Just exploring?")
             DataRow(
-                "Restore the sample portfolio",
-                "Reset",
-                supporting = "Two illustrative properties in Uruguay",
-                onClick = {
-                    state.store.resetToSeed()
-                    state.notify("Sample portfolio restored")
-                }
+                "Explore a sample portfolio",
+                "Demo cockpit",
+                supporting = "Sample records stay separate from your private workspace",
+                onClick = { state.notify("Sign out and choose Enter the demo cockpit") }
             )
         }
     }

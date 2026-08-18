@@ -149,9 +149,10 @@ plausible-looking one you cannot check.
 
 ## Sandbox payments
 
-Checkout is a working flow, not a mock screen: Luhn validation, expiry and CVC
-checks, a processing state, distinct decline paths, a receipt, persisted billing
-history, and cancel-at-period-end with resume.
+Checkout is a working server-verified sandbox flow: Luhn validation, expiry and
+CVC checks, a processing state, distinct decline paths, a receipt, persisted
+billing history, and cancel-at-period-end with resume. The authenticated bridge,
+not the Android client, writes subscription and payment state.
 
 **No money moves and no payment provider is contacted.** Outcomes are driven by
 the published, non-functional test card numbers, tappable in the app:
@@ -164,11 +165,12 @@ the published, non-functional test card numbers, tappable in the app:
 | `4000 0000 0000 0069` | Expired card |
 | `4000 0000 0000 0119` | Processing error |
 
-Any future expiry and any 3-digit code work. Only the card brand and last four
-digits are ever persisted, never the full number, and there is a test asserting
-it. Pro is priced at $12.00/month as **sandbox pricing**, labelled as such in
-the UI. Swapping in a real processor means replacing `SandboxProcessor.authorise`
-and nothing else.
+Any future expiry and any 3-digit code work. A typed number is matched locally
+to one of these published test outcomes; only a non-sensitive outcome token is
+sent to the bridge. A full number is never transmitted or persisted. Pro is
+priced at $12.00/month as **sandbox pricing**, labelled as such in the UI.
+Production billing replaces that outcome token with a verified Play Billing or
+processor purchase token.
 
 ---
 
@@ -229,6 +231,7 @@ domain/     Models, Finance, Tax, Exchange, Payments, Analyst, Seed
             pure Kotlin, no Android dependencies, fully unit-tested
 data/       PorticoStore: single owner of state, offline cache + cloud sync
             FirestoreWorkspaceRepository: normalized owner-scoped records
+            PorticoBackend: authenticated quota, billing and push APIs
             PorticoFiles: authenticated private document transfer
             PorticoExport / PorticoImport: CSV round-trip
 ui/theme/   Colour roles, semantic extensions, tabular-figure type scale
@@ -248,18 +251,21 @@ domains.
 `domain/Finance.kt` and `domain/Tax.kt` from records in your workspace.
 Everything persists across restart through an account-scoped DataStore cache and
 normalized Firestore collections. Clerk authentication, realtime cloud sync,
-private document upload/download/delete, CSV import and export, and session
-revocation all hit real systems. Existing schema-v1 workspace snapshots migrate
-to the normalized schema on the next authenticated sync.
+private document upload/download/delete, server-enforced property quotas,
+server-owned sandbox subscriptions, FCM Installation-ID registration and delivery, CSV
+import/export, and session revocation all hit real systems. Existing schema-v1
+workspace snapshots migrate to the normalized schema on authenticated sync.
 
 **Illustrative, and labelled as such in the app.** The three seeded properties,
 comparable properties, market signals, acquisition listings, organisation
 members, audit entries and admin platform metrics. Every tax rate and every
 exchange rate is an assumption you can edit.
 
-**Not connected.** Real payment processing, push delivery and external property
-data remain integration seams. The checkout is intentionally labelled sandbox
-and never charges a card.
+**Not connected.** Real payment processing, cloud AI and external
+property data remain integration seams. Checkout is intentionally labelled
+sandbox and never charges a card. Portico Intelligence is intentionally
+on-device: no backend AI endpoint exists, and portfolio context, questions and
+conversation history are not sent to an external model.
 
 ### Cloud data layout
 
@@ -268,6 +274,9 @@ independent collections (`properties`, `income`, `expenses`, `valuations`,
 `documents`, `activity`, `notifications`, `conversations`, and `payments`) and
 profile/preferences/tax/exchange/subscription records live in `settings`.
 Firestore's root user document carries schema version, revision and counts only.
+Subscription, receipts, quota counters and FCM installation records are
+server-owned; Firestore rules deny Android writes to those paths and deny direct
+property creation so the bridge can enforce the Free limit atomically.
 
 Document metadata is stored in Firestore; file bytes are stored in a private
 Vercel Blob store. Android never receives Firebase service credentials or a Blob

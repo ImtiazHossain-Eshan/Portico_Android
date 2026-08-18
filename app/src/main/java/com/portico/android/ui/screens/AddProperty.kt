@@ -7,6 +7,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,6 +22,7 @@ import com.portico.android.ui.PorticoState
 import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
+import kotlinx.coroutines.launch
 
 private val stepTitles = listOf("Property", "Purchase", "Income", "Expenses", "Analysis", "Review")
 
@@ -32,6 +38,8 @@ fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val step = state.addStep.coerceIn(0, stepTitles.lastIndex)
     val draft = state.draft
     val isEditing = state.editingPropertyId != null
+    val scope = rememberCoroutineScope()
+    var saving by remember { mutableStateOf(false) }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -87,12 +95,27 @@ fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             PrimaryButton(
                 label = if (step == stepTitles.lastIndex) (if (isEditing) "Save changes" else "Save property") else "Next",
                 modifier = Modifier.weight(1f),
-                enabled = draft.isStepValid(step)
+                enabled = draft.isStepValid(step) && !saving
             ) {
                 if (step == stepTitles.lastIndex) {
-                    state.commitDraft()
-                    state.notify(if (isEditing) "Property updated" else "Property added")
-                    state.selectDestination(Route.PORTFOLIO)
+                    scope.launch {
+                        saving = true
+                        runCatching { state.commitDraft() }
+                            .onSuccess {
+                                state.notify(if (isEditing) "Property updated" else "Property added")
+                                state.selectDestination(Route.PORTFOLIO)
+                            }
+                            .onFailure { error ->
+                                if (error is com.portico.android.data.PorticoBackendException &&
+                                    error.code == "plan_limit_reached"
+                                ) {
+                                    state.showPaywall = true
+                                } else {
+                                    state.notify(error.message ?: "Property could not be saved")
+                                }
+                            }
+                        saving = false
+                    }
                 } else state.addStep++
             }
         }

@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,6 +24,7 @@ import com.portico.android.ui.PorticoState
 import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
+import kotlinx.coroutines.launch
 
 /*
  * Rows shared across surfaces. A property reads the same on the dashboard, in
@@ -180,6 +182,7 @@ fun PropertyRow(
 fun PropertyDeleteDialog(state: PorticoState) {
     val propertyId = state.pendingDeletePropertyId ?: return
     val property = state.store.propertyById(propertyId) ?: return
+    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = { state.pendingDeletePropertyId = null },
@@ -192,10 +195,15 @@ fun PropertyDeleteDialog(state: PorticoState) {
         confirmButton = {
             TextButton(
                 onClick = {
-                    state.store.deleteProperty(propertyId)
-                    state.pendingDeletePropertyId = null
-                    state.selectDestination(Route.PORTFOLIO)
-                    state.notify("${property.name} deleted")
+                    scope.launch {
+                        runCatching { state.store.deleteProperty(propertyId) }
+                            .onSuccess {
+                                state.pendingDeletePropertyId = null
+                                state.selectDestination(Route.PORTFOLIO)
+                                state.notify("${property.name} deleted")
+                            }
+                            .onFailure { state.notify(it.message ?: "Property could not be deleted") }
+                    }
                 }
             ) {
                 Text("Delete property", color = MaterialTheme.colorScheme.error)

@@ -15,7 +15,42 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, create, update, delete: if owns(userId);
 
-      match /{document=**} {
+      // Property creation is routed through the authenticated bridge so the
+      // Free-plan limit is checked atomically. Owners can still edit/remove
+      // their own records.
+      match /properties/{propertyId} {
+        allow read, update, delete: if owns(userId);
+        allow create: if false;
+      }
+
+      // Billing facts and quotas are server-owned. The mobile client can read
+      // the effective plan but cannot grant itself Pro or forge a receipt.
+      match /settings/{settingId} {
+        allow read: if owns(userId);
+        allow create, update, delete: if owns(userId) &&
+          !(settingId in ['subscription', 'quota', 'aiUsage']);
+      }
+
+      match /payments/{paymentId} {
+        allow read: if owns(userId);
+        allow write: if false;
+      }
+
+      match /devices/{deviceId} {
+        allow read, write: if false;
+      }
+
+      match /{collection}/{documentId} {
+        allow read, create, update, delete: if owns(userId) &&
+          collection in [
+            'income', 'expenses', 'valuations', 'documents', 'activity',
+            'notifications', 'conversations', 'workspace'
+          ];
+      }
+
+      // Legacy nested data remains readable during migration, but new unknown
+      // paths are closed by default.
+      match /workspace/{document=**} {
         allow read, create, update, delete: if owns(userId);
       }
     }
