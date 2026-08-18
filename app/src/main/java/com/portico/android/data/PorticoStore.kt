@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.firebase.firestore.ListenerRegistration
 import com.portico.android.domain.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +64,9 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     private var activeOwnerId: String? = null
     private var activeUpdatedAtEpochMillis = 0L
     private var cloudSyncEnabled = false
+    private var lastCloudSnapshot: PorticoSnapshot? = null
+    private var activeCloudRevision = ""
+    private var cloudListener: ListenerRegistration? = null
     private val persistenceMutex = Mutex()
 
     val properties: SnapshotStateList<Property> = mutableStateListOf()
@@ -94,10 +98,14 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     /** Starts signed out with no portfolio attached to the device. */
     suspend fun load() {
+        cloudListener?.remove()
+        cloudListener = null
         activeSnapshotKey = null
         activeOwnerId = null
         activeUpdatedAtEpochMillis = 0L
         cloudSyncEnabled = false
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         apply(emptySnapshot())
         loaded = true
     }
@@ -120,6 +128,10 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         }
         loaded = false
         cloudSyncEnabled = false
+        cloudListener?.remove()
+        cloudListener = null
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         val key = workspaceKey(userId)
         val stored = withContext(Dispatchers.IO) {
             runCatching {
@@ -155,6 +167,10 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     suspend fun loadDemo() {
         loaded = false
         cloudSyncEnabled = false
+        cloudListener?.remove()
+        cloudListener = null
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         val key = workspaceKey("demo")
         val stored = withContext(Dispatchers.IO) {
             runCatching {
@@ -170,10 +186,14 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     }
 
     fun closeWorkspace() {
+        cloudListener?.remove()
+        cloudListener = null
         activeSnapshotKey = null
         activeOwnerId = null
         activeUpdatedAtEpochMillis = 0L
         cloudSyncEnabled = false
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         apply(emptySnapshot())
         loaded = true
     }
@@ -242,25 +262,23 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         exchangeRates = exchangeRates,
         subscription = subscription,
         updatedAtEpochMillis = activeUpdatedAtEpochMillis,
-        seeded = true
+        seeded = activeOwnerId == "demo"
     )
 
     /**
-     * Reconciles the encrypted-on-device workspace with the signed-in user's
-     * Firestore document. The newest snapshot wins; an empty cloud workspace
-     * receives the current local record. Demo data is never uploaded.
+     * Reconciles the encrypted-on-device workspace with normalized Firestore
+     * collections. Existing schema-v1 snapshot blobs migrate on first sign-in;
+     * demo data is never uploaded.
      */
-    suspend fun syncCloud(): Boolean {
+    suspend fun syncCloud(force: Boolean = false): Boolean {
         val ownerId = activeOwnerId?.takeUnless { it == "demo" } ?: return false
         return runCatching {
-            val cloudPayload = FirebaseBackend.loadWorkspace(ownerId)
-            val cloudSnapshot = cloudPayload?.let {
-                json.decodeFromString<PorticoSnapshot>(it)
-            }
+            val cloudWorkspace = FirebaseBackend.loadWorkspace(ownerId)
+            val cloudSnapshot = cloudWorkspace?.snapshot
 
             if (
                 cloudSnapshot != null &&
-                cloudSnapshot.updatedAtEpochMillis > activeUpdatedAtEpochMillis
+                (force || cloudSnapshot.updatedAtEpochMillis > activeUpdatedAtEpochMillis)
             ) {
                 val safeSnapshot = cloudSnapshot.copy(
                     profile = cloudSnapshot.profile.copy(userId = ownerId),
@@ -276,12 +294,60 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
                 }
             }
 
+            activeCloudRevision = cloudWorkspace?.revision.orEmpty()
+            lastCloudSnapshot = cloudSnapshot
+                ?.takeIf { cloudWorkspace.source == CloudWorkspaceSource.NORMALIZED }
             cloudSyncEnabled = true
-            if (cloudSnapshot == null || activeUpdatedAtEpochMillis > cloudSnapshot.updatedAtEpochMillis) {
+            if (
+                cloudSnapshot == null ||
+                cloudWorkspace.source == CloudWorkspaceSource.LEGACY ||
+                activeUpdatedAtEpochMillis > cloudSnapshot.updatedAtEpochMillis
+            ) {
                 persist()
             }
+            observeCloud(ownerId)
             true
         }.getOrDefault(false)
+    }
+
+    private fun observeCloud(ownerId: String) {
+        cloudListener?.remove()
+        cloudListener = FirebaseBackend.observeWorkspace(
+            userId = ownerId,
+            onRevision = revision@ { revision, _ ->
+                if (revision == activeCloudRevision) return@revision
+                scope.launch { refreshFromCloud(ownerId, revision) }
+            }
+        )
+    }
+
+    private suspend fun refreshFromCloud(ownerId: String, revision: String) {
+        persistenceMutex.withLock {
+            if (
+                activeOwnerId != ownerId ||
+                !cloudSyncEnabled ||
+                revision == activeCloudRevision
+            ) return@withLock
+
+            val cloud = runCatching { FirebaseBackend.loadWorkspace(ownerId) }.getOrNull()
+                ?: return@withLock
+            if (cloud.source != CloudWorkspaceSource.NORMALIZED) return@withLock
+
+            val safeSnapshot = cloud.snapshot.copy(
+                profile = cloud.snapshot.profile.copy(userId = ownerId),
+                seeded = false
+            )
+            apply(safeSnapshot)
+            activeUpdatedAtEpochMillis = safeSnapshot.updatedAtEpochMillis
+            lastCloudSnapshot = safeSnapshot
+            activeCloudRevision = cloud.revision
+
+            val key = activeSnapshotKey ?: return@withLock
+            val payload = json.encodeToString(safeSnapshot)
+            withContext(Dispatchers.IO) {
+                runCatching { appContext.dataStore.edit { it[key] = payload } }
+            }
+        }
     }
 
     private fun persist() {
@@ -289,12 +355,22 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         val ownerId = activeOwnerId
         val shouldSyncCloud = cloudSyncEnabled && ownerId != null && ownerId != "demo"
         activeUpdatedAtEpochMillis = System.currentTimeMillis()
-        val payload = runCatching { json.encodeToString(snapshot()) }.getOrNull() ?: return
+        val currentSnapshot = snapshot()
+        val payload = runCatching { json.encodeToString(currentSnapshot) }.getOrNull() ?: return
         scope.launch(Dispatchers.IO) {
             persistenceMutex.withLock {
                 runCatching { appContext.dataStore.edit { it[key] = payload } }
                 if (shouldSyncCloud) {
-                    runCatching { FirebaseBackend.saveWorkspace(ownerId, payload) }
+                    runCatching {
+                        FirebaseBackend.saveWorkspace(
+                            userId = ownerId,
+                            previous = lastCloudSnapshot,
+                            current = currentSnapshot
+                        )
+                    }.onSuccess { revision ->
+                        lastCloudSnapshot = currentSnapshot
+                        activeCloudRevision = revision
+                    }
                 }
             }
         }
@@ -302,12 +378,19 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     // ----------------------------------------------------------- properties
 
-    fun addProperty(property: Property, incomeEntries: List<IncomeEntry>, expenseEntries: List<ExpenseEntry>) {
-        properties.add(property)
-        income.addAll(incomeEntries)
-        expenses.addAll(expenseEntries)
-        logActivity(ActivityKind.PROPERTY_ADDED, "Property added", property.name, null, property.id)
-        persist()
+    suspend fun addProperty(property: Property, incomeEntries: List<IncomeEntry>, expenseEntries: List<ExpenseEntry>) {
+        if (usesSecureBackend) {
+            PorticoBackend.createProperties(
+                listOf(PropertyCreateBundle(property, incomeEntries, expenseEntries))
+            )
+            check(syncCloud(force = true)) { "Property was saved but the workspace could not refresh" }
+        } else {
+            properties.add(property)
+            income.addAll(incomeEntries)
+            expenses.addAll(expenseEntries)
+            logActivity(ActivityKind.PROPERTY_ADDED, "Property added", property.name, null, property.id)
+            persist()
+        }
     }
 
     fun updateProperty(property: Property) {
@@ -319,35 +402,53 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         }
     }
 
-    fun deleteProperty(propertyId: String) {
-        properties.removeAll { it.id == propertyId }
-        income.removeAll { it.propertyId == propertyId }
-        expenses.removeAll { it.propertyId == propertyId }
-        documents.removeAll { it.propertyId == propertyId }
-        valuations.removeAll { it.propertyId == propertyId }
-        activity.removeAll { it.propertyId == propertyId }
-        conversations.removeAll { it.propertyId == propertyId }
-        persist()
+    suspend fun deleteProperty(propertyId: String) {
+        if (usesSecureBackend) {
+            PorticoBackend.deleteProperty(propertyId)
+            check(syncCloud(force = true)) { "Property was deleted but the workspace could not refresh" }
+        } else {
+            deleteStoredFiles(documents.filter { it.propertyId == propertyId }.map { it.storagePath })
+            properties.removeAll { it.id == propertyId }
+            income.removeAll { it.propertyId == propertyId }
+            expenses.removeAll { it.propertyId == propertyId }
+            documents.removeAll { it.propertyId == propertyId }
+            valuations.removeAll { it.propertyId == propertyId }
+            activity.removeAll { it.propertyId == propertyId }
+            conversations.removeAll { it.propertyId == propertyId }
+            persist()
+        }
     }
 
     /** Bulk insert from an import. One activity entry, not one per row. */
-    fun importProperties(
+    suspend fun importProperties(
         newProperties: List<Property>,
         newIncome: List<IncomeEntry>,
         newExpenses: List<ExpenseEntry>
     ) {
         if (newProperties.isEmpty()) return
-        properties.addAll(newProperties)
-        income.addAll(newIncome)
-        expenses.addAll(newExpenses)
-        logActivity(
-            ActivityKind.PROPERTY_ADDED,
-            "Bulk import",
-            "${newProperties.size} properties added from CSV",
-            null,
-            null
-        )
-        persist()
+        if (usesSecureBackend) {
+            val records = newProperties.map { property ->
+                PropertyCreateBundle(
+                    property,
+                    newIncome.filter { it.propertyId == property.id },
+                    newExpenses.filter { it.propertyId == property.id }
+                )
+            }
+            PorticoBackend.createProperties(records)
+            check(syncCloud(force = true)) { "Import completed but the workspace could not refresh" }
+        } else {
+            properties.addAll(newProperties)
+            income.addAll(newIncome)
+            expenses.addAll(newExpenses)
+            logActivity(
+                ActivityKind.PROPERTY_ADDED,
+                "Bulk import",
+                "${newProperties.size} properties added from CSV",
+                null,
+                null
+            )
+            persist()
+        }
     }
 
     fun propertyById(id: String?): Property? = properties.firstOrNull { it.id == id }
@@ -407,7 +508,12 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         }
     }
 
-    fun removeDocument(id: String) { documents.removeAll { it.id == id }; persist() }
+    suspend fun removeDocument(id: String) {
+        val document = documents.firstOrNull { it.id == id } ?: return
+        PorticoFiles.delete(document.storagePath)
+        documents.removeAll { it.id == id }
+        persist()
+    }
 
     fun documentsFor(propertyId: String) = documents.filter { it.propertyId == propertyId }
 
@@ -422,7 +528,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
      * Activates a paid plan against a settled payment. Both move together,
      * a subscription is never activated without the payment that paid for it.
      */
-    fun activatePlan(plan: SubscriptionPlan, payment: Payment) {
+    private fun activatePlanLocally(plan: SubscriptionPlan, payment: Payment) {
         payments.add(0, payment)
         if (!payment.succeeded) {
             logActivity(
@@ -452,31 +558,72 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     }
 
     /** Cancel keeps access to the end of the period, as a real one would. */
-    fun cancelSubscription() {
-        if (!subscription.isPaid) return
-        subscription = subscription.copy(status = "Cancels at period end", cancelAtPeriodEnd = true)
-        logActivity(ActivityKind.PLAN_CHANGED, "Subscription cancelled", "Access continues until ${subscription.renewsOn ?: "the period ends"}", null, null)
-        persist()
+    suspend fun checkout(plan: SubscriptionPlan, card: CardInput): PaymentResult {
+        if (!usesSecureBackend) {
+            val result = SandboxProcessor.authorise(card, plan, newId("pay"))
+            activatePlanLocally(
+                plan,
+                (result as? PaymentResult.Succeeded)?.payment
+                    ?: (result as PaymentResult.Declined).payment
+            )
+            return result
+        }
+
+        val billing = PorticoBackend.checkout(plan, card)
+        syncCloud(force = true)
+        val payment = billing.payment ?: error("Billing service returned no payment")
+        return if (payment.succeeded) {
+            PaymentResult.Succeeded(payment)
+        } else {
+            PaymentResult.Declined(
+                payment,
+                payment.failureReason ?: "Payment could not be processed",
+                "Nothing was charged. Use another sandbox card and try again."
+            )
+        }
     }
 
-    fun resumeSubscription() {
+    suspend fun cancelSubscription() {
+        if (!subscription.isPaid) return
+        if (usesSecureBackend) {
+            PorticoBackend.changeSubscription("cancel")
+            syncCloud(force = true)
+        } else {
+            subscription = subscription.copy(status = "Cancels at period end", cancelAtPeriodEnd = true)
+            logActivity(ActivityKind.PLAN_CHANGED, "Subscription cancelled", "Access continues until ${subscription.renewsOn ?: "the period ends"}", null, null)
+            persist()
+        }
+    }
+
+    suspend fun resumeSubscription() {
         if (!subscription.cancelAtPeriodEnd) return
-        subscription = subscription.copy(status = "Active", cancelAtPeriodEnd = false)
-        logActivity(ActivityKind.PLAN_CHANGED, "Subscription resumed", "Renews ${subscription.renewsOn ?: "next period"}", null, null)
-        persist()
+        if (usesSecureBackend) {
+            PorticoBackend.changeSubscription("resume")
+            syncCloud(force = true)
+        } else {
+            subscription = subscription.copy(status = "Active", cancelAtPeriodEnd = false)
+            logActivity(ActivityKind.PLAN_CHANGED, "Subscription resumed", "Renews ${subscription.renewsOn ?: "next period"}", null, null)
+            persist()
+        }
     }
 
     /** Immediate downgrade, used by the Free option. */
-    fun setPlan(tier: PlanTier) {
-        subscription = Subscription(
-            planTier = tier.name,
-            planId = if (tier == PlanTier.PRO) SubscriptionPlan.PRO_MONTHLY.id else SubscriptionPlan.FREE.id,
-            status = "Active",
-            startDate = SimpleDate.today().format(),
-            renewsOn = if (tier == PlanTier.PRO) nextRenewal("month") else null
-        )
-        logActivity(ActivityKind.PLAN_CHANGED, "Plan changed", "Now on ${tier.label}", null, null)
-        persist()
+    suspend fun setPlan(tier: PlanTier) {
+        require(tier == PlanTier.FREE) { "Paid plans must go through checkout" }
+        if (usesSecureBackend) {
+            PorticoBackend.changeSubscription("downgrade")
+            syncCloud(force = true)
+        } else {
+            subscription = Subscription(
+                planTier = tier.name,
+                planId = SubscriptionPlan.FREE.id,
+                status = "Active",
+                startDate = SimpleDate.today().format(),
+                renewsOn = null
+            )
+            logActivity(ActivityKind.PLAN_CHANGED, "Plan changed", "Now on ${tier.label}", null, null)
+            persist()
+        }
     }
 
     private fun nextRenewal(interval: String): String {
@@ -493,6 +640,9 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     /** Free tier caps the register; Pro removes the cap. */
     val canAddProperty: Boolean
         get() = properties.size < subscription.tier.propertyLimit
+
+    private val usesSecureBackend: Boolean
+        get() = activeOwnerId != null && activeOwnerId != "demo"
 
     // ----------------------------------------------------------- assistant
 
@@ -556,6 +706,10 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
      * the member and must survive a demo-data reset.
      */
     fun resetToSeed() {
+        check(!usesSecureBackend) {
+            "The sample portfolio stays in the demo cockpit so it cannot be mixed with your private records."
+        }
+        deleteStoredFiles(documents.map { it.storagePath })
         val seed = seedSnapshot().copy(
             profile = profile,
             preferences = preferences,
@@ -568,9 +722,23 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         persist()
     }
 
-    fun clearEverything() {
-        apply(PorticoSnapshot(profile = profile.copy(name = profile.name), seeded = true))
-        persist()
+    suspend fun clearEverything() {
+        if (usesSecureBackend) {
+            PorticoBackend.eraseWorkspace()
+            check(syncCloud(force = true)) { "Records were erased but the workspace could not refresh" }
+        } else {
+            deleteStoredFiles(documents.map { it.storagePath })
+            apply(PorticoSnapshot(profile = profile.copy(name = profile.name), seeded = true))
+            persist()
+        }
+    }
+
+    private fun deleteStoredFiles(paths: List<String>) {
+        paths.filter { it.isNotBlank() && !it.startsWith("content://") }
+            .distinct()
+            .forEach { pathname ->
+                scope.launch(Dispatchers.IO) { runCatching { PorticoFiles.delete(pathname) } }
+            }
     }
 
     companion object {

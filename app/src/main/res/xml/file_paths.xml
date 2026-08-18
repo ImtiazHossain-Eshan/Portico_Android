@@ -3,4 +3,7 @@
     <!-- Exports are written to the cache and shared by content URI, so no
          storage permission is needed and nothing is left in shared storage. -->
     <cache-path name="exports" path="exports/" />
+    <!-- Authenticated downloads are staged here only long enough to hand the
+         private file to the user's chosen viewer. -->
+    <cache-path name="documents" path="documents/" />
 </paths>

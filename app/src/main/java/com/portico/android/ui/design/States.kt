@@ -267,7 +267,7 @@ fun OfflineBanner(modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) 
     ) {
         PorticoIcon(Glyph.OFFLINE, size = 15.dp, tint = semantic.tertiaryText, contentDescription = null)
         Text(
-            "Offline. Your records are on this device; sign-in and market data need a connection.",
+            "Offline. Cached records remain available; cloud sync, sign-in and market data need a connection.",
             style = MaterialTheme.typography.bodySmall,
             color = semantic.tertiaryText,
             modifier = Modifier.weight(1f)

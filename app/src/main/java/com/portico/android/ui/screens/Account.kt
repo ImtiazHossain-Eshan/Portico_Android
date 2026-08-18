@@ -149,7 +149,7 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
         AlertDialog(
             onDismissRequest = { state.showLogoutDialog = false },
             title = { Text("Sign out of Portico?") },
-            text = { Text("Your records stay on this device. You'll need to sign in again to reach them.") },
+            text = { Text("Your device cache remains private. Sign in again to resume secure cloud sync.") },
             confirmButton = {
                 TextButton(onClick = {
                     state.showLogoutDialog = false
@@ -315,7 +315,7 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         SyntheticNote(
-            "Preferences are stored on this device. Push delivery needs a messaging service, which is not connected."
+            "Preferences sync with your private workspace. Push delivery still needs a messaging service, which is not connected."
         )
     }
 }
@@ -455,9 +455,9 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("How Portico protects your records")
-            DataRow("Financial records", "On this device", supporting = "Never sent to a Portico server")
+            DataRow("Financial records", "Private cloud sync", supporting = "Owner-scoped Firestore with an offline device cache")
             Hairline()
-            DataRow("Documents", "On this device", supporting = "Stored as references to your own files")
+            DataRow("Documents", "Private cloud files", supporting = "Fetched only through your authenticated session")
             Hairline()
             DataRow("Password", "Never stored by Portico", supporting = "Handled by the identity provider")
             Hairline()
@@ -465,8 +465,7 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         SyntheticNote(
-            "Encryption at rest, per-user access rules and audit logging belong to the backend, " +
-                "which is an integration seam in this build rather than a shipped service."
+            "Firestore and private file storage enforce per-user access. Passwords and server credentials never ship in the APK."
         )
     }
 }
@@ -478,6 +477,7 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val store = state.store
     val context = LocalContext.current
     val semantic = PorticoTheme.semantic
+    val scope = rememberCoroutineScope()
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -510,15 +510,23 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 }
             }
             Hairline()
-            NavRow("Restore sample portfolio", glyph = Glyph.REFRESH, supporting = "Replaces current records with the demo set") {
-                store.resetToSeed()
-                state.notify("Sample portfolio restored")
+            NavRow(
+                "Sample portfolio",
+                glyph = Glyph.REFRESH,
+                supporting = if (state.demoMode) "Restore the demonstration records" else "Available separately from the demo cockpit"
+            ) {
+                if (state.demoMode) {
+                    store.resetToSeed()
+                    state.notify("Sample portfolio restored")
+                } else {
+                    state.notify("Sign out and choose Enter the demo cockpit to explore sample records")
+                }
             }
             Hairline()
             NavRow(
                 "Erase all records",
                 glyph = Glyph.DELETE,
-                supporting = "Removes every property, record and document from this device",
+                supporting = "Removes every synced property, record and private document",
                 tint = MaterialTheme.colorScheme.error
             ) { state.showDeleteAccountDialog = true }
         }
@@ -527,9 +535,9 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             PanelHeader("Principles")
             Column(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
                 listOf(
-                    "Your financial records never leave this device in this build.",
+                    "Financial records are isolated to your authenticated Firestore workspace.",
                     "Assistant analysis runs locally; no question is sent anywhere.",
-                    "Documents are stored as references to files you already have.",
+                    "Document bytes use private Blob storage; metadata stays in Firestore.",
                     "Deleting a property deletes everything attached to it."
                 ).forEach { line ->
                     Row(Modifier.padding(vertical = 6.dp)) {
@@ -552,15 +560,20 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             title = { Text("Erase every record?") },
             text = {
                 Text(
-                    "This removes all properties, income, expenses, documents and conversations from this device. It cannot be undone."
+                    "This removes all properties, income, expenses, private documents and conversations from this workspace. It cannot be undone."
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
-                    store.clearEverything()
-                    state.showDeleteAccountDialog = false
-                    state.selectDestination(Route.DASHBOARD)
-                    state.notify("All records erased")
+                    scope.launch {
+                        runCatching { store.clearEverything() }
+                            .onSuccess {
+                                state.showDeleteAccountDialog = false
+                                state.selectDestination(Route.DASHBOARD)
+                                state.notify("All records erased")
+                            }
+                            .onFailure { state.notify(it.message ?: "Records could not be erased") }
+                    }
                 }) { Text("Erase everything", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {

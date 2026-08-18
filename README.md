@@ -1,27 +1,48 @@
-<div align="center">
+<p align="center">
+  <img src="docs/brand/portico-readme-banner.png" width="100%" alt="Portico architectural mark merging into a property-value curve" />
+</p>
 
-# Portico
+<h1 align="center">Portico</h1>
 
-**A real-estate investment portfolio platform for Android.**
+<p align="center">
+  <strong>Real-estate portfolio intelligence for Android.</strong><br />
+  Turn property records into a defensible view of value, yield, cashflow, tax and return.
+</p>
 
-*Property capital, measured.*
+<p align="center">
+  <img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-E8A33D?style=flat-square&logo=android&logoColor=white&labelColor=141416" />
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-E8A33D?style=flat-square&logo=kotlin&logoColor=white&labelColor=141416" />
+  <img alt="Firebase" src="https://img.shields.io/badge/Data-Firebase-E8A33D?style=flat-square&logo=firebase&logoColor=white&labelColor=141416" />
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-42%20passing-E8A33D?style=flat-square&labelColor=141416" />
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-E8A33D?style=flat-square&labelColor=141416" /></a>
+</p>
 
-Kotlin · Jetpack Compose · Material 3 · minSdk 26 · 42 unit tests
+<p align="center">
+  <a href="#product-story">Product</a> ·
+  <a href="#product-tour">Screens</a> ·
+  <a href="#capabilities">Capabilities</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#getting-started">Get started</a> ·
+  <a href="#tests">Tests</a>
+</p>
 
-Imtiaz Hossain · 23101137 · CSE489
-
-</div>
+<p align="center"><sub>Designed and built by Imtiaz Hossain · CSE489</sub></p>
 
 ---
 
-## The idea
+## Product story
 
-A property portfolio is not one number.
+A property portfolio is not one number. It is gross rent falling through
+operating costs and tax to whatever actually survives.
 
-It is gross rent falling through operating costs and tax to whatever actually
-survives, and most property apps show you the rent. Portico is built around
-making that subtraction visible, on every property and across the whole
-register.
+Portico makes that subtraction visible on every property and across the whole
+register. The app pairs owner-scoped records with a financial engine that
+recomputes return, yield, cap rate and cashflow from source transactions rather
+than storing impressive-looking percentages.
+
+| Financial truth | Private workspace | Local intelligence | Adaptive interface |
+| --- | --- | --- | --- |
+| Gross-to-net calculations reconcile to the underlying records. | Clerk sessions and owner-scoped Firestore collections isolate each account. | Portfolio questions are answered on-device; no conversation or financial context reaches a cloud model. | Phone navigation becomes a rail and wider working surface on tablets. |
 
 <div align="center">
 <img src="docs/screenshots/02-dashboard.png" width="300" alt="Dashboard showing portfolio value and performance chart" />
@@ -39,7 +60,7 @@ you add is analysed by exactly the same rules as the seeded ones.
 
 ---
 
-## Screens
+## Product tour
 
 ### Register and property
 
@@ -84,45 +105,20 @@ on any device.
 
 ---
 
-## What's in it
+## Capabilities
 
-**Portfolio.** Register with search, filter and sort; property detail across
-overview, income, expenses, documents and tax; a six-step capture flow with
-live analysis at step five; edit and delete.
-
-**Analysis.** ROI, capital ROI, cash-on-cash, cap rate, gross and net yield,
-monthly and annual cashflow. Reports for performance, cashflow, allocation,
-property comparison and gross-vs-net.
-
-**Tax.** A jurisdiction engine covering **Bangladesh** (Dhaka North, Dhaka
-South, Chattogram), **Uruguay** (Montevideo, Canelones, Maldonado) and
-**Argentina** (CABA, Buenos Aires, Córdoba). Nine jurisdictions, every rate an
-editable assumption with its reasoning attached.
-
-**Multi-currency.** Each property records the currency its figures were
-entered in, and everything converts before it is summed.
-
-**Documents.** Private library with a real system file picker, category
-filing, a viewer, and states for uploading, failed, unavailable and restricted.
-
-**Assistant.** On-device analysis with the working shown. Handles extremes,
-comparisons, tax share, allocation, and what-if scenarios on rent or costs.
-
-**Valuation and acquisition.** Comparable-based estimates against purchase
-price and recorded value; a search-to-decision flow that runs the same engine on
-a property you don't own yet.
-
-**Subscription.** Sandbox checkout, receipts, billing history, cancel and
-resume.
-
-**Account.** Preferences, currency, exchange rates, jurisdiction, appearance,
-reduce-motion, notifications, security with live session management, privacy,
-workspace with roles and permissions, and a six-section admin platform.
-
-**Import and export.** The register round-trips as CSV. Export writes a
-portfolio summary and a full income/expense ledger to the share sheet; import
-reads the same shape back, skipping duplicates and reporting rejected rows by
-line number.
+| Area | What works end to end |
+| --- | --- |
+| **Portfolio** | Search, filter and sort; property detail; six-step property capture; edit and delete; server-enforced Free-plan limit. |
+| **Financial analysis** | ROI, capital ROI, cash-on-cash, cap rate, gross/net yield, monthly/annual cashflow, value history and gross-to-net waterfall. |
+| **Reports** | Performance, cashflow, allocation, property comparison and gross-versus-net analysis with cross-currency normalization. |
+| **Tax** | Editable assumptions for nine jurisdictions across Bangladesh, Uruguay and Argentina, with the arithmetic attached to every rate. |
+| **Documents** | Private library, Android system picker, upload/download/delete, categories, viewer and recovery states. |
+| **Portico Intelligence** | On-device portfolio and property analysis, comparisons and what-if scenarios with the working shown. |
+| **Valuation and acquisition** | Comparable-based estimates and a search-to-decision flow using the same finance engine as owned properties. |
+| **Plans and payments** | Free/Pro rules, server-owned sandbox checkout, receipts, billing history, cancellation and resume—without charging a card. |
+| **Account and workspace** | Clerk email/OAuth authentication, session management, preferences, appearance, notifications, privacy, roles and admin surfaces. |
+| **Portability** | CSV export/import with duplicate detection and line-level rejection reporting. |
 
 ---
 
@@ -149,9 +145,10 @@ plausible-looking one you cannot check.
 
 ## Sandbox payments
 
-Checkout is a working flow, not a mock screen: Luhn validation, expiry and CVC
-checks, a processing state, distinct decline paths, a receipt, persisted billing
-history, and cancel-at-period-end with resume.
+Checkout is a working server-verified sandbox flow: Luhn validation, expiry and
+CVC checks, a processing state, distinct decline paths, a receipt, persisted
+billing history, and cancel-at-period-end with resume. The authenticated bridge,
+not the Android client, writes subscription and payment state.
 
 **No money moves and no payment provider is contacted.** Outcomes are driven by
 the published, non-functional test card numbers, tappable in the app:
@@ -164,11 +161,12 @@ the published, non-functional test card numbers, tappable in the app:
 | `4000 0000 0000 0069` | Expired card |
 | `4000 0000 0000 0119` | Processing error |
 
-Any future expiry and any 3-digit code work. Only the card brand and last four
-digits are ever persisted, never the full number, and there is a test asserting
-it. Pro is priced at $12.00/month as **sandbox pricing**, labelled as such in
-the UI. Swapping in a real processor means replacing `SandboxProcessor.authorise`
-and nothing else.
+Any future expiry and any 3-digit code work. A typed number is matched locally
+to one of these published test outcomes; only a non-sensitive outcome token is
+sent to the bridge. A full number is never transmitted or persisted. Pro is
+priced at $12.00/month as **sandbox pricing**, labelled as such in the UI.
+Production billing replaces that outcome token with a verified Play Billing or
+processor purchase token.
 
 ---
 
@@ -191,17 +189,38 @@ reliable way to demonstrate sign-up without a real inbox.
 
 ---
 
-## Running it
+## Getting started
 
-Open the folder in Android Studio and run the `app` configuration.
+### Requirements
 
-From a shell, with Android Studio's bundled JDK:
+- Android Studio with Android SDK 36
+- JDK 17 or Android Studio's bundled runtime
+- Android 8.0/API 26 or newer device or emulator
 
-```bash
-JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" ANDROID_HOME="$HOME/AppData/Local/Android/Sdk" gradle :app:assembleDebug
+### Build
+
+```powershell
+git clone https://github.com/ImtiazHossain-Eshan/Portico_Android.git
+cd Portico_Android
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+.\gradlew.bat :app:assembleDebug
 ```
 
-The APK lands at `app/build/outputs/apk/debug/app-debug.apk`.
+The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. You can also
+open the repository in Android Studio and run the `app` configuration.
+
+The complete demo cockpit works without an account. Authenticated cloud flows
+use the Clerk publishable key and Firebase bridge URL resolved from Gradle
+properties or environment variables:
+
+```properties
+CLERK_PUBLISHABLE_KEY=pk_test_or_pk_live_...
+FIREBASE_TOKEN_BRIDGE_URL=https://your-bridge.vercel.app/api/firebase-token
+PORTICO_FILE_API_URL=https://your-bridge.vercel.app/api/files
+```
+
+`app/google-services.json` enables Firebase Android services when present. Keep
+service-account credentials and private backend keys out of the APK and Git.
 
 ---
 
@@ -227,7 +246,10 @@ JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" gradle :app:testDebugUni
 ```
 domain/     Models, Finance, Tax, Exchange, Payments, Analyst, Seed
             pure Kotlin, no Android dependencies, fully unit-tested
-data/       PorticoStore: single owner of state, persists to DataStore
+data/       PorticoStore: single owner of state, offline cache + cloud sync
+            FirestoreWorkspaceRepository: normalized owner-scoped records
+            PorticoBackend: authenticated quota, billing and push APIs
+            PorticoFiles: authenticated private document transfer
             PorticoExport / PorticoImport: CSV round-trip
 ui/theme/   Colour roles, semantic extensions, tabular-figure type scale
 ui/design/  Panels, rows, charts, icons, logo, the seven state patterns
@@ -244,17 +266,39 @@ domains.
 
 **Real.** Every return, yield, cap rate, cashflow and tax figure is computed by
 `domain/Finance.kt` and `domain/Tax.kt` from records in your workspace.
-Everything persists across restart via DataStore. Clerk authentication, document
-picking, CSV import and export, and session revocation all hit real systems.
+Everything persists across restart through an account-scoped DataStore cache and
+normalized Firestore collections. Clerk authentication, realtime cloud sync,
+private document upload/download/delete, server-enforced property quotas,
+server-owned sandbox subscriptions, FCM Installation-ID registration and delivery, CSV
+import/export, and session revocation all hit real systems. Existing schema-v1
+workspace snapshots migrate to the normalized schema on authenticated sync.
 
 **Illustrative, and labelled as such in the app.** The three seeded properties,
 comparable properties, market signals, acquisition listings, organisation
 members, audit entries and admin platform metrics. Every tax rate and every
 exchange rate is an assumption you can edit.
 
-**Not connected.** Any backend. Firebase, cloud document storage, real payment
-processing, push delivery and external property data are integration seams, not
-shipped services. Records never leave the device.
+**Not connected.** Real payment processing, cloud AI and external
+property data remain integration seams. Checkout is intentionally labelled
+sandbox and never charges a card. Portico Intelligence is intentionally
+on-device: no backend AI endpoint exists, and portfolio context, questions and
+conversation history are not sent to an external model.
+
+### Cloud data layout
+
+Every member record is isolated below `users/{clerkUserId}`. Domain entities use
+independent collections (`properties`, `income`, `expenses`, `valuations`,
+`documents`, `activity`, `notifications`, `conversations`, and `payments`) and
+profile/preferences/tax/exchange/subscription records live in `settings`.
+Firestore's root user document carries schema version, revision and counts only.
+Subscription, receipts, quota counters and FCM installation records are
+server-owned; Firestore rules deny Android writes to those paths and deny direct
+property creation so the bridge can enforce the Free limit atomically.
+
+Document metadata is stored in Firestore; file bytes are stored in a private
+Vercel Blob store. Android never receives Firebase service credentials or a Blob
+token. Both APIs verify the current Clerk JWT and derive the owner path on the
+server.
 
 ---
 
@@ -279,3 +323,10 @@ extraction to `strings.xml` plus a `values-bn` or `values-es` set is mechanical.
 - Implemented visual system: [DESIGN.md](DESIGN.md)
 - Direction contract: the header comment in `ui/PorticoApp.kt`
 - Milestone 1 wireframes and schema: `diagrams/`
+
+---
+
+## Project and license
+
+Portico was created by **Imtiaz Hossain** (`23101137`) for **CSE489**. The source
+is available under the [MIT License](LICENSE).

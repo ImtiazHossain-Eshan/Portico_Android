@@ -27,8 +27,13 @@ package com.portico.android.ui
  * finish review, the verdict, and DESIGN.md.
  */
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.activity.compose.BackHandler
@@ -51,11 +56,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.core.content.ContextCompat
 import com.clerk.api.Clerk
+import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.installations.FirebaseInstallations
 import com.portico.android.BuildConfig
+import com.portico.android.PorticoMessagingService
 import com.portico.android.data.FirebaseBackend
 import com.portico.android.data.FirebaseConnection
 import com.portico.android.data.PorticoStore
+import com.portico.android.data.PorticoBackend
+import com.portico.android.data.await
 import com.portico.android.ui.screens.AuthScreen
 import com.portico.android.ui.screens.OnboardingScreen
 import com.portico.android.ui.screens.SplashScreen
@@ -72,6 +83,11 @@ fun PorticoApp() {
     val store = remember { PorticoStore(context.applicationContext, scope) }
     val state = remember { PorticoState(store) }
     val snackbarHostState = remember { SnackbarHostState() }
+    val notificationPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (!granted) state.notify("Notifications remain off. You can enable them from Android settings.")
+    }
 
     val clerkConfigured = BuildConfig.CLERK_PUBLISHABLE_KEY.isNotBlank()
     val clerkInitialized by Clerk.isInitialized.collectAsState(initial = false)
@@ -95,6 +111,19 @@ fun PorticoApp() {
                 if (BuildConfig.FIREBASE_CONFIGURED) {
                     if (FirebaseBackend.connect(context.applicationContext) is FirebaseConnection.Connected) {
                         store.syncCloud()
+                        if (
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                        runCatching {
+                            FirebaseMessaging.getInstance().register().await()
+                            val installationId = PorticoMessagingService.pendingToken(context)
+                                ?: FirebaseInstallations.getInstance().id.await()
+                            PorticoBackend.registerDevice(installationId)
+                            PorticoMessagingService.clearPendingToken(context)
+                        }
                     }
                 }
                 if (state.route in Route.public) state.replaceRoute(Route.DASHBOARD)

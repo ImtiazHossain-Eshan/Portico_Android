@@ -140,7 +140,7 @@ private fun AuthBrandPanel(modifier: Modifier = Modifier) {
         listOf(
             "Gross to net, on every property",
             "Tax modelling for Bangladesh, Uruguay and Argentina",
-            "Documents and records stay on your device"
+            "Documents and records sync to your private workspace"
         ).forEach { line ->
             Row(Modifier.padding(vertical = Space.sm), verticalAlignment = Alignment.CenterVertically) {
                 PorticoIcon(Glyph.CHECK, size = 15.dp, tint = MaterialTheme.colorScheme.primary, contentDescription = null)
@@ -456,7 +456,7 @@ private fun AuthForm(
                         phase == AuthPhase.RESET_CODE -> "A recovery code is on its way to ${email.trim()}."
                         phase == AuthPhase.RESET_PASSWORD -> PasswordPolicy.summary
                         isRecovery -> "We'll email you a code to set a new password."
-                        isRegister -> "Your portfolio records stay on this device."
+                        isRegister -> "Your private workspace is created after verification."
                         else -> "Welcome back."
                     },
                     style = MaterialTheme.typography.bodyMedium,
