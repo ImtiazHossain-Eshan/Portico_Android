@@ -188,9 +188,6 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
         SyntheticNote(SANDBOX_NOTICE)
     }
 
-    if (state.showPaywall) {
-        ModalBottomSheetPaywall(state) { state.showPaywall = false }
-    }
 }
 
 @Composable
@@ -262,21 +259,6 @@ private fun PlanPanel(
             }
         }
         Spacer(Modifier.height(Space.sm))
-    }
-}
-
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@Composable
-private fun ModalBottomSheetPaywall(state: PorticoState, onDismiss: () -> Unit) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = PorticoTheme.semantic.panel) {
-        PlanLimitState(
-            limit = state.store.subscription.tier.propertyLimit,
-            onUpgrade = {
-                onDismiss()
-                state.navigate(Route.SUBSCRIPTION)
-            },
-            onDismiss = onDismiss
-        )
     }
 }
 

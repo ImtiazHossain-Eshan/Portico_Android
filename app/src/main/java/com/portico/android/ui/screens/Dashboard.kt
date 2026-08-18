@@ -218,7 +218,7 @@ private fun FirstRunDashboard(state: PorticoState, modifier: Modifier = Modifier
             DataRow(
                 "Restore the sample portfolio",
                 "Reset",
-                supporting = "Three illustrative properties in Uruguay and Argentina",
+                supporting = "Two illustrative properties in Uruguay",
                 onClick = {
                     state.store.resetToSeed()
                     state.notify("Sample portfolio restored")

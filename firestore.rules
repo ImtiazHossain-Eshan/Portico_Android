@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Every member-owned record lives below the Firebase UID. The Clerk bridge
+    // mints Firebase identities with the Clerk user ID as that UID.
+    match /users/{userId} {
+      allow read, create, update, delete: if owns(userId);
+
+      match /{document=**} {
+        allow read, create, update, delete: if owns(userId);
+      }
+    }
+
+    // Public market reference data is readable only inside the signed-in app.
+    match /public/{document=**} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Payment facts are written only by trusted server code. Members can read
+    // their own receipts, but the Android client cannot manufacture one.
+    match /payments/{paymentId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

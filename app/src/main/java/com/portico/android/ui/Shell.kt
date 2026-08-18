@@ -2,6 +2,7 @@
 
 package com.portico.android.ui
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -42,6 +43,7 @@ private val destinations = listOf(
     Destination(Route.PROFILE, "Profile", Glyph.PROFILE)
 )
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun PorticoShell(
     state: PorticoState,
@@ -114,8 +116,52 @@ fun PorticoShell(
                 )
             }
         }
+
+        if (state.showPaywall) {
+            PropertyLimitDialog(state)
+        }
     }
     }
+}
+
+@Composable
+private fun PropertyLimitDialog(state: PorticoState) {
+    val limit = state.store.subscription.tier.propertyLimit
+
+    AlertDialog(
+        onDismissRequest = { state.showPaywall = false },
+        icon = {
+            PorticoIcon(
+                Glyph.SUBSCRIPTION,
+                size = 28.dp,
+                tint = MaterialTheme.colorScheme.primary,
+                contentDescription = null
+            )
+        },
+        title = { Text("Upgrade to add another property") },
+        text = {
+            Text(
+                "Your Free plan includes $limit properties, and both are in use. " +
+                    "Upgrade to Pro to remove the property limit and keep growing your portfolio."
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    state.showPaywall = false
+                    state.navigate(Route.SUBSCRIPTION)
+                }
+            ) {
+                Text("View Pro plan")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { state.showPaywall = false }) {
+                Text("Not now")
+            }
+        },
+        containerColor = PorticoTheme.semantic.panel
+    )
 }
 
 @Composable

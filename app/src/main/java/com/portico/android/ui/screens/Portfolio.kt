@@ -123,6 +123,13 @@ fun PortfolioScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         detailed = true,
                         shareOfPortfolio = if (portfolio.portfolioValue > 0)
                             result.property.currentValue / portfolio.portfolioValue else 0.0,
+                        onEdit = {
+                            state.loadDraftFrom(result.property)
+                            state.navigate(Route.ADD_PROPERTY)
+                        },
+                        onDelete = {
+                            state.pendingDeletePropertyId = result.property.id
+                        },
                         onClick = { state.openProperty(result.property.id) }
                     )
                 }
@@ -142,6 +149,7 @@ fun PortfolioScreen(state: PorticoState, modifier: Modifier = Modifier) {
     if (state.showFilterSheet) {
         FilterSheet(state) { state.showFilterSheet = false }
     }
+    PropertyDeleteDialog(state)
 }
 
 @Composable

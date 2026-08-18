@@ -53,6 +53,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.clerk.api.Clerk
 import com.portico.android.BuildConfig
+import com.portico.android.data.FirebaseBackend
+import com.portico.android.data.FirebaseConnection
 import com.portico.android.data.PorticoStore
 import com.portico.android.ui.screens.AuthScreen
 import com.portico.android.ui.screens.OnboardingScreen
@@ -88,16 +90,19 @@ fun PorticoApp() {
                 state.signedIn = true
                 state.demoMode = false
                 val name = listOfNotNull(user.firstName, user.lastName).joinToString(" ").trim()
-                store.setProfile {
-                    it.copy(
-                        name = name.ifBlank { it.name },
-                        email = user.primaryEmailAddress?.emailAddress ?: it.email
-                    )
+                val email = user.primaryEmailAddress?.emailAddress.orEmpty()
+                store.loadAccount(user.id, name, email)
+                if (BuildConfig.FIREBASE_CONFIGURED) {
+                    if (FirebaseBackend.connect(context.applicationContext) is FirebaseConnection.Connected) {
+                        store.syncCloud()
+                    }
                 }
                 if (state.route in Route.public) state.replaceRoute(Route.DASHBOARD)
             } else if (state.signedIn) {
                 // The session ended outside the app.
                 state.signedIn = false
+                FirebaseBackend.disconnect()
+                store.closeWorkspace()
                 if (!state.demoMode) state.sessionExpired = true
             }
         }
@@ -157,8 +162,11 @@ fun PorticoApp() {
                             state.replaceRoute(Route.LOGIN)
                         },
                         onUseDemo = {
-                            state.demoMode = true
-                            state.replaceRoute(Route.DASHBOARD)
+                            scope.launch {
+                                store.loadDemo()
+                                state.demoMode = true
+                                state.replaceRoute(Route.DASHBOARD)
+                            }
                         }
                     )
 
@@ -166,15 +174,30 @@ fun PorticoApp() {
                         state = state,
                         route = state.route,
                         onAuthenticated = {
-                            state.signedIn = true
-                            state.demoMode = false
-                            state.sessionExpired = false
-                            state.replaceRoute(Route.DASHBOARD)
+                            scope.launch {
+                                Clerk.user?.let { user ->
+                                    val name = listOfNotNull(user.firstName, user.lastName)
+                                        .joinToString(" ")
+                                        .trim()
+                                    store.loadAccount(
+                                        user.id,
+                                        name,
+                                        user.primaryEmailAddress?.emailAddress.orEmpty()
+                                    )
+                                }
+                                state.signedIn = true
+                                state.demoMode = false
+                                state.sessionExpired = false
+                                state.replaceRoute(Route.DASHBOARD)
+                            }
                         },
                         onUseDemo = {
-                            state.demoMode = true
-                            state.sessionExpired = false
-                            state.replaceRoute(Route.DASHBOARD)
+                            scope.launch {
+                                store.loadDemo()
+                                state.demoMode = true
+                                state.sessionExpired = false
+                                state.replaceRoute(Route.DASHBOARD)
+                            }
                         }
                     )
 
@@ -187,6 +210,8 @@ fun PorticoApp() {
                                 }
                                 state.signedIn = false
                                 state.demoMode = false
+                                FirebaseBackend.disconnect()
+                                store.closeWorkspace()
                                 state.replaceRoute(Route.ONBOARDING)
                                 state.onboardingPage = 0
                             }

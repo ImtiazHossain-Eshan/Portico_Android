@@ -1,0 +1,20 @@
+{
+  "name": "portico-firebase-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "check": "npm run build"
+  },
+  "dependencies": {
+    "jose": "4.15.9"
+  },
+  "devDependencies": {
+    "@vercel/node": "^5.5.14",
+    "typescript": "^5.9.3"
+  }
+}

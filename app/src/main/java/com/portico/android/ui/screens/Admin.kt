@@ -176,7 +176,7 @@ private data class AdminUser(
  * a control that only reports is the pattern this build set out to remove.
  */
 private val seedAdminUsers = listOf(
-    AdminUser("Imtiaz Hossain", "imtiaz@ramblacapital.uy", "Pro", 3, "Active", "Today"),
+    AdminUser("Imtiaz Hossain", "imtiaz@ramblacapital.uy", "Pro", 2, "Active", "Today"),
     AdminUser("Sofía Márquez", "sofia@ramblacapital.uy", "Pro", 7, "Active", "Today"),
     AdminUser("Diego Ferrer", "diego@ramblacapital.uy", "Free", 2, "Active", "Yesterday"),
     AdminUser("Lucía Benítez", "lucia@ramblacapital.uy", "Free", 1, "Locked", "18 Mar"),
@@ -279,7 +279,7 @@ private fun AdminOrganizations(state: PorticoState) {
             headers = listOf("Organisation", "Members", "Properties", "Created"),
             weights = listOf(2.4f, 1.2f, 1.4f, 1.4f),
             rows = listOf(
-                listOf("Rambla Capital", "4", "3", "12 Jan 2025"),
+                listOf("Rambla Capital", "4", "2", "12 Jan 2025"),
                 listOf("Costa Invest", "9", "24", "03 Mar 2025"),
                 listOf("Plata Estate", "3", "8", "22 Jul 2025")
             )

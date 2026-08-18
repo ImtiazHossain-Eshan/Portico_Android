@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -14,12 +15,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 private val Context.dataStore by preferencesDataStore(name = "portico")
-private val SNAPSHOT_KEY = stringPreferencesKey("snapshot_v1")
+private val LEGACY_SNAPSHOT_KEY = stringPreferencesKey("snapshot_v1")
 
 /** Everything that survives a restart, in one serialisable envelope. */
 @Serializable
@@ -38,6 +41,7 @@ data class PorticoSnapshot(
     val taxProfile: TaxProfile = TaxProfile(),
     val exchangeRates: ExchangeRates = ExchangeRates(),
     val subscription: Subscription = Subscription(),
+    val updatedAtEpochMillis: Long = 0,
     val seeded: Boolean = false
 )
 
@@ -54,6 +58,12 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
+    private var activeSnapshotKey: Preferences.Key<String>? = null
+    private var activeOwnerId: String? = null
+    private var activeUpdatedAtEpochMillis = 0L
+    private var cloudSyncEnabled = false
+    private val persistenceMutex = Mutex()
 
     val properties: SnapshotStateList<Property> = mutableStateListOf()
     val income: SnapshotStateList<IncomeEntry> = mutableStateListOf()
@@ -82,16 +92,101 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     // ------------------------------------------------------------ lifecycle
 
+    /** Starts signed out with no portfolio attached to the device. */
     suspend fun load() {
+        activeSnapshotKey = null
+        activeOwnerId = null
+        activeUpdatedAtEpochMillis = 0L
+        cloudSyncEnabled = false
+        apply(emptySnapshot())
+        loaded = true
+    }
+
+    /**
+     * Loads a device cache scoped to one Clerk account. A legacy snapshot is
+     * migrated only when its saved email matches the account signing in; this
+     * prevents a newly-created account from inheriting another member's data.
+     */
+    suspend fun loadAccount(userId: String, name: String, email: String) {
+        if (activeOwnerId == userId) {
+            setProfile {
+                it.copy(
+                    userId = userId,
+                    name = name.ifBlank { it.name },
+                    email = email.ifBlank { it.email }
+                )
+            }
+            return
+        }
+        loaded = false
+        cloudSyncEnabled = false
+        val key = workspaceKey(userId)
         val stored = withContext(Dispatchers.IO) {
             runCatching {
-                appContext.dataStore.data.first()[SNAPSHOT_KEY]
+                val preferences = appContext.dataStore.data.first()
+                val account = preferences[key]?.let { json.decodeFromString<PorticoSnapshot>(it) }
+                val legacy = preferences[LEGACY_SNAPSHOT_KEY]
+                    ?.let { json.decodeFromString<PorticoSnapshot>(it) }
+                    ?.takeIf {
+                        email.isNotBlank() && it.profile.email.equals(email, ignoreCase = true)
+                    }
+                account ?: legacy
+            }.getOrNull()
+        }
+
+        activeSnapshotKey = key
+        activeOwnerId = userId
+        val base = stored ?: emptySnapshot(userId, name, email)
+        apply(
+            base.copy(
+                profile = base.profile.copy(
+                    userId = userId,
+                    name = name.ifBlank { base.profile.name.ifBlank { "Portico member" } },
+                    email = email.ifBlank { base.profile.email }
+                ),
+                seeded = false
+            )
+        )
+        loaded = true
+        persist()
+    }
+
+    /** Demo data is isolated from every authenticated account. */
+    suspend fun loadDemo() {
+        loaded = false
+        cloudSyncEnabled = false
+        val key = workspaceKey("demo")
+        val stored = withContext(Dispatchers.IO) {
+            runCatching {
+                appContext.dataStore.data.first()[key]
                     ?.let { json.decodeFromString<PorticoSnapshot>(it) }
             }.getOrNull()
         }
+        activeSnapshotKey = key
+        activeOwnerId = "demo"
         apply(stored ?: seedSnapshot())
         loaded = true
         if (stored == null) persist()
+    }
+
+    fun closeWorkspace() {
+        activeSnapshotKey = null
+        activeOwnerId = null
+        activeUpdatedAtEpochMillis = 0L
+        cloudSyncEnabled = false
+        apply(emptySnapshot())
+        loaded = true
+    }
+
+    private fun emptySnapshot(
+        userId: String = "",
+        name: String = "",
+        email: String = ""
+    ) = PorticoSnapshot(profile = UserProfile(userId, name, email), seeded = false)
+
+    private fun workspaceKey(ownerId: String): Preferences.Key<String> {
+        val safeOwnerId = ownerId.replace(Regex("[^A-Za-z0-9_-]"), "_")
+        return stringPreferencesKey("snapshot_v2_$safeOwnerId")
     }
 
     private fun seedSnapshot() = PorticoSnapshot(
@@ -128,6 +223,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         taxProfile = snapshot.taxProfile
         exchangeRates = snapshot.exchangeRates
         subscription = snapshot.subscription
+        activeUpdatedAtEpochMillis = snapshot.updatedAtEpochMillis
     }
 
     private fun snapshot() = PorticoSnapshot(
@@ -145,13 +241,62 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         taxProfile = taxProfile,
         exchangeRates = exchangeRates,
         subscription = subscription,
+        updatedAtEpochMillis = activeUpdatedAtEpochMillis,
         seeded = true
     )
 
+    /**
+     * Reconciles the encrypted-on-device workspace with the signed-in user's
+     * Firestore document. The newest snapshot wins; an empty cloud workspace
+     * receives the current local record. Demo data is never uploaded.
+     */
+    suspend fun syncCloud(): Boolean {
+        val ownerId = activeOwnerId?.takeUnless { it == "demo" } ?: return false
+        return runCatching {
+            val cloudPayload = FirebaseBackend.loadWorkspace(ownerId)
+            val cloudSnapshot = cloudPayload?.let {
+                json.decodeFromString<PorticoSnapshot>(it)
+            }
+
+            if (
+                cloudSnapshot != null &&
+                cloudSnapshot.updatedAtEpochMillis > activeUpdatedAtEpochMillis
+            ) {
+                val safeSnapshot = cloudSnapshot.copy(
+                    profile = cloudSnapshot.profile.copy(userId = ownerId),
+                    seeded = false
+                )
+                apply(safeSnapshot)
+                val key = activeSnapshotKey ?: return@runCatching false
+                val safePayload = json.encodeToString(safeSnapshot)
+                withContext(Dispatchers.IO) {
+                    persistenceMutex.withLock {
+                        appContext.dataStore.edit { it[key] = safePayload }
+                    }
+                }
+            }
+
+            cloudSyncEnabled = true
+            if (cloudSnapshot == null || activeUpdatedAtEpochMillis > cloudSnapshot.updatedAtEpochMillis) {
+                persist()
+            }
+            true
+        }.getOrDefault(false)
+    }
+
     private fun persist() {
+        val key = activeSnapshotKey ?: return
+        val ownerId = activeOwnerId
+        val shouldSyncCloud = cloudSyncEnabled && ownerId != null && ownerId != "demo"
+        activeUpdatedAtEpochMillis = System.currentTimeMillis()
         val payload = runCatching { json.encodeToString(snapshot()) }.getOrNull() ?: return
         scope.launch(Dispatchers.IO) {
-            runCatching { appContext.dataStore.edit { it[SNAPSHOT_KEY] = payload } }
+            persistenceMutex.withLock {
+                runCatching { appContext.dataStore.edit { it[key] = payload } }
+                if (shouldSyncCloud) {
+                    runCatching { FirebaseBackend.saveWorkspace(ownerId, payload) }
+                }
+            }
         }
     }
 
@@ -180,6 +325,8 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         expenses.removeAll { it.propertyId == propertyId }
         documents.removeAll { it.propertyId == propertyId }
         valuations.removeAll { it.propertyId == propertyId }
+        activity.removeAll { it.propertyId == propertyId }
+        conversations.removeAll { it.propertyId == propertyId }
         persist()
     }
 
@@ -403,8 +550,23 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     // --------------------------------------------------------------- reset
 
-    /** Account deletion and "reset demo data" share this path. */
-    fun resetToSeed() { apply(seedSnapshot()); persist() }
+    /**
+     * Restore only the illustrative portfolio. Account identity, preferences,
+     * tax choices, exchange rates, subscription and payment history belong to
+     * the member and must survive a demo-data reset.
+     */
+    fun resetToSeed() {
+        val seed = seedSnapshot().copy(
+            profile = profile,
+            preferences = preferences,
+            taxProfile = taxProfile,
+            exchangeRates = exchangeRates,
+            subscription = subscription,
+            payments = payments.toList()
+        )
+        apply(seed)
+        persist()
+    }
 
     fun clearEverything() {
         apply(PorticoSnapshot(profile = profile.copy(name = profile.name), seeded = true))

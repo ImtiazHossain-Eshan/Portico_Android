@@ -4,6 +4,13 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+// The project remains buildable before Firebase Console produces this file.
+// Once app/google-services.json exists, the normal Firebase resource wiring is
+// applied automatically on the next Gradle sync.
+if (file("google-services.json").isFile) {
+    pluginManager.apply("com.google.gms.google-services")
+}
+
 android {
     namespace = "com.portico.android"
     compileSdk = 36
@@ -22,6 +29,15 @@ android {
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
         buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"$clerkPublishableKey\"")
+
+        val firebaseBridgeUrl = providers.gradleProperty("FIREBASE_TOKEN_BRIDGE_URL")
+            .orElse(providers.environmentVariable("FIREBASE_TOKEN_BRIDGE_URL"))
+            .orElse("")
+            .get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        buildConfigField("String", "FIREBASE_TOKEN_BRIDGE_URL", "\"$firebaseBridgeUrl\"")
+        buildConfigField("boolean", "FIREBASE_CONFIGURED", file("google-services.json").isFile.toString())
 
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -61,6 +77,10 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("com.clerk:clerk-android-api:1.0.37")
+    implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
