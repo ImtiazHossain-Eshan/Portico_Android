@@ -3,6 +3,9 @@
   "functions": {
     "api/firebase-token.ts": {
       "maxDuration": 10
+    },
+    "api/files.ts": {
+      "maxDuration": 30
     }
   },
   "headers": [
@@ -10,6 +13,13 @@
       "source": "/api/firebase-token",
       "headers": [
         {"key": "Cache-Control", "value": "no-store"},
+        {"key": "X-Content-Type-Options", "value": "nosniff"}
+      ]
+    },
+    {
+      "source": "/api/files",
+      "headers": [
+        {"key": "Cache-Control", "value": "private, no-store"},
         {"key": "X-Content-Type-Options", "value": "nosniff"}
       ]
     }

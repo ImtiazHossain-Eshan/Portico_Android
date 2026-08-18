@@ -11,6 +11,7 @@
     "check": "npm run build"
   },
   "dependencies": {
+    "@vercel/blob": "^2.8.0",
     "jose": "4.15.9"
   },
   "devDependencies": {

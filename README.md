@@ -227,7 +227,9 @@ JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" gradle :app:testDebugUni
 ```
 domain/     Models, Finance, Tax, Exchange, Payments, Analyst, Seed
             pure Kotlin, no Android dependencies, fully unit-tested
-data/       PorticoStore: single owner of state, persists to DataStore
+data/       PorticoStore: single owner of state, offline cache + cloud sync
+            FirestoreWorkspaceRepository: normalized owner-scoped records
+            PorticoFiles: authenticated private document transfer
             PorticoExport / PorticoImport: CSV round-trip
 ui/theme/   Colour roles, semantic extensions, tabular-figure type scale
 ui/design/  Panels, rows, charts, icons, logo, the seven state patterns
@@ -244,17 +246,33 @@ domains.
 
 **Real.** Every return, yield, cap rate, cashflow and tax figure is computed by
 `domain/Finance.kt` and `domain/Tax.kt` from records in your workspace.
-Everything persists across restart via DataStore. Clerk authentication, document
-picking, CSV import and export, and session revocation all hit real systems.
+Everything persists across restart through an account-scoped DataStore cache and
+normalized Firestore collections. Clerk authentication, realtime cloud sync,
+private document upload/download/delete, CSV import and export, and session
+revocation all hit real systems. Existing schema-v1 workspace snapshots migrate
+to the normalized schema on the next authenticated sync.
 
 **Illustrative, and labelled as such in the app.** The three seeded properties,
 comparable properties, market signals, acquisition listings, organisation
 members, audit entries and admin platform metrics. Every tax rate and every
 exchange rate is an assumption you can edit.
 
-**Not connected.** Any backend. Firebase, cloud document storage, real payment
-processing, push delivery and external property data are integration seams, not
-shipped services. Records never leave the device.
+**Not connected.** Real payment processing, push delivery and external property
+data remain integration seams. The checkout is intentionally labelled sandbox
+and never charges a card.
+
+### Cloud data layout
+
+Every member record is isolated below `users/{clerkUserId}`. Domain entities use
+independent collections (`properties`, `income`, `expenses`, `valuations`,
+`documents`, `activity`, `notifications`, `conversations`, and `payments`) and
+profile/preferences/tax/exchange/subscription records live in `settings`.
+Firestore's root user document carries schema version, revision and counts only.
+
+Document metadata is stored in Firestore; file bytes are stored in a private
+Vercel Blob store. Android never receives Firebase service credentials or a Blob
+token. Both APIs verify the current Clerk JWT and derive the owner path on the
+server.
 
 ---
 

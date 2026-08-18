@@ -1,5 +1,6 @@
 import type {VercelRequest, VercelResponse} from "@vercel/node";
-import {createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT} from "jose";
+import {importPKCS8, SignJWT} from "jose";
+import {ClerkAuthorizationError, verifyClerkRequest} from "../lib/clerk-auth.js";
 
 const requiredEnvironment = [
   "CLERK_ISSUER",
@@ -8,8 +9,6 @@ const requiredEnvironment = [
   "FIREBASE_PRIVATE_KEY",
 ] as const;
 
-let cachedIssuer = "";
-let cachedJwks: ReturnType<typeof createRemoteJWKSet> | null = null;
 let cachedPrivateKeyMaterial = "";
 let cachedPrivateKey: Awaited<ReturnType<typeof importPKCS8>> | null = null;
 
@@ -23,16 +22,10 @@ function environment() {
   }
 
   return {
-    clerkIssuer: process.env.CLERK_ISSUER!.replace(/\/$/, ""),
     firebaseProjectId: process.env.FIREBASE_PROJECT_ID!,
     firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
     firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
   };
-}
-
-function bearerToken(authorization: string | undefined): string {
-  if (!authorization?.startsWith("Bearer ")) return "";
-  return authorization.slice("Bearer ".length).trim();
 }
 
 async function signingKey(privateKey: string) {
@@ -41,14 +34,6 @@ async function signingKey(privateKey: string) {
     cachedPrivateKey = await importPKCS8(privateKey, "RS256");
   }
   return cachedPrivateKey;
-}
-
-function clerkJwks(issuer: string) {
-  if (!cachedJwks || cachedIssuer !== issuer) {
-    cachedIssuer = issuer;
-    cachedJwks = createRemoteJWKSet(new URL(`${issuer}/.well-known/jwks.json`));
-  }
-  return cachedJwks;
 }
 
 async function firebaseCustomToken(userId: string) {
@@ -79,34 +64,17 @@ export default async function handler(request: VercelRequest, response: VercelRe
     return;
   }
 
-  const clerkToken = bearerToken(request.headers.authorization);
-  if (!clerkToken) {
-    response.status(401).json({error: "missing_session_token"});
-    return;
-  }
-
   try {
-    const {clerkIssuer} = environment();
-    const {payload} = await jwtVerify(clerkToken, clerkJwks(clerkIssuer), {
-      issuer: clerkIssuer,
-      algorithms: ["RS256"],
-    });
-    const clerkUserId = payload.sub;
-
-    if (!clerkUserId || clerkUserId.length > 128) {
-      response.status(401).json({error: "invalid_user_identity"});
-      return;
-    }
-
+    const clerkUserId = await verifyClerkRequest(request);
     const token = await firebaseCustomToken(clerkUserId);
     response.status(200).json({token});
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
     console.error("Clerk to Firebase exchange failed", {message});
-    response.status(message.startsWith("Missing server environment") ? 503 : 401).json({
-      error: message.startsWith("Missing server environment")
-        ? "server_not_configured"
-        : "invalid_session_token",
-    });
+    const unavailable = message.startsWith("Missing server environment");
+    const authCode = error instanceof ClerkAuthorizationError
+      ? error.code
+      : "invalid_session_token";
+    response.status(unavailable ? 503 : 401).json({error: unavailable ? "server_not_configured" : authCode});
   }
 }

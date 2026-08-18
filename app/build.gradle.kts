@@ -37,6 +37,13 @@ android {
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
         buildConfigField("String", "FIREBASE_TOKEN_BRIDGE_URL", "\"$firebaseBridgeUrl\"")
+        val fileApiUrl = providers.gradleProperty("PORTICO_FILE_API_URL")
+            .orElse(providers.environmentVariable("PORTICO_FILE_API_URL"))
+            .orElse(firebaseBridgeUrl.replace("/firebase-token", "/files"))
+            .get()
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+        buildConfigField("String", "PORTICO_FILE_API_URL", "\"$fileApiUrl\"")
         buildConfigField("boolean", "FIREBASE_CONFIGURED", file("google-services.json").isFile.toString())
 
 
@@ -80,7 +87,6 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
-    implementation("com.google.firebase:firebase-storage")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")

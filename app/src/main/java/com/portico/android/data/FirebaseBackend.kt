@@ -7,8 +7,7 @@ import com.clerk.api.session.fetchToken
 import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.portico.android.BuildConfig
 import java.net.HttpURLConnection
 import java.net.URL
@@ -33,6 +32,7 @@ sealed interface FirebaseConnection {
  */
 object FirebaseBackend {
     private val json = Json { ignoreUnknownKeys = true }
+    private val workspaceRepository by lazy { FirestoreWorkspaceRepository() }
 
     fun isConfigured(context: Context): Boolean =
         BuildConfig.FIREBASE_CONFIGURED && FirebaseApp.getApps(context).isNotEmpty()
@@ -76,31 +76,41 @@ object FirebaseBackend {
         }
     }
 
-    suspend fun loadWorkspace(userId: String): String? {
-        check(FirebaseAuth.getInstance().currentUser?.uid == userId) {
-            "Firebase user does not match the active Portico account"
-        }
-        return FirebaseFirestore.getInstance()
-            .document("users/$userId/workspace/main")
-            .get()
-            .await()
-            .getString("snapshot")
+    internal suspend fun sessionToken(): String {
+        val session = Clerk.session ?: error("No active Clerk session")
+        return when (val result = session.fetchToken()) {
+            is ClerkResult.Success -> result.value.jwt
+            is ClerkResult.Failure<*> -> null
+        } ?: error("Clerk session token could not be issued")
     }
 
-    suspend fun saveWorkspace(userId: String, snapshot: String) {
+    suspend fun loadWorkspace(userId: String): CloudWorkspace? {
         check(FirebaseAuth.getInstance().currentUser?.uid == userId) {
             "Firebase user does not match the active Portico account"
         }
-        FirebaseFirestore.getInstance()
-            .document("users/$userId/workspace/main")
-            .set(
-                mapOf(
-                    "snapshot" to snapshot,
-                    "updatedAt" to FieldValue.serverTimestamp(),
-                    "schemaVersion" to 1
-                )
-            )
-            .await()
+        return workspaceRepository.load(userId)
+    }
+
+    suspend fun saveWorkspace(
+        userId: String,
+        previous: PorticoSnapshot?,
+        current: PorticoSnapshot
+    ): String {
+        check(FirebaseAuth.getInstance().currentUser?.uid == userId) {
+            "Firebase user does not match the active Portico account"
+        }
+        return workspaceRepository.save(userId, previous, current)
+    }
+
+    fun observeWorkspace(
+        userId: String,
+        onRevision: (revision: String, updatedAtEpochMillis: Long) -> Unit,
+        onError: (Throwable) -> Unit = {}
+    ): ListenerRegistration {
+        check(FirebaseAuth.getInstance().currentUser?.uid == userId) {
+            "Firebase user does not match the active Portico account"
+        }
+        return workspaceRepository.observeRevision(userId, onRevision, onError)
     }
 
     private suspend fun exchangeToken(url: String, clerkJwt: String): String =
@@ -138,7 +148,7 @@ object FirebaseBackend {
         }
 }
 
-private suspend fun <T> Task<T>.await(): T = suspendCoroutine { continuation ->
+internal suspend fun <T> Task<T>.await(): T = suspendCoroutine { continuation ->
     addOnCompleteListener { task ->
         if (task.isSuccessful) {
             continuation.resume(task.result)

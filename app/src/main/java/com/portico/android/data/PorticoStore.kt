@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.firebase.firestore.ListenerRegistration
 import com.portico.android.domain.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +64,9 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     private var activeOwnerId: String? = null
     private var activeUpdatedAtEpochMillis = 0L
     private var cloudSyncEnabled = false
+    private var lastCloudSnapshot: PorticoSnapshot? = null
+    private var activeCloudRevision = ""
+    private var cloudListener: ListenerRegistration? = null
     private val persistenceMutex = Mutex()
 
     val properties: SnapshotStateList<Property> = mutableStateListOf()
@@ -94,10 +98,14 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
 
     /** Starts signed out with no portfolio attached to the device. */
     suspend fun load() {
+        cloudListener?.remove()
+        cloudListener = null
         activeSnapshotKey = null
         activeOwnerId = null
         activeUpdatedAtEpochMillis = 0L
         cloudSyncEnabled = false
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         apply(emptySnapshot())
         loaded = true
     }
@@ -120,6 +128,10 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         }
         loaded = false
         cloudSyncEnabled = false
+        cloudListener?.remove()
+        cloudListener = null
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         val key = workspaceKey(userId)
         val stored = withContext(Dispatchers.IO) {
             runCatching {
@@ -155,6 +167,10 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     suspend fun loadDemo() {
         loaded = false
         cloudSyncEnabled = false
+        cloudListener?.remove()
+        cloudListener = null
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         val key = workspaceKey("demo")
         val stored = withContext(Dispatchers.IO) {
             runCatching {
@@ -170,10 +186,14 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     }
 
     fun closeWorkspace() {
+        cloudListener?.remove()
+        cloudListener = null
         activeSnapshotKey = null
         activeOwnerId = null
         activeUpdatedAtEpochMillis = 0L
         cloudSyncEnabled = false
+        lastCloudSnapshot = null
+        activeCloudRevision = ""
         apply(emptySnapshot())
         loaded = true
     }
@@ -242,21 +262,19 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         exchangeRates = exchangeRates,
         subscription = subscription,
         updatedAtEpochMillis = activeUpdatedAtEpochMillis,
-        seeded = true
+        seeded = activeOwnerId == "demo"
     )
 
     /**
-     * Reconciles the encrypted-on-device workspace with the signed-in user's
-     * Firestore document. The newest snapshot wins; an empty cloud workspace
-     * receives the current local record. Demo data is never uploaded.
+     * Reconciles the encrypted-on-device workspace with normalized Firestore
+     * collections. Existing schema-v1 snapshot blobs migrate on first sign-in;
+     * demo data is never uploaded.
      */
     suspend fun syncCloud(): Boolean {
         val ownerId = activeOwnerId?.takeUnless { it == "demo" } ?: return false
         return runCatching {
-            val cloudPayload = FirebaseBackend.loadWorkspace(ownerId)
-            val cloudSnapshot = cloudPayload?.let {
-                json.decodeFromString<PorticoSnapshot>(it)
-            }
+            val cloudWorkspace = FirebaseBackend.loadWorkspace(ownerId)
+            val cloudSnapshot = cloudWorkspace?.snapshot
 
             if (
                 cloudSnapshot != null &&
@@ -276,12 +294,60 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
                 }
             }
 
+            activeCloudRevision = cloudWorkspace?.revision.orEmpty()
+            lastCloudSnapshot = cloudSnapshot
+                ?.takeIf { cloudWorkspace.source == CloudWorkspaceSource.NORMALIZED }
             cloudSyncEnabled = true
-            if (cloudSnapshot == null || activeUpdatedAtEpochMillis > cloudSnapshot.updatedAtEpochMillis) {
+            if (
+                cloudSnapshot == null ||
+                cloudWorkspace.source == CloudWorkspaceSource.LEGACY ||
+                activeUpdatedAtEpochMillis > cloudSnapshot.updatedAtEpochMillis
+            ) {
                 persist()
             }
+            observeCloud(ownerId)
             true
         }.getOrDefault(false)
+    }
+
+    private fun observeCloud(ownerId: String) {
+        cloudListener?.remove()
+        cloudListener = FirebaseBackend.observeWorkspace(
+            userId = ownerId,
+            onRevision = revision@ { revision, _ ->
+                if (revision == activeCloudRevision) return@revision
+                scope.launch { refreshFromCloud(ownerId, revision) }
+            }
+        )
+    }
+
+    private suspend fun refreshFromCloud(ownerId: String, revision: String) {
+        persistenceMutex.withLock {
+            if (
+                activeOwnerId != ownerId ||
+                !cloudSyncEnabled ||
+                revision == activeCloudRevision
+            ) return@withLock
+
+            val cloud = runCatching { FirebaseBackend.loadWorkspace(ownerId) }.getOrNull()
+                ?: return@withLock
+            if (cloud.source != CloudWorkspaceSource.NORMALIZED) return@withLock
+
+            val safeSnapshot = cloud.snapshot.copy(
+                profile = cloud.snapshot.profile.copy(userId = ownerId),
+                seeded = false
+            )
+            apply(safeSnapshot)
+            activeUpdatedAtEpochMillis = safeSnapshot.updatedAtEpochMillis
+            lastCloudSnapshot = safeSnapshot
+            activeCloudRevision = cloud.revision
+
+            val key = activeSnapshotKey ?: return@withLock
+            val payload = json.encodeToString(safeSnapshot)
+            withContext(Dispatchers.IO) {
+                runCatching { appContext.dataStore.edit { it[key] = payload } }
+            }
+        }
     }
 
     private fun persist() {
@@ -289,12 +355,22 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         val ownerId = activeOwnerId
         val shouldSyncCloud = cloudSyncEnabled && ownerId != null && ownerId != "demo"
         activeUpdatedAtEpochMillis = System.currentTimeMillis()
-        val payload = runCatching { json.encodeToString(snapshot()) }.getOrNull() ?: return
+        val currentSnapshot = snapshot()
+        val payload = runCatching { json.encodeToString(currentSnapshot) }.getOrNull() ?: return
         scope.launch(Dispatchers.IO) {
             persistenceMutex.withLock {
                 runCatching { appContext.dataStore.edit { it[key] = payload } }
                 if (shouldSyncCloud) {
-                    runCatching { FirebaseBackend.saveWorkspace(ownerId, payload) }
+                    runCatching {
+                        FirebaseBackend.saveWorkspace(
+                            userId = ownerId,
+                            previous = lastCloudSnapshot,
+                            current = currentSnapshot
+                        )
+                    }.onSuccess { revision ->
+                        lastCloudSnapshot = currentSnapshot
+                        activeCloudRevision = revision
+                    }
                 }
             }
         }
@@ -320,6 +396,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     }
 
     fun deleteProperty(propertyId: String) {
+        deleteStoredFiles(documents.filter { it.propertyId == propertyId }.map { it.storagePath })
         properties.removeAll { it.id == propertyId }
         income.removeAll { it.propertyId == propertyId }
         expenses.removeAll { it.propertyId == propertyId }
@@ -407,7 +484,12 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         }
     }
 
-    fun removeDocument(id: String) { documents.removeAll { it.id == id }; persist() }
+    suspend fun removeDocument(id: String) {
+        val document = documents.firstOrNull { it.id == id } ?: return
+        PorticoFiles.delete(document.storagePath)
+        documents.removeAll { it.id == id }
+        persist()
+    }
 
     fun documentsFor(propertyId: String) = documents.filter { it.propertyId == propertyId }
 
@@ -556,6 +638,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
      * the member and must survive a demo-data reset.
      */
     fun resetToSeed() {
+        deleteStoredFiles(documents.map { it.storagePath })
         val seed = seedSnapshot().copy(
             profile = profile,
             preferences = preferences,
@@ -569,8 +652,17 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     }
 
     fun clearEverything() {
+        deleteStoredFiles(documents.map { it.storagePath })
         apply(PorticoSnapshot(profile = profile.copy(name = profile.name), seeded = true))
         persist()
+    }
+
+    private fun deleteStoredFiles(paths: List<String>) {
+        paths.filter { it.isNotBlank() && !it.startsWith("content://") }
+            .distinct()
+            .forEach { pathname ->
+                scope.launch(Dispatchers.IO) { runCatching { PorticoFiles.delete(pathname) } }
+            }
     }
 
     companion object {

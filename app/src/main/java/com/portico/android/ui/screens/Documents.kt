@@ -13,18 +13,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
+import com.portico.android.data.PorticoFiles
 import com.portico.android.data.PorticoStore
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
 import com.portico.android.ui.UploadStage
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /*
- * Documents are treated as private records: nothing leaves the device, the
- * library states what it can and cannot open, and every failure has a way
- * forward rather than a dead end.
+ * Documents are private, owner-scoped records. Metadata is synchronized in
+ * Firestore and file bytes travel only through the authenticated file bridge.
  */
 @Composable
 fun DocumentsScreen(state: PorticoState, modifier: Modifier = Modifier) {
@@ -71,7 +72,7 @@ fun DocumentsScreen(state: PorticoState, modifier: Modifier = Modifier) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
                 "Library",
-                supporting = "${visible.size} documents · stored on this device"
+                supporting = "${visible.size} documents · private to this workspace"
             )
             when {
                 store.documents.isEmpty() -> EmptyState(
@@ -106,7 +107,7 @@ fun DocumentsScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         SyntheticNote(
-            "Documents stay on this device. Cloud storage with per-user access rules is an integration seam, not a shipped service."
+            "Private files are encrypted in transit and can only be fetched through your signed-in Portico session."
         )
     }
 
@@ -121,14 +122,10 @@ fun DocumentsScreen(state: PorticoState, modifier: Modifier = Modifier) {
 private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, modifier: Modifier = Modifier) {
     val store = state.store
     val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
     val semantic = PorticoTheme.semantic
-    var loading by remember(document.id) { mutableStateOf(true) }
-
-    LaunchedEffect(document.id) {
-        loading = true
-        delay(450)
-        loading = false
-    }
+    var opening by remember(document.id) { mutableStateOf(false) }
+    var deleting by remember(document.id) { mutableStateOf(false) }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Row(
@@ -160,12 +157,6 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                    loading -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 2.dp)
-                        Spacer(Modifier.height(Space.md))
-                        Text("Opening document", style = MaterialTheme.typography.bodySmall, color = semantic.tertiaryText)
-                    }
-
                     document.status == DocumentStatus.RESTRICTED -> PermissionDeniedState(
                         what = document.fileName,
                         onBack = { state.viewerDocumentId = null }
@@ -191,7 +182,8 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                         // real file opens in the system viewer.
                         Box(
                             Modifier
-                                .fillMaxWidth(0.62f)
+                                .fillMaxWidth(0.5f)
+                                .widthIn(max = 160.dp)
                                 .aspectRatio(0.72f)
                                 .clip(RoundedCornerShape(4.dp))
                                 .background(semantic.panel),
@@ -200,15 +192,28 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                             PorticoIcon(Glyph.DOCUMENT, size = 42.dp, tint = semantic.tertiaryText, contentDescription = null)
                         }
                         Spacer(Modifier.height(Space.lg))
-                        PrimaryButton("Open in your PDF viewer", glyph = Glyph.EXTERNAL) {
-                            runCatching {
-                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                    setDataAndType(android.net.Uri.parse(document.storagePath), "application/pdf")
+                        PrimaryButton(
+                            "Open in document viewer",
+                            glyph = Glyph.EXTERNAL,
+                            loading = opening
+                        ) {
+                            scope.launch {
+                                opening = true
+                                runCatching {
+                                    val uri = if (document.storagePath.startsWith("content://")) {
+                                        document.storagePath.toUri()
+                                    } else {
+                                        PorticoFiles.download(context, document)
+                                    }
+                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, documentMimeType(document.fileName))
                                     addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 }
-                                context.startActivity(intent)
-                            }.onFailure {
-                                state.notify("No app on this device can open a PDF.")
+                                    context.startActivity(intent)
+                                }.onFailure { error ->
+                                    state.notify(error.message ?: "No app can open this document.")
+                                }
+                                opening = false
                             }
                         }
                     }
@@ -230,10 +235,23 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
         }
 
         Box(Modifier.padding(horizontal = Space.lg)) {
-            SecondaryButton("Delete document", Modifier.fillMaxWidth(), glyph = Glyph.DELETE, destructive = true) {
-                store.removeDocument(document.id)
-                state.viewerDocumentId = null
-                state.notify("Document deleted")
+            SecondaryButton(
+                if (deleting) "Deleting…" else "Delete document",
+                Modifier.fillMaxWidth(),
+                enabled = !deleting,
+                glyph = Glyph.DELETE,
+                destructive = true
+            ) {
+                scope.launch {
+                    deleting = true
+                    runCatching { store.removeDocument(document.id) }
+                        .onSuccess {
+                            state.viewerDocumentId = null
+                            state.notify("Document deleted")
+                        }
+                        .onFailure { state.notify(it.message ?: "Document could not be deleted") }
+                    deleting = false
+                }
             }
         }
     }
@@ -248,31 +266,46 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
 @Composable
 fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
     val store = state.store
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
     val semantic = PorticoTheme.semantic
     var failed by remember { mutableStateOf(false) }
+    var failureMessage by remember { mutableStateOf("The file couldn't be uploaded. Check your connection and try again.") }
 
     val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        runCatching {
-            state.uploadFileName = uri.lastPathSegment?.substringAfterLast('/') ?: "Document"
-            val document = PortfolioDocument(
-                id = PorticoStore.newId("d"),
-                propertyId = state.uploadPropertyId,
-                fileName = state.uploadFileName,
-                fileType = "PDF",
-                category = state.uploadCategory,
-                uploadedAt = SimpleDate.today().format(),
-                sizeBytes = 0,
-                status = DocumentStatus.READY,
-                storagePath = uri.toString()
-            )
-            store.addDocument(document)
-            state.uploadStage = UploadStage.DONE
-        }.onFailure {
-            failed = true
-            state.uploadStage = UploadStage.FAILED
+        val documentId = PorticoStore.newId("d")
+        state.uploadFileName = uri.lastPathSegment?.substringAfterLast('/') ?: "Document"
+        state.uploadStage = UploadStage.UPLOADING
+        scope.launch {
+            runCatching {
+                PorticoFiles.upload(
+                    context = context,
+                    source = uri,
+                    resourceId = documentId
+                )
+            }.onSuccess { stored ->
+                state.uploadFileName = stored.fileName
+                val document = PortfolioDocument(
+                    id = documentId,
+                    propertyId = state.uploadPropertyId,
+                    fileName = stored.fileName,
+                    fileType = stored.contentType.substringAfter('/').uppercase(),
+                    category = state.uploadCategory,
+                    uploadedAt = SimpleDate.today().format(),
+                    sizeBytes = stored.sizeBytes,
+                    status = DocumentStatus.READY,
+                    storagePath = stored.pathname
+                )
+                store.addDocument(document)
+                state.uploadStage = UploadStage.DONE
+            }.onFailure { error ->
+                failed = true
+                failureMessage = error.message ?: "The private upload did not finish."
+                state.uploadStage = UploadStage.FAILED
+            }
         }
     }
 
@@ -370,7 +403,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
 
                 UploadStage.FAILED -> ErrorState(
                     title = "Upload didn't finish",
-                    body = "The file couldn't be read. Check it still exists and try again.",
+                    body = failureMessage,
                     retryLabel = "Try again",
                     onRetry = { failed = false; state.uploadStage = UploadStage.FILE },
                     secondaryLabel = "Cancel",
@@ -382,4 +415,12 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
             }
         }
     }
+}
+
+private fun documentMimeType(fileName: String): String = when (fileName.substringAfterLast('.', "").lowercase()) {
+    "pdf" -> "application/pdf"
+    "jpg", "jpeg" -> "image/jpeg"
+    "png" -> "image/png"
+    "webp" -> "image/webp"
+    else -> "application/octet-stream"
 }
