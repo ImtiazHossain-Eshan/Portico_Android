@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "763707398765",
+    "project_id": "portico-489",
+    "storage_bucket": "portico-489.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:763707398765:android:5e7417c76c5b099e453d64",
+        "android_client_info": {
+          "package_name": "com.portico.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxuRinNmI8vkxiuLt1rxePVKUERwL_z5E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

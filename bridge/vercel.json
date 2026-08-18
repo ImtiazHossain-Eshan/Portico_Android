@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/firebase-token.ts": {
+      "maxDuration": 10
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/firebase-token",
+      "headers": [
+        {"key": "Cache-Control", "value": "no-store"},
+        {"key": "X-Content-Type-Options", "value": "nosniff"}
+      ]
+    }
+  ]
+}

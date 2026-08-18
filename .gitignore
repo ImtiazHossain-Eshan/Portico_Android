@@ -12,3 +12,14 @@
 
 # Source documents (the assignment brief)
 /Project Details/
+
+# Firebase server credentials and local tooling
+**/*service-account*.json
+.firebase/
+firebase-debug.log
+
+# Free Vercel Clerk-to-Firebase bridge
+bridge/.env*
+!bridge/.env.example
+bridge/node_modules/
+bridge/.vercel/
