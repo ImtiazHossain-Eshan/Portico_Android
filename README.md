@@ -219,8 +219,11 @@ FIREBASE_TOKEN_BRIDGE_URL=https://your-bridge.vercel.app/api/firebase-token
 PORTICO_FILE_API_URL=https://your-bridge.vercel.app/api/files
 ```
 
-`app/google-services.json` enables Firebase Android services when present. Keep
-service-account credentials and private backend keys out of the APK and Git.
+`app/google-services.json` enables Firebase Android services when present. It is
+intentionally ignored by Git: after cloning, download the Android configuration
+from **Firebase Console → Project settings → Your apps → Portico**, then place it
+at that path. Never put a Firebase service-account JSON or private backend key
+inside the APK or repository.
 
 ---
 
