@@ -16,7 +16,11 @@
     "jose": "4.15.9"
   },
   "overrides": {
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "jose": "4.15.9",
+    "jwks-rsa": {
+      "jose": "4.15.9"
+    }
   },
   "devDependencies": {
     "@vercel/node": "^5.5.14",
