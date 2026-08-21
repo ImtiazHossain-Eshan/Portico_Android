@@ -1,6 +1,7 @@
 package com.portico.android.data
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -641,7 +642,7 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     val canAddProperty: Boolean
         get() = properties.size < subscription.tier.propertyLimit
 
-    private val usesSecureBackend: Boolean
+    val usesSecureBackend: Boolean
         get() = activeOwnerId != null && activeOwnerId != "demo"
 
     // ----------------------------------------------------------- assistant
@@ -732,6 +733,175 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
             persist()
         }
     }
+
+    /**
+     * Deletes the account and everything in it, then empties the device cache.
+     *
+     * The local wipe happens whatever the server said. Leaving a cached
+     * portfolio on the handset after the user asked to be deleted is the one
+     * outcome that would be indefensible, so a server failure is reported but
+     * never blocks the local erase.
+     */
+    suspend fun deleteAccount(): Boolean {
+        val serverComplete = if (usesSecureBackend) {
+            runCatching { PorticoBackend.deleteAccount() }.getOrElse { failure ->
+                wipeLocalState()
+                throw failure
+            }
+        } else {
+            true
+        }
+        wipeLocalState()
+        return serverComplete
+    }
+
+    private suspend fun wipeLocalState() {
+        deleteStoredFiles(documents.map { it.storagePath })
+        cloudSyncEnabled = false
+        cloudListener?.remove()
+        cloudListener = null
+        apply(PorticoSnapshot())
+        withContext(Dispatchers.IO) {
+            appContext.dataStore.edit { it.clear() }
+        }
+    }
+
+    /**
+     * Moves freshly picked photographs into private storage.
+     *
+     * A picker URI is a grant to one device, so storing it in a synced record
+     * would hand every other device a reference it cannot open. References that
+     * are already stored pass through untouched, and an upload that fails keeps
+     * the local URI: a picture that works on one device beats losing it.
+     */
+    suspend fun storePhotos(propertyId: String, references: List<String>): List<String> {
+        if (!usesSecureBackend) return references
+        return references.map { reference ->
+            if (PorticoFiles.isStoredReference(reference)) {
+                reference
+            } else {
+                runCatching {
+                    PorticoFiles.upload(
+                        context = appContext,
+                        source = Uri.parse(reference),
+                        resourceId = propertyId,
+                        kind = "photos"
+                    ).pathname
+                }.getOrDefault(reference)
+            }
+        }
+    }
+
+    /** Resolves a stored photograph for display, or null when it cannot be read. */
+    suspend fun photoUri(reference: String): Uri? = when {
+        reference.isBlank() -> null
+        !PorticoFiles.isStoredReference(reference) -> Uri.parse(reference)
+        !usesSecureBackend -> null
+        else -> runCatching { PorticoFiles.photo(appContext, reference) }.getOrNull()
+    }
+
+    /**
+     * The market reference set currently in effect.
+     *
+     * Starts as the bundled sample so the first launch has something to
+     * compare against, and is replaced once the provider answers. Never
+     * persisted: stale market figures presented as current are the exact
+     * failure this whole domain is trying to avoid.
+     */
+    var market by mutableStateOf(
+        MarketReference(
+            provider = DataProvider(name = "Portico bundled sample", basis = "modelled"),
+            populated = false,
+            comparables = Seed.comparables,
+            listings = Seed.listings,
+            signals = Seed.marketSignals
+        )
+    )
+        private set
+
+    /** Refreshes market data if a provider is reachable; silent when it is not. */
+    suspend fun refreshMarket() {
+        if (!usesSecureBackend) return
+        val published = PorticoBackend.market() ?: return
+        if (published.populated) market = published
+    }
+
+    // ------------------------------------------------------- organizations
+
+    /**
+     * The organization the member belongs to, if any.
+     *
+     * Null is the honest default: most members are individuals, and showing a
+     * fabricated firm to every one of them was the old behaviour this replaces.
+     * Not persisted, because membership is decided by the server and a cached
+     * role is a stale permission.
+     */
+    var organization by mutableStateOf<OrganizationRecord?>(null)
+        private set
+
+    var organizationsLoading by mutableStateOf(false)
+        private set
+
+    val myRole: OrgRole
+        get() = organization?.let { record ->
+            runCatching { OrgRole.valueOf(record.role) }.getOrDefault(OrgRole.VIEWER)
+        } ?: OrgRole.OWNER
+
+    /** True when the signed-in member may perform [permission] here. */
+    fun may(permission: Permission): Boolean = myRole.holds(permission)
+
+    suspend fun refreshOrganizations() {
+        if (!usesSecureBackend) return
+        organizationsLoading = true
+        organization = PorticoBackend.organizations().firstOrNull()
+        organizationsLoading = false
+    }
+
+    suspend fun createOrganization(name: String) {
+        organization = PorticoBackend.createOrganization(
+            name = name,
+            memberName = profile.name,
+            memberEmail = profile.email
+        )
+    }
+
+    suspend fun inviteMember(email: String, role: OrgRole) {
+        val current = organization ?: error("Create an organization first")
+        val members = PorticoBackend.inviteMember(current.id, email, role.name)
+        organization = current.copy(members = members)
+    }
+
+    suspend fun setMemberRole(userId: String, role: OrgRole) {
+        val current = organization ?: return
+        val members = PorticoBackend.setMemberRole(current.id, userId, role.name)
+        organization = current.copy(members = members)
+    }
+
+    suspend fun removeMember(userId: String) {
+        val current = organization ?: return
+        val members = PorticoBackend.removeMember(current.id, userId)
+        organization = if (userId == profile.userId) null else current.copy(members = members)
+    }
+
+    /**
+     * The audit trail, derived from activity actually recorded in this
+     * workspace rather than from a fixture.
+     *
+     * Every entry names the signed-in member because that is who performed it:
+     * a workspace has one actor today. When an organization shares a workspace,
+     * the actor becomes the member id already carried on each record, and this
+     * mapping is the only thing that changes.
+     */
+    fun auditTrail(limit: Int = 50): List<AuditLogEntry> =
+        activity.sortedByDescending { it.timestamp }.take(limit).map { event ->
+            AuditLogEntry(
+                id = event.id,
+                actor = profile.email.ifBlank { profile.name.ifBlank { "This workspace" } },
+                action = event.title,
+                entity = event.detail,
+                timestamp = event.timestamp
+            )
+        }
 
     private fun deleteStoredFiles(paths: List<String>) {
         paths.filter { it.isNotBlank() && !it.startsWith("content://") }

@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Portico stores portfolio documents in Vercel Blob behind the authenticated
+// bridge, not in Firebase Storage. The bucket exists because google-services.json
+// provisions one, so it is closed here rather than left on Firebase's default
+// rule, which allows any signed-in user to read and write anything.
+//
+// If document storage ever moves to Firebase Storage, replace the deny-all with
+// the owner-scoped match below it, which mirrors firestore.rules.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Default: nothing is readable or writable.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Owner-scoped document storage, kept here as the migration target.
+    // The Clerk bridge mints Firebase identities whose UID is the Clerk user
+    // ID, so a member's files live below their own UID and nobody else's.
+    //
+    // match /users/{userId}/documents/{documentId} {
+    //   allow read: if request.auth != null && request.auth.uid == userId;
+    //   allow write: if request.auth != null
+    //     && request.auth.uid == userId
+    //     && request.resource.size < 25 * 1024 * 1024
+    //     && request.resource.contentType.matches('application/pdf|image/.*');
+    // }
+  }
+}

@@ -41,6 +41,13 @@ fun PropertyDetailScreen(state: PorticoState, modifier: Modifier = Modifier) {
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         // ---- headline -------------------------------------------------------
+        Box(Modifier.padding(horizontal = Space.lg)) {
+            PropertyHero(
+                photoUri = property.photoUris.firstOrNull(),
+                propertyName = property.name,
+                store = state.store
+            )
+        }
         Column(Modifier.padding(horizontal = Space.lg)) {
             SectionLabel("${property.location} · ${property.type}")
             Spacer(Modifier.height(Space.xs))

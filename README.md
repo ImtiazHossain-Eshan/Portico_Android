@@ -116,7 +116,7 @@ on any device.
 | **Documents** | Private library, Android system picker, upload/download/delete, categories, viewer and recovery states. |
 | **Portico Intelligence** | On-device portfolio and property analysis, comparisons and what-if scenarios with the working shown. |
 | **Valuation and acquisition** | Comparable-based estimates and a search-to-decision flow using the same finance engine as owned properties. |
-| **Plans and payments** | Free/Pro rules, server-owned sandbox checkout, receipts, billing history, cancellation and resume—without charging a card. |
+| **Plans and payments** | Free/Pro rules, server-owned sandbox checkout, receipts, billing history, cancellation and resume,without charging a card. |
 | **Account and workspace** | Clerk email/OAuth authentication, session management, preferences, appearance, notifications, privacy, roles and admin surfaces. |
 | **Portability** | CSV export/import with duplicate detection and line-level rejection reporting. |
 

@@ -1,5 +1,6 @@
 import type {VercelRequest, VercelResponse} from "@vercel/node";
 import {verifyClerkRequest} from "../lib/clerk-auth.js";
+import {consumeRateLimit} from "../lib/rate-limit.js";
 import {ApiError, bodyObject, privateJson, sendError} from "../lib/http.js";
 import {registerDevice, unregisterDevice} from "../lib/notifications.js";
 
@@ -17,6 +18,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const userId = await verifyClerkRequest(request);
+    await consumeRateLimit(userId, "notifications");
     const body = bodyObject(request);
     const installationId = typeof body.installationId === "string" ? body.installationId.trim() : "";
     if (installationId.length < 10 || installationId.length > 256) throw new ApiError(400, "invalid_installation_id");

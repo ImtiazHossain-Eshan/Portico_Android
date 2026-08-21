@@ -110,6 +110,47 @@ object PorticoFiles {
         }
     }
 
+    /**
+     * Resolves a stored photograph to a file Coil can render.
+     *
+     * Blob objects are private and need the session header, so an image URL
+     * cannot simply be handed to the image loader. The bytes are fetched once
+     * and cached on disk under a name derived from the pathname; subsequent
+     * reads skip the network entirely.
+     */
+    suspend fun photo(context: Context, pathname: String): Uri = withContext(Dispatchers.IO) {
+        check(pathname.isNotBlank()) { "This photograph has no stored file" }
+        val directory = File(context.cacheDir, "photos").apply { mkdirs() }
+        val target = File(directory, "${pathname.hashCode().toUInt()}.img")
+        if (target.isFile && target.length() > 0) {
+            return@withContext Uri.fromFile(target)
+        }
+
+        val query = URLEncoder.encode(pathname, StandardCharsets.UTF_8.name())
+        val connection = authenticatedConnection("${apiUrl()}?path=$query", "GET")
+        try {
+            if (connection.responseCode !in 200..299) {
+                error(apiError(connection.responseCode, connection.responseText()))
+            }
+            connection.inputStream.use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
+            }
+            Uri.fromFile(target)
+        } catch (failure: Throwable) {
+            target.delete()
+            throw failure
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    /** True when [reference] is a blob pathname rather than a local picker URI. */
+    fun isStoredReference(reference: String): Boolean =
+        reference.isNotBlank() &&
+            !reference.startsWith("content://") &&
+            !reference.startsWith("file://") &&
+            !reference.startsWith("http")
+
     suspend fun delete(pathname: String) = withContext(Dispatchers.IO) {
         if (pathname.isBlank() || pathname.startsWith("content://")) return@withContext
         val connection = authenticatedConnection(apiUrl(), "DELETE").apply {

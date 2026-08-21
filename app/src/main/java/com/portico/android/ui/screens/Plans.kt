@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -287,9 +288,18 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val semantic = PorticoTheme.semantic
-    val organization = Seed.organization
+    val organization = store.organization
+    val members = organization?.members.orEmpty()
     var selectedRole by remember { mutableStateOf(OrgRole.ANALYST) }
     var importResult by remember { mutableStateOf<PorticoImport.Result?>(null) }
+    var newOrgName by remember { mutableStateOf("") }
+    var inviteEmail by remember { mutableStateOf("") }
+    var inviteRole by remember { mutableStateOf(OrgRole.ANALYST) }
+    var busy by remember { mutableStateOf(false) }
+
+    // Membership decides what the rest of this screen may do, so it is read
+    // from the server on entry rather than assumed from anything cached.
+    LaunchedEffect(Unit) { store.refreshOrganizations() }
 
     val importPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -320,36 +330,129 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
-        Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Organisation")
-            DataRow("Name", organization.name)
-            Hairline()
-            DataRow("Members", organization.memberCount.toString())
-            Hairline()
-            DataRow("Properties", store.properties.size.toString())
-            Hairline()
-            DataRow("Created", organization.createdAt)
-        }
+        if (organization == null) {
+            /*
+             * No organization is the normal state for an individual investor,
+             * so this is an invitation rather than an error. The old build
+             * showed everybody the same fictional firm, which made the whole
+             * section unreadable as a feature.
+             */
+            Panel(Modifier.padding(horizontal = Space.lg)) {
+                PanelHeader("Organisation")
+                Column(
+                    Modifier.padding(horizontal = Space.lg, vertical = Space.md),
+                    verticalArrangement = Arrangement.spacedBy(Space.md)
+                ) {
+                    Text(
+                        if (store.organizationsLoading) "Checking your memberships." else
+                            "You are investing on your own account. Create an organisation to hold properties with other people and control who may see or change what.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    PorticoField(newOrgName, { newOrgName = it }, "Organisation name", placeholder = "Rambla Capital")
+                    PrimaryButton(
+                        if (busy) "Creating..." else "Create organisation",
+                        Modifier.fillMaxWidth(),
+                        enabled = newOrgName.isNotBlank() && !busy && store.usesSecureBackend
+                    ) {
+                        scope.launch {
+                            busy = true
+                            runCatching { store.createOrganization(newOrgName.trim()) }
+                                .onSuccess {
+                                    newOrgName = ""
+                                    state.notify("Organisation created. You are the owner.")
+                                }
+                                .onFailure { state.notify(it.message ?: "The organisation could not be created") }
+                            busy = false
+                        }
+                    }
+                    if (!store.usesSecureBackend) {
+                        Text(
+                            "Sign in to create an organisation. Demo workspaces are single-member.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = semantic.tertiaryText
+                        )
+                    }
+                }
+            }
+        } else {
+            Panel(Modifier.padding(horizontal = Space.lg)) {
+                PanelHeader("Organisation", supporting = "You are ${store.myRole.label.lowercase()}")
+                DataRow("Name", organization.name)
+                Hairline()
+                DataRow("Members", members.size.toString())
+                Hairline()
+                DataRow("Properties", store.properties.size.toString())
+                Hairline()
+                DataRow("Created", organization.createdAt.take(10))
+            }
 
-        Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Members and roles", supporting = "${Seed.members.size} people")
-            Seed.members.forEachIndexed { index, member ->
-                if (index > 0) Hairline()
-                DataRow(
-                    label = member.name,
-                    value = member.orgRole.label,
-                    supporting = member.email,
-                    valueColor = if (member.orgRole == OrgRole.OWNER) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    onClick = { selectedRole = member.orgRole }
+            Panel(Modifier.padding(horizontal = Space.lg)) {
+                PanelHeader(
+                    "Members and roles",
+                    supporting = "${members.size} ${if (members.size == 1) "person" else "people"}"
                 )
+                members.forEachIndexed { index, member ->
+                    if (index > 0) Hairline()
+                    val role = runCatching { OrgRole.valueOf(member.role) }.getOrDefault(OrgRole.VIEWER)
+                    DataRow(
+                        label = member.name.ifBlank { member.email },
+                        value = role.label,
+                        supporting = member.email,
+                        valueColor = if (role == OrgRole.OWNER) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = { selectedRole = role }
+                    )
+                }
+            }
+
+            /*
+             * Only shown to somebody who may actually use it. A control that
+             * appears and then refuses is worse than one that is absent, and
+             * the server enforces the same rule regardless of what renders.
+             */
+            if (store.may(Permission.MANAGE_MEMBERS)) {
+                Panel(Modifier.padding(horizontal = Space.lg)) {
+                    PanelHeader("Invite a member", supporting = "They need a Portico account already")
+                    Column(
+                        Modifier.padding(horizontal = Space.lg, vertical = Space.md),
+                        verticalArrangement = Arrangement.spacedBy(Space.md)
+                    ) {
+                        PorticoField(
+                            inviteEmail, { inviteEmail = it }, "Email address",
+                            keyboardType = KeyboardType.Email,
+                            placeholder = "colleague@example.com"
+                        )
+                        SegmentedRow(
+                            OrgRole.entries.filter { it.rank < store.myRole.rank }.map { it.label },
+                            inviteRole.label
+                        ) { label -> inviteRole = OrgRole.entries.first { it.label == label } }
+                        PrimaryButton(
+                            if (busy) "Inviting..." else "Add to organisation",
+                            Modifier.fillMaxWidth(),
+                            enabled = inviteEmail.contains("@") && !busy
+                        ) {
+                            scope.launch {
+                                busy = true
+                                runCatching { store.inviteMember(inviteEmail.trim(), inviteRole) }
+                                    .onSuccess {
+                                        inviteEmail = ""
+                                        state.notify("Added to ${organization.name}")
+                                    }
+                                    .onFailure { state.notify(it.message ?: "That invitation could not be completed") }
+                                busy = false
+                            }
+                        }
+                    }
+                }
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
                 "What ${selectedRole.label} can do",
-                supporting = "Tap a member above to see their permissions"
+                supporting = if (organization == null) "Roles apply once you create an organisation"
+                else "Tap a member above to see their permissions"
             )
             SegmentedRow(
                 OrgRole.entries.map { it.label },
@@ -435,7 +538,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Audit trail", supporting = "Every sensitive action is recorded")
-            Seed.auditLog.take(5).forEachIndexed { index, entry ->
+            store.auditTrail(limit = 5).forEachIndexed { index, entry ->
                 if (index > 0) Hairline()
                 DataRow(
                     label = entry.action,

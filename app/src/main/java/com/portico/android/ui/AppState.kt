@@ -218,6 +218,10 @@ class PorticoState(val store: PorticoStore) {
     var showValuationSheet by mutableStateOf(false)
     var showLogoutDialog by mutableStateOf(false)
     var showDeleteAccountDialog by mutableStateOf(false)
+    var showDeleteIdentityDialog by mutableStateOf(false)
+    var showPasswordDialog by mutableStateOf(false)
+    var deleteIdentityConfirmation by mutableStateOf("")
+    var deletingIdentity by mutableStateOf(false)
     var showDiscardDraftDialog by mutableStateOf(false)
     var showPaywall by mutableStateOf(false)
     var checkoutStage by mutableStateOf(CheckoutStage.DETAILS)
@@ -313,6 +317,8 @@ class PorticoState(val store: PorticoStore) {
     /** Commit the draft as a new property, or as an edit of an existing one. */
     suspend fun commitDraft() {
         val id = editingPropertyId ?: PorticoStore.newId("p")
+        // Photographs move to private storage before the record references them.
+        val storedPhotos = store.storePhotos(id, draft.photoUris)
         val property = Property(
             id = id,
             name = draft.name.trim(),
@@ -327,7 +333,7 @@ class PorticoState(val store: PorticoStore) {
             financingAmount = draft.number(draft.financing),
             currentValue = store.propertyById(id)?.currentValue ?: draft.purchasePriceValue,
             currency = draft.currency,
-            photoUris = draft.photoUris,
+            photoUris = storedPhotos,
             note = ""
         )
 

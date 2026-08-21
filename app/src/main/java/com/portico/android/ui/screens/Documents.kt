@@ -126,6 +126,13 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
     val semantic = PorticoTheme.semantic
     var opening by remember(document.id) { mutableStateOf(false) }
     var deleting by remember(document.id) { mutableStateOf(false) }
+    var pdfHandle by remember(document.id) { mutableStateOf<PdfDocumentHandle?>(null) }
+
+    // The renderer holds a file descriptor. Leaving the screen without closing
+    // it leaks one per document opened.
+    DisposableEffect(document.id) {
+        onDispose { pdfHandle?.close() }
+    }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Row(
@@ -192,9 +199,19 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                             PorticoIcon(Glyph.DOCUMENT, size = 42.dp, tint = semantic.tertiaryText, contentDescription = null)
                         }
                         Spacer(Modifier.height(Space.lg))
+                        /*
+                         * PDFs open inside Portico. These are private documents,
+                         * and handing a content URI to whichever app claims the
+                         * MIME type is the moment the product stops having
+                         * custody of them. Anything that is not a PDF still goes
+                         * out to the system, because rendering arbitrary formats
+                         * is not this app's job.
+                         */
+                        val isPdf = document.fileName.substringAfterLast('.', "")
+                            .equals("pdf", ignoreCase = true)
                         PrimaryButton(
-                            "Open in document viewer",
-                            glyph = Glyph.EXTERNAL,
+                            if (isPdf) "Read document" else "Open in document viewer",
+                            glyph = if (isPdf) Glyph.DOCUMENT else Glyph.EXTERNAL,
                             loading = opening
                         ) {
                             scope.launch {
@@ -205,13 +222,18 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                                     } else {
                                         PorticoFiles.download(context, document)
                                     }
-                                    val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                                    setDataAndType(uri, documentMimeType(document.fileName))
-                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                    context.startActivity(intent)
+                                    if (isPdf) {
+                                        pdfHandle?.close()
+                                        pdfHandle = openPdf(context, uri).getOrThrow()
+                                    } else {
+                                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                            setDataAndType(uri, documentMimeType(document.fileName))
+                                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(intent)
+                                    }
                                 }.onFailure { error ->
-                                    state.notify(error.message ?: "No app can open this document.")
+                                    state.notify(error.message ?: "This document could not be opened.")
                                 }
                                 opening = false
                             }
@@ -232,6 +254,20 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
             DataRow("Size", document.readableSize)
             Hairline()
             DataRow("Visibility", "Private to this workspace")
+        }
+
+        pdfHandle?.let { handle ->
+            Panel(Modifier.padding(horizontal = Space.lg)) {
+                PanelHeader(
+                    "Document",
+                    action = "Close",
+                    onAction = {
+                        handle.close()
+                        pdfHandle = null
+                    }
+                )
+                PdfViewer(handle, Modifier.padding(Space.sm).heightIn(max = 1_400.dp))
+            }
         }
 
         Box(Modifier.padding(horizontal = Space.lg)) {

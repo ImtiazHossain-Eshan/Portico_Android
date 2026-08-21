@@ -19,6 +19,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.portico.android.data.PorticoStore
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
 import com.portico.android.ui.Route
@@ -42,6 +43,7 @@ fun PropertyRow(
     result: PropertyFinancials,
     modifier: Modifier = Modifier,
     currency: String = "USD",
+    store: PorticoStore? = null,
     shareOfPortfolio: Double = 0.0,
     detailed: Boolean = false,
     onEdit: (() -> Unit)? = null,
@@ -66,6 +68,12 @@ fun PropertyRow(
             .padding(horizontal = Space.lg, vertical = Space.md)
     ) {
         Row(verticalAlignment = Alignment.Top) {
+            PropertyThumbnail(
+                photoUri = property.photoUris.firstOrNull(),
+                propertyName = property.name,
+                store = store
+            )
+            Spacer(Modifier.width(Space.md))
             Column(Modifier.weight(1f)) {
                 Text(
                     property.name,

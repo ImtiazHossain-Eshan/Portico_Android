@@ -24,3 +24,8 @@ bridge/.env*
 !bridge/.env.example
 bridge/node_modules/
 bridge/.vercel/
+
+# Release signing. The keystore and its passwords never enter the repository.
+/keystore.properties
+*.jks
+*.keystore

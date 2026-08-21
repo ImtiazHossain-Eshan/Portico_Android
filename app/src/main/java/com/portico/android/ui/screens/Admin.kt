@@ -391,8 +391,12 @@ private fun AdminAnalytics(state: PorticoState) {
 private fun AdminActivity(state: PorticoState) {
     val semantic = PorticoTheme.semantic
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Audit log", supporting = "Every sensitive action")
-        Seed.auditLog.forEachIndexed { index, entry ->
+        val entries = state.store.auditTrail()
+        PanelHeader(
+            "Audit log",
+            supporting = if (entries.isEmpty()) "Nothing recorded yet" else "${entries.size} recorded actions"
+        )
+        entries.forEachIndexed { index, entry ->
             if (index > 0) Hairline()
             DataRow(
                 label = entry.action,

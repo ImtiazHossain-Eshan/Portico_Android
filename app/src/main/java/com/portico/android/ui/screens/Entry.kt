@@ -9,6 +9,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -55,7 +57,7 @@ fun SplashScreen(onFinished: () -> Unit, modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(Space.xs))
             Text(
-                "Property capital, measured",
+                stringResource(R.string.app_tagline),
                 style = MaterialTheme.typography.labelSmall,
                 color = PorticoTheme.semantic.tertiaryText
             )
@@ -69,29 +71,34 @@ private fun Int.sp8() = androidx.compose.ui.unit.TextUnit(
 
 private data class OnboardingPage(
     val glyph: Glyph,
-    val title: String,
+    /**
+     * The title is a resource id rather than a string because this list is a
+     * top-level value: stringResource needs a composition, and a page list that
+     * cannot be built outside one would have to be rebuilt on every recomposition.
+     */
+    val titleRes: Int,
     val body: String
 )
 
 private val onboardingPages = listOf(
     OnboardingPage(
         Glyph.PORTFOLIO,
-        "Every property in one register",
+        R.string.onboarding_register,
         "Purchase price, current value, rent and running costs, the facts each decision rests on, kept together."
     ),
     OnboardingPage(
         Glyph.REPORTS,
-        "Return worked out, not guessed",
+        R.string.onboarding_return,
         "ROI, cap rate, gross and net yield and cashflow are computed from what you enter, so they move when your records do."
     ),
     OnboardingPage(
         Glyph.TAX,
-        "What you keep, not what you collect",
+        R.string.onboarding_net,
         "Gross rent falls through expenses and tax to a net figure, modelled for Bangladesh, Uruguay and Argentina, and editable by you."
     ),
     OnboardingPage(
         Glyph.ASSISTANT,
-        "Answers with the working shown",
+        R.string.onboarding_answers,
         "Ask which property earns least after tax, or what a rent change would do. Every answer comes with the arithmetic."
     )
 )
@@ -140,7 +147,7 @@ fun OnboardingScreen(
             }
             Spacer(Modifier.height(Space.xxl))
             Text(
-                current.title,
+                stringResource(current.titleRes),
                 style = MaterialTheme.typography.headlineLarge,
                 textAlign = TextAlign.Center
             )
@@ -174,15 +181,15 @@ fun OnboardingScreen(
         }
 
         if (isLast) {
-            PrimaryButton("Sign in or create an account", Modifier.fillMaxWidth(), onClick = onSignIn)
+            PrimaryButton(stringResource(R.string.entry_sign_in), Modifier.fillMaxWidth(), onClick = onSignIn)
             Spacer(Modifier.height(Space.sm))
-            SecondaryButton("Explore with demo data", Modifier.fillMaxWidth(), onClick = onUseDemo)
+            SecondaryButton(stringResource(R.string.entry_demo), Modifier.fillMaxWidth(), onClick = onUseDemo)
         } else {
             PrimaryButton("Next", Modifier.fillMaxWidth(), glyph = Glyph.FORWARD, glyphTrailing = true) {
                 state.onboardingPage = page + 1
             }
             Spacer(Modifier.height(Space.sm))
-            SecondaryButton("Explore with demo data", Modifier.fillMaxWidth(), onClick = onUseDemo)
+            SecondaryButton(stringResource(R.string.entry_demo), Modifier.fillMaxWidth(), onClick = onUseDemo)
         }
         Spacer(Modifier.height(Space.sm))
     }

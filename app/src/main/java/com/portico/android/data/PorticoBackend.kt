@@ -4,6 +4,7 @@ import com.portico.android.BuildConfig
 import com.portico.android.domain.CardInput
 import com.portico.android.domain.ExpenseEntry
 import com.portico.android.domain.IncomeEntry
+import com.portico.android.domain.MarketReference
 import com.portico.android.domain.Payment
 import com.portico.android.domain.Property
 import com.portico.android.domain.Subscription
@@ -25,6 +26,55 @@ class PorticoBackendException(
     val code: String,
     override val message: String
 ) : Exception(message)
+
+@Serializable
+data class AssistantRequest(val question: String, val context: String)
+
+@Serializable
+data class OrganizationRequest(
+    val action: String,
+    val organizationId: String? = null,
+    val name: String? = null,
+    val email: String? = null,
+    val role: String? = null,
+    val userId: String? = null,
+    val memberName: String? = null,
+    val memberEmail: String? = null
+)
+
+@Serializable
+data class OrganizationMemberRecord(
+    val userId: String = "",
+    val organizationId: String = "",
+    val role: String = "VIEWER",
+    val name: String = "",
+    val email: String = "",
+    val joinedAt: String = ""
+)
+
+@Serializable
+data class OrganizationRecord(
+    val id: String = "",
+    val name: String = "",
+    val ownerId: String = "",
+    val createdAt: String = "",
+    /** The signed-in member's own role in this organization. */
+    val role: String = "VIEWER",
+    val members: List<OrganizationMemberRecord> = emptyList()
+)
+
+@Serializable
+private data class OrganizationListResponse(val organizations: List<OrganizationRecord> = emptyList())
+
+@Serializable
+private data class MemberListResponse(
+    val members: List<OrganizationMemberRecord> = emptyList(),
+    val left: Boolean = false
+)
+
+/** The server refuses deletion unless this exact word arrives with it. */
+@Serializable
+data class AccountDeletionRequest(val confirm: String = "DELETE")
 
 @Serializable
 data class PropertyCreateBundle(
@@ -124,8 +174,118 @@ object PorticoBackend {
         )
     }
 
+    /**
+     * Asks the Gemma-backed analyst a question about the supplied figures.
+     *
+     * Returns null whenever cloud analysis is unavailable for any reason at
+     * all: no key on the server, no network, rate limited, model down. The
+     * caller answers from the device instead, so the feature never surfaces as
+     * a failure the member has to understand.
+     */
+    suspend fun askAssistant(question: String, context: String): String? = runCatching {
+        val body = request(
+            path = "assistant",
+            method = "POST",
+            payload = json.encodeToString(AssistantRequest(question, context))
+        )
+        json.parseToJsonElement(body).jsonObject["answer"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
+    }.getOrNull()
+
+    /**
+     * Fetches the published market reference set.
+     *
+     * Null on any failure, and the caller keeps whatever it already had. Market
+     * figures are context, never the basis of a stored record, so a fetch that
+     * fails costs the member nothing but freshness.
+     */
+    suspend fun market(): MarketReference? = runCatching {
+        json.decodeFromString<MarketReference>(request(path = "market", method = "GET"))
+    }.getOrNull()
+
+    // ------------------------------------------------------- organizations
+
+    /**
+     * Organizations the signed-in member belongs to, with their roster.
+     *
+     * Every mutation returns the fresh roster rather than a status, so the
+     * screen never has to guess what the server decided. Rank rules live on the
+     * server; these calls surface its refusals verbatim.
+     */
+    suspend fun organizations(): List<OrganizationRecord> = runCatching {
+        json.decodeFromString<OrganizationListResponse>(
+            request(path = "organizations", method = "GET")
+        ).organizations
+    }.getOrDefault(emptyList())
+
+    suspend fun createOrganization(name: String, memberName: String, memberEmail: String): OrganizationRecord =
+        json.decodeFromString(
+            request(
+                path = "organizations",
+                method = "POST",
+                payload = json.encodeToString(
+                    OrganizationRequest(
+                        action = "create", name = name,
+                        memberName = memberName, memberEmail = memberEmail
+                    )
+                )
+            )
+        )
+
+    suspend fun inviteMember(organizationId: String, email: String, role: String): List<OrganizationMemberRecord> =
+        json.decodeFromString<MemberListResponse>(
+            request(
+                path = "organizations",
+                method = "POST",
+                payload = json.encodeToString(
+                    OrganizationRequest(action = "invite", organizationId = organizationId, email = email, role = role)
+                )
+            )
+        ).members
+
+    suspend fun setMemberRole(organizationId: String, userId: String, role: String): List<OrganizationMemberRecord> =
+        json.decodeFromString<MemberListResponse>(
+            request(
+                path = "organizations",
+                method = "POST",
+                payload = json.encodeToString(
+                    OrganizationRequest(action = "role", organizationId = organizationId, userId = userId, role = role)
+                )
+            )
+        ).members
+
+    suspend fun removeMember(organizationId: String, userId: String): List<OrganizationMemberRecord> =
+        json.decodeFromString<MemberListResponse>(
+            request(
+                path = "organizations",
+                method = "POST",
+                payload = json.encodeToString(
+                    OrganizationRequest(action = "remove", organizationId = organizationId, userId = userId)
+                )
+            )
+        ).members
+
     suspend fun eraseWorkspace() {
         request(path = "workspace", method = "DELETE")
+    }
+
+    /**
+     * Deletes the account itself: every record, every private file, and both
+     * the Firebase and Clerk identities.
+     *
+     * The confirmation word is re-checked on the server, so a call that reaches
+     * the endpoint by accident cannot destroy an account. Returns true when the
+     * server confirmed both identities were removed; a false means the records
+     * are gone but an identity outlived them, which is worth telling the user.
+     */
+    suspend fun deleteAccount(): Boolean {
+        val body = request(
+            path = "account",
+            method = "DELETE",
+            payload = json.encodeToString(AccountDeletionRequest())
+        )
+        return runCatching {
+            json.parseToJsonElement(body).jsonObject["complete"]?.jsonPrimitive?.content == "true"
+        }.getOrDefault(false)
     }
 
     private suspend fun request(path: String, method: String, payload: String? = null): String =

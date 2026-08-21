@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import com.portico.android.data.PorticoBackend
 import com.portico.android.data.PorticoStore
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
@@ -82,11 +83,28 @@ fun AssistantScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 state.assistantError = "You're offline. Analysis runs on this device, so try again once the app settles."
                 return@launch
             }
+            /*
+             * The device analyst always runs: it is the answer of record, it
+             * costs nothing, and its workings are what the panel below the
+             * reply renders. Gemma is asked only when the member has turned
+             * cloud analysis on, and its prose replaces the text while the
+             * computed workings stay exactly as derived here. A null means
+             * unavailable for any reason, and the device answer stands.
+             */
             val reply = Analyst.answer(question, results, portfolio, store.taxProfile, currency, focus)
+            val cloudText = if (store.preferences.cloudAssistant && store.usesSecureBackend) {
+                PorticoBackend.askAssistant(
+                    question = question,
+                    context = Analyst.factSheet(results, portfolio, store.taxProfile, currency, focus)
+                )
+            } else {
+                null
+            }
+
             store.saveConversation(
                 withQuestion.copy(
                     messages = withQuestion.messages + AiMessage(
-                        PorticoStore.newId("msg"), target.id, false, reply.text, now, reply.workings
+                        PorticoStore.newId("msg"), target.id, false, cloudText ?: reply.text, now, reply.workings
                     )
                 )
             )

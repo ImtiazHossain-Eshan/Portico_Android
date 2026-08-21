@@ -120,6 +120,7 @@ fun PortfolioScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     PropertyRow(
                         result = result,
                         currency = currency,
+                        store = state.store,
                         detailed = true,
                         shareOfPortfolio = if (portfolio.portfolioValue > 0)
                             result.property.currentValue / portfolio.portfolioValue else 0.0,

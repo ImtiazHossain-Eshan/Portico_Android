@@ -27,6 +27,7 @@ import kotlin.math.abs
  */
 @Composable
 fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
+    val market = state.store.market
     val store = state.store
     val currency = store.profile.currency
     val semantic = PorticoTheme.semantic
@@ -47,9 +48,9 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
     }
 
     val result = store.financialsFor(property.id)!!
-    val comparables = Seed.comparables.filter {
+    val comparables = market.comparables.filter {
         it.region.substringBefore(" ·") == property.region.substringBefore(" ·")
-    }.ifEmpty { Seed.comparables }
+    }.ifEmpty { market.comparables }
 
     val medianPerSqm = comparables.map { it.pricePerSqm }.sorted().let { sorted ->
         if (sorted.isEmpty()) 0.0
@@ -127,9 +128,9 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader("Market signals", supporting = "Trailing twelve months")
-            Seed.marketSignals
+            market.signals
                 .filter { it.region.substringBefore(" ·") == property.region.substringBefore(" ·") }
-                .ifEmpty { Seed.marketSignals.take(2) }
+                .ifEmpty { market.signals.take(2) }
                 .forEachIndexed { index, signal ->
                     if (index > 0) Hairline()
                     DataRow(
@@ -159,7 +160,7 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         SyntheticNote(
-            "Comparables and market signals are illustrative sample data, not a live feed. " +
+            "${market.provider.disclosure}. " +
                 "The estimate is a median price-per-m² model, shown so you can judge it."
         )
     }
@@ -217,16 +218,17 @@ private val acquisitionSteps = listOf("Search", "Property", "Comparables", "Anal
  */
 @Composable
 fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
+    val market = state.store.market
     val store = state.store
     val currency = store.profile.currency
     val semantic = PorticoTheme.semantic
     val step = state.acquisitionStep.coerceIn(0, acquisitionSteps.lastIndex)
 
     var query by remember { mutableStateOf("") }
-    val listings = Seed.listings.filter {
+    val listings = market.listings.filter {
         query.isBlank() || it.address.contains(query, true) || it.region.contains(query, true)
     }
-    val listing = Seed.listings.firstOrNull { it.id == state.acquisitionListingId }
+    val listing = market.listings.firstOrNull { it.id == state.acquisitionListingId }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -307,9 +309,9 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     listOf(ExpenseEntry("c-e", "candidate", rent * 0.25, ExpenseCategory.OTHER.label, candidate.purchaseDate)),
                     store.taxProfile
                 )
-                val comparables = Seed.comparables.filter {
+                val comparables = market.comparables.filter {
                     it.region.substringBefore(" ·") == listing.region.substringBefore(" ·")
-                }.ifEmpty { Seed.comparables }
+                }.ifEmpty { market.comparables }
                 val medianPerSqm = comparables.map { it.pricePerSqm }.average()
                 val modelValue = medianPerSqm * listing.sizeSqm
 
