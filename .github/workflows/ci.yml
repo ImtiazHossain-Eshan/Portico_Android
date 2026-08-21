@@ -32,6 +32,13 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Git on Windows does not track the executable bit, so a commit made
+      # there can land gradlew as 100644 and every Gradle step then fails with
+      # "Permission denied". The index is set correctly, and this makes the
+      # workflow survive it happening again.
+      - name: Make the wrapper executable
+        run: chmod +x gradlew
+
       # google-services.json is deliberately not in the repository. The build
       # is written to configure without it, and this job is what keeps that
       # true: if someone makes Firebase mandatory, CI fails here rather than on
