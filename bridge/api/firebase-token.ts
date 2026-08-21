@@ -1,6 +1,7 @@
 import type {VercelRequest, VercelResponse} from "@vercel/node";
 import {importPKCS8, SignJWT} from "jose";
 import {ClerkAuthorizationError, verifyClerkRequest} from "../lib/clerk-auth.js";
+import {consumeRateLimit} from "../lib/rate-limit.js";
 
 const requiredEnvironment = [
   "CLERK_ISSUER",
@@ -66,6 +67,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const clerkUserId = await verifyClerkRequest(request);
+    await consumeRateLimit(clerkUserId, "firebase-token");
     const token = await firebaseCustomToken(clerkUserId);
     response.status(200).json({token});
   } catch (error) {

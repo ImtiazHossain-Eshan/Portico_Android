@@ -1,3 +1,103 @@
 <resources>
     <string name="app_name">Portico</string>
+    <string name="app_tagline">Property capital, measured</string>
+
+    <!-- Navigation -->
+    <string name="nav_overview">Overview</string>
+    <string name="nav_portfolio">Portfolio</string>
+    <string name="nav_reports">Reports</string>
+    <string name="nav_assistant">Assistant</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Entry and onboarding -->
+    <string name="entry_sign_in">Sign in or create an account</string>
+    <string name="entry_demo">Explore with demo data</string>
+    <string name="onboarding_register">Every property in one register</string>
+    <string name="onboarding_return">Return worked out, not guessed</string>
+    <string name="onboarding_net">What you keep, not what you collect</string>
+    <string name="onboarding_answers">Answers with the working shown</string>
+
+    <!-- Authentication -->
+    <string name="auth_email">Email address</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_confirm_password">Confirm password</string>
+    <string name="auth_full_name">Full name</string>
+    <string name="auth_sign_in">Sign in</string>
+    <string name="auth_create_account">Create account</string>
+    <string name="auth_forgot">Forgot password?</string>
+    <string name="auth_email_code">Email me a code</string>
+    <string name="auth_verify">Verify</string>
+    <string name="auth_verification_code">Verification code</string>
+    <string name="auth_continue_google">Continue with Google</string>
+    <string name="auth_continue_github">Continue with GitHub</string>
+    <string name="auth_sign_out">Sign out</string>
+    <string name="auth_no_account">No account found for that email.</string>
+    <string name="auth_password_rule">Your workspace requires at least %1$d characters.</string>
+
+    <!-- Common actions -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_add">Add</string>
+    <string name="action_close">Close</string>
+    <string name="action_back">Back</string>
+    <string name="action_next">Next</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_done">Done</string>
+
+    <!-- Financial vocabulary. These are the terms the whole product turns on,
+         so each one is translated with the English kept alongside where the
+         Bangla term alone would be ambiguous to a working investor. -->
+    <string name="metric_portfolio_value">Portfolio value</string>
+    <string name="metric_total_return">Total return</string>
+    <string name="metric_roi">Return on investment</string>
+    <string name="metric_cap_rate">Cap rate</string>
+    <string name="metric_gross_yield">Gross yield</string>
+    <string name="metric_net_yield">Net yield</string>
+    <string name="metric_monthly_cashflow">Monthly cashflow</string>
+    <string name="metric_annual_income">Annual income</string>
+    <string name="metric_annual_expenses">Annual expenses</string>
+    <string name="metric_gross_income">Gross income</string>
+    <string name="metric_operating_expenses">Operating expenses</string>
+    <string name="metric_taxes_and_fees">Taxes and fees</string>
+    <string name="metric_net_income">Net income</string>
+    <string name="metric_purchase_price">Purchase price</string>
+    <string name="metric_current_value">Current value</string>
+    <string name="metric_appreciation">Appreciation</string>
+
+    <!-- Property -->
+    <string name="property_name">Property name</string>
+    <string name="property_address">Street address</string>
+    <string name="property_region">City and neighbourhood</string>
+    <string name="property_country">Country</string>
+    <string name="property_type">Property type</string>
+    <string name="property_size">Size</string>
+    <string name="property_add">Add property</string>
+    <string name="property_photo_add">Add a photograph</string>
+    <string name="property_photo_added">Photograph added</string>
+
+    <!-- States -->
+    <string name="state_loading">Loading</string>
+    <string name="state_offline">You are offline</string>
+    <string name="state_empty_portfolio">No properties yet</string>
+    <string name="state_error">Something went wrong</string>
+
+    <!-- Settings -->
+    <string name="settings_preferences">Preferences</string>
+    <string name="settings_currency">Currency</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_change_password">Change password</string>
+    <string name="settings_delete_account">Delete account</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_bangla">বাংলা</string>
+    <string name="settings_language_note">Restarts the screen so every label is re-read in the new language.</string>
 </resources>

@@ -3,6 +3,14 @@ package com.portico.android.ui.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import com.clerk.api.user.User
+import com.clerk.api.user.updatePassword
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
@@ -15,10 +23,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.clerk.api.Clerk
+import com.clerk.api.network.model.error.ClerkErrorResponse
 import com.clerk.api.network.serialization.ClerkResult
 import kotlinx.coroutines.launch
 import com.portico.android.data.PorticoExport
 import com.portico.android.domain.*
+import androidx.compose.ui.res.stringResource
+import com.portico.android.R
+import com.portico.android.ui.AppLanguage
 import com.portico.android.ui.PorticoState
 import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
@@ -31,6 +43,20 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
     val semantic = PorticoTheme.semantic
     val profile = store.profile
     val portfolio = store.portfolio()
+    val avatarContext = LocalContext.current
+    val avatarPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                avatarContext.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            store.setProfile { it.copy(profileImageUri = uri.toString()) }
+        }
+    }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -39,19 +65,40 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
             Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            /*
+             * Tapping the avatar changes it. Initials remain the fallback and
+             * the resting state, because most members never set a picture and a
+             * grey silhouette says less about who they are than their own
+             * initials do.
+             */
             Box(
                 Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.16f))
+                    .clickable {
+                        avatarPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    profile.name.split(" ").mapNotNull { it.firstOrNull() }.take(2).joinToString(""),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
+                val avatar = profile.profileImageUri
+                if (avatar.isNullOrBlank()) {
+                    Text(
+                        profile.name.split(" ").mapNotNull { it.firstOrNull() }.take(2).joinToString(""),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                } else {
+                    AsyncImage(
+                        model = avatar,
+                        contentDescription = "Your profile photograph",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
             Spacer(Modifier.width(Space.lg))
             Column(Modifier.weight(1f)) {
@@ -314,6 +361,60 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
             ) { value -> store.setPreferences { it.copy(notificationsMarket = value) } }
         }
 
+        /*
+         * The language selector is back because it now does something. The
+         * previous one set a preference and changed nothing on screen, which
+         * is the kind of control this build exists to remove; this one hands
+         * the choice to the platform, which recreates the activity and re-reads
+         * every label from the resource set.
+         */
+        Panel(Modifier.padding(horizontal = Space.lg)) {
+            PanelHeader(stringResource(R.string.settings_language))
+            val language = AppLanguage.current()
+            SegmentedRow(
+                AppLanguage.entries.map { it.label },
+                language.label
+            ) { label ->
+                AppLanguage.entries.firstOrNull { it.label == label }?.let(AppLanguage::apply)
+            }
+            Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
+                Text(
+                    stringResource(R.string.settings_language_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = semantic.tertiaryText
+                )
+            }
+        }
+
+        /*
+         * Cloud analysis is the one setting that changes where a member's
+         * figures go, so it says so in the row rather than in a policy page
+         * nobody opens. Off by default; the on-device analyst answers either
+         * way, so turning it off never removes a capability.
+         */
+        Panel(Modifier.padding(horizontal = Space.lg)) {
+            PanelHeader("Portico Intelligence")
+            SwitchRow(
+                "Cloud analysis",
+                preferences.cloudAssistant,
+                supporting = if (preferences.cloudAssistant) {
+                    "Computed figures are sent to Gemma for wording. No address, document or note is included."
+                } else {
+                    "Answers are worked out on this device. Nothing is sent anywhere."
+                },
+                glyph = Glyph.ASSISTANT
+            ) { value -> store.setPreferences { it.copy(cloudAssistant = value) } }
+            if (preferences.cloudAssistant) {
+                Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
+                    Text(
+                        "Sent: property names, types, regions and the figures Portico computed. Never sent: street addresses, documents, notes or your identity. The arithmetic shown under each answer is always the device's own.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = semantic.tertiaryText
+                    )
+                }
+            }
+        }
+
         SyntheticNote(
             "Preferences sync with your private workspace. Push delivery still needs a messaging service, which is not connected."
         )
@@ -400,13 +501,9 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
             NavRow(
                 "Change password",
                 glyph = Glyph.KEY,
-                supporting = "Opens your account portal"
+                supporting = "Set a new password without leaving Portico"
             ) {
-                runCatching {
-                    context.startActivity(
-                        Intent(Intent.ACTION_VIEW, Uri.parse("https://sharing-iguana-58.accounts.dev/user"))
-                    )
-                }.onFailure { state.notify("No browser available to open the account portal.") }
+                state.showPasswordDialog = true
             }
             Hairline()
             NavRow(
@@ -468,12 +565,126 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
             "Firestore and private file storage enforce per-user access. Passwords and server credentials never ship in the APK."
         )
     }
+
+    if (state.showPasswordDialog) ChangePasswordDialog(state)
+}
+
+/**
+ * Changing a password in the app rather than in a browser.
+ *
+ * Clerk enforces the same policy the sign-up screen advertises, so the rule is
+ * stated before the member types and checked here too; a server rejection after
+ * a filled form is the failure this build set out to remove. Signing other
+ * sessions out is offered because a password change is usually prompted by
+ * suspecting one of them.
+ */
+@Composable
+private fun ChangePasswordDialog(state: PorticoState) {
+    val scope = rememberCoroutineScope()
+    var current by remember { mutableStateOf("") }
+    var next by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    var signOutOthers by remember { mutableStateOf(true) }
+    var working by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val tooShort = next.isNotEmpty() && next.length < PasswordPolicy.MIN_LENGTH
+    val mismatch = confirm.isNotEmpty() && confirm != next
+    val ready = current.isNotBlank() &&
+        PasswordPolicy.isValid(next) &&
+        confirm == next &&
+        !working
+
+    AlertDialog(
+        onDismissRequest = { if (!working) state.showPasswordDialog = false },
+        title = { Text("Change password") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.md)) {
+                PorticoField(
+                    current, { current = it }, "Current password",
+                    isPassword = true, enabled = !working
+                )
+                PorticoField(
+                    next, { next = it }, "New password",
+                    isPassword = true, enabled = !working,
+                    supporting = if (tooShort) null else PasswordPolicy.summary,
+                    error = if (tooShort) {
+                        "At least ${PasswordPolicy.MIN_LENGTH} characters (${next.length}/${PasswordPolicy.MIN_LENGTH})"
+                    } else null
+                )
+                PorticoField(
+                    confirm, { confirm = it }, "Confirm new password",
+                    isPassword = true, enabled = !working,
+                    error = if (mismatch) "The two entries do not match." else null
+                )
+                SwitchRow(
+                    "Sign out other devices",
+                    signOutOthers,
+                    supporting = "Recommended if you think someone else has the old password"
+                ) { signOutOthers = it }
+                error?.let { InlineError(it) }
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = ready, onClick = {
+                scope.launch {
+                    working = true
+                    error = null
+                    val user = Clerk.user
+                    if (user == null) {
+                        error = "You are not signed in."
+                    } else {
+                        when (val result = user.updatePassword(
+                            User.UpdatePasswordParams(
+                                currentPassword = current,
+                                newPassword = next,
+                                signOutOfOtherSessions = signOutOthers
+                            )
+                        )) {
+                            is ClerkResult.Success -> {
+                                state.showPasswordDialog = false
+                                state.notify("Password changed")
+                            }
+                            is ClerkResult.Failure -> error = explainPasswordFailure(result)
+                        }
+                    }
+                    working = false
+                }
+            }) { Text(if (working) "Saving..." else "Change password") }
+        },
+        dismissButton = {
+            TextButton(enabled = !working, onClick = { state.showPasswordDialog = false }) {
+                Text("Cancel")
+            }
+        },
+        containerColor = PorticoTheme.semantic.panel
+    )
+}
+
+/** Clerk's codes, turned into something a person can act on. */
+private fun explainPasswordFailure(failure: ClerkResult.Failure<*>): String {
+    val response = failure.error as? ClerkErrorResponse
+    val code = response?.errors?.firstOrNull()?.code.orEmpty()
+    if (code.isEmpty() && failure.throwable != null) {
+        return "Can't reach the identity service. Check your connection and try again."
+    }
+    return when {
+        code.contains("incorrect") || code.contains("verification") ->
+            "That current password is not right."
+        code == "form_password_length_too_short" || code.contains("length") ->
+            PasswordPolicy.summary
+        code == "form_password_pwned" ->
+            "That password appears in a known breach list. Choose another."
+        code.contains("rate") || code.contains("too_many") ->
+            "Too many attempts. Wait a few minutes and try again."
+        else -> "The password could not be changed. Check your connection and try again."
+    }
 }
 
 // ----------------------------------------------------------------- privacy
 
 @Composable
-fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
+fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier = Modifier) {
     val store = state.store
     val context = LocalContext.current
     val semantic = PorticoTheme.semantic
@@ -529,6 +740,16 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 supporting = "Removes every synced property, record and private document",
                 tint = MaterialTheme.colorScheme.error
             ) { state.showDeleteAccountDialog = true }
+            Hairline()
+            NavRow(
+                "Delete account",
+                glyph = Glyph.DELETE,
+                supporting = "Erases the workspace and closes the account permanently",
+                tint = MaterialTheme.colorScheme.error
+            ) {
+                state.deleteIdentityConfirmation = ""
+                state.showDeleteIdentityDialog = true
+            }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
@@ -536,7 +757,11 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             Column(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
                 listOf(
                     "Financial records are isolated to your authenticated Firestore workspace.",
-                    "Assistant analysis runs locally; no question is sent anywhere.",
+                    if (store.preferences.cloudAssistant) {
+                        "Cloud analysis is on: computed figures go to Gemma, addresses and documents never do."
+                    } else {
+                        "Assistant analysis runs locally; no question is sent anywhere."
+                    },
                     "Document bytes use private Blob storage; metadata stays in Firestore.",
                     "Deleting a property deletes everything attached to it."
                 ).forEach { line ->
@@ -578,6 +803,82 @@ fun PrivacyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             },
             dismissButton = {
                 TextButton(onClick = { state.showDeleteAccountDialog = false }) { Text("Cancel") }
+            },
+            containerColor = PorticoTheme.semantic.panel
+        )
+    }
+
+    /*
+     * Deleting an account is the one action in the product with no undo and no
+     * support path, so it asks for the word rather than a second tap. The same
+     * word is re-checked on the server, which is what actually protects the
+     * account; this is here so nobody arrives at the outcome by reflex.
+     */
+    if (state.showDeleteIdentityDialog) {
+        val confirmed = state.deleteIdentityConfirmation.trim() == "DELETE"
+        AlertDialog(
+            onDismissRequest = {
+                if (!state.deletingIdentity) state.showDeleteIdentityDialog = false
+            },
+            title = { Text("Delete your account?") },
+            text = {
+                Column {
+                    Text(
+                        "Every property, income and expense record, private document, receipt and conversation is erased, and your sign-in is closed. This cannot be undone and support cannot restore it."
+                    )
+                    Spacer(Modifier.height(Space.md))
+                    PorticoField(
+                        value = state.deleteIdentityConfirmation,
+                        onValueChange = { state.deleteIdentityConfirmation = it },
+                        label = "Type DELETE to confirm",
+                        enabled = !state.deletingIdentity,
+                        supporting = if (confirmed) null else "The word must match exactly."
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = confirmed && !state.deletingIdentity,
+                    onClick = {
+                        scope.launch {
+                            state.deletingIdentity = true
+                            val outcome = runCatching { store.deleteAccount() }
+                            state.deletingIdentity = false
+                            state.showDeleteIdentityDialog = false
+                            state.deleteIdentityConfirmation = ""
+                            outcome
+                                .onSuccess { complete ->
+                                    state.notify(
+                                        if (complete) "Account deleted"
+                                        else "Records deleted. Closing the sign-in did not complete; contact support if you can still sign in."
+                                    )
+                                    onSignOut()
+                                }
+                                .onFailure {
+                                    // The device cache is wiped either way, so
+                                    // signing out keeps the app honest about
+                                    // what is left.
+                                    state.notify(it.message ?: "The account could not be fully deleted")
+                                    onSignOut()
+                                }
+                        }
+                    }
+                ) {
+                    Text(
+                        if (state.deletingIdentity) "Deleting..." else "Delete account",
+                        color = if (confirmed && !state.deletingIdentity) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            PorticoTheme.semantic.tertiaryText
+                        }
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !state.deletingIdentity,
+                    onClick = { state.showDeleteIdentityDialog = false }
+                ) { Text("Keep my account") }
             },
             containerColor = PorticoTheme.semantic.panel
         )

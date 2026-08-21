@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Languages Portico ships. Android reads this to populate the per-app
+    language picker in system Settings, so the app appears there without any
+    extra work, and to decide which resource set to resolve.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="bn" />
+</locale-config>

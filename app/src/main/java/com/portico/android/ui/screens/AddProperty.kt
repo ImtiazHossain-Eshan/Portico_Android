@@ -2,6 +2,12 @@
 
 package com.portico.android.ui.screens
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -177,11 +183,64 @@ private fun StepIndicator(current: Int, modifier: Modifier = Modifier) {
 private fun StepProperty(state: PorticoState) {
     val draft = state.draft
     val countries = TaxCatalog.countries + listOf("Other")
+    val context = LocalContext.current
+
+    /*
+     * The system photo picker needs no storage permission and shows only what
+     * the user chooses, so nothing else in their gallery is ever readable. The
+     * URI is held with a persistable grant, otherwise it stops resolving after
+     * a reboot and the property silently loses its picture.
+     */
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+            state.updateDraft { it.copy(photoUris = listOf(uri.toString())) }
+        }
+    }
 
     Column(
         Modifier.padding(horizontal = Space.lg),
         verticalArrangement = Arrangement.spacedBy(Space.md)
     ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            PropertyThumbnail(
+                photoUri = draft.photoUris.firstOrNull(),
+                propertyName = draft.name.ifBlank { "this property" },
+                size = 64.dp
+            )
+            Spacer(Modifier.width(Space.md))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    if (draft.photoUris.isEmpty()) "Add a photograph" else "Photograph added",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    "Optional. It appears on the register and the property page.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = PorticoTheme.semantic.tertiaryText
+                )
+            }
+            Spacer(Modifier.width(Space.sm))
+            TextButton(onClick = {
+                if (draft.photoUris.isEmpty()) {
+                    photoPicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                } else {
+                    state.updateDraft { it.copy(photoUris = emptyList()) }
+                }
+            }) {
+                Text(if (draft.photoUris.isEmpty()) "Choose" else "Remove")
+            }
+        }
+        Hairline()
         PorticoField(draft.name, { v -> state.updateDraft { it.copy(name = v) } }, "Property name", placeholder = "Harbor House")
         PorticoField(draft.address, { v -> state.updateDraft { it.copy(address = v) } }, "Street address", placeholder = "Bulevar España 2340")
         PorticoField(draft.region, { v -> state.updateDraft { it.copy(region = v) } }, "City and neighbourhood", placeholder = "Montevideo · Pocitos")

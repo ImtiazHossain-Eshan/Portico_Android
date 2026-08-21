@@ -31,6 +31,12 @@ export function bodyObject(request: VercelRequest): Record<string, unknown> {
 
 export function sendError(response: VercelResponse, error: unknown, label: string) {
   if (error instanceof ApiError) {
+    // A 429 without Retry-After leaves the client guessing, so it retries
+    // immediately and makes the problem worse.
+    if (error.status === 429) {
+      const seconds = /Retry in (\d+)s/.exec(error.message)?.[1] ?? "60";
+      response.setHeader("Retry-After", seconds);
+    }
     response.status(error.status).json({error: error.code, message: error.message});
     return;
   }

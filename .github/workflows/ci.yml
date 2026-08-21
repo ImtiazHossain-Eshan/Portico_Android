@@ -1,0 +1,128 @@
+name: CI
+
+# Every push and every pull request. A green tick has to mean "this builds,
+# the arithmetic is right, and nothing private leaks", so all three suites run
+# on the same commit rather than on a nightly nobody reads.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+concurrency:
+  # A new push supersedes the run in flight for the same ref.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android build, tests and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # google-services.json is deliberately not in the repository. The build
+      # is written to configure without it, and this job is what keeps that
+      # true: if someone makes Firebase mandatory, CI fails here rather than on
+      # a contributor's first clone.
+      - name: Confirm the build configures without Firebase credentials
+        run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+
+      - name: Android lint
+        run: ./gradlew :app:lintDebug --no-daemon
+
+      - name: Compile instrumented tests
+        # Running them needs an emulator; compiling them catches the drift that
+        # makes UI tests rot, at a fraction of the cost.
+        run: ./gradlew :app:assembleDebugAndroidTest --no-daemon
+
+      - name: Release build with R8
+        # Minification is where missing ProGuard rules surface. A debug-only
+        # pipeline finds none of them.
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest
+          retention-days: 7
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          retention-days: 7
+
+  bridge:
+    name: Bridge typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: bridge
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: bridge/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run build
+
+  secrets:
+    name: No credentials in the tree
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # These files have each been committed by accident once. The gitignore
+      # entries alone did nothing, because git keeps tracking a file it already
+      # knows about, so this checks the tree rather than the intent.
+      - name: Check for tracked credentials
+        run: |
+          set -e
+          fail=0
+          for pattern in \
+            "app/google-services.json" \
+            "keystore.properties" \
+            "*.jks" \
+            "*.keystore" \
+            "bridge/.env" \
+            "bridge/.env.local" \
+            "*service-account*.json"
+          do
+            found=$(git ls-files "$pattern")
+            if [ -n "$found" ]; then
+              echo "::error::Credential file is tracked: $found"
+              fail=1
+            fi
+          done
+          exit $fail

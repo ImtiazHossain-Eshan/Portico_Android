@@ -31,7 +31,15 @@ data class UserPreferences(
     val notificationsRent: Boolean = true,
     val notificationsDocuments: Boolean = true,
     val notificationsMarket: Boolean = false,
-    val reducedMotion: Boolean = false
+    val reducedMotion: Boolean = false,
+    /**
+     * Cloud analysis is off until the member turns it on.
+     *
+     * Defaulting this to true would quietly break a promise the app makes on
+     * its own privacy screen, so the on-device analyst stays the default and
+     * the toggle states exactly what leaves the device.
+     */
+    val cloudAssistant: Boolean = false
 )
 
 // -------------------------------------------------------- portfolio domain
@@ -271,9 +279,47 @@ data class AiConversation(
 // ---------------------------------------------------- external data domain
 
 /**
- * Comparables and market figures are modelled locally and always surfaced with
- * an explicit synthetic label. No provider is named and no price is presented
- * as observed market truth.
+ * Who supplied a set of market figures, and whether they were observed or
+ * modelled.
+ *
+ * The blueprint's external-data domain starts with DataProvider for a reason:
+ * a price with no provenance is worse than no price, because it looks like
+ * fact. Every comparable and signal Portico renders carries this record, and
+ * the UI states the basis rather than leaving the reader to assume.
+ */
+@Serializable
+data class DataProvider(
+    val id: String = "portico-reference",
+    val name: String = "Portico reference set",
+    val type: String = "internal",
+    /** "observed" for a real feed, "modelled" for a reference set. */
+    val basis: String = "modelled",
+    val updated: String = ""
+) {
+    val isObserved: Boolean get() = basis.equals("observed", ignoreCase = true)
+    val disclosure: String
+        get() = if (isObserved) "Observed by $name" else "Modelled reference set, not observed market data"
+}
+
+/**
+ * A provider's figures, as delivered.
+ *
+ * Empty means nothing has been published yet, in which case the app keeps its
+ * bundled reference set. That is the only state in which Portico shows figures
+ * it made up, and it says so on screen.
+ */
+@Serializable
+data class MarketReference(
+    val provider: DataProvider = DataProvider(),
+    val populated: Boolean = false,
+    val comparables: List<ComparableProperty> = emptyList(),
+    val listings: List<PropertyListing> = emptyList(),
+    val signals: List<MarketSignal> = emptyList()
+)
+
+/**
+ * Comparables and market figures carry a provider and an explicit basis. No
+ * price is presented as observed market truth unless a provider claims it.
  */
 @Serializable
 data class ComparableProperty(

@@ -1,16 +1,13 @@
 import type {VercelRequest, VercelResponse} from "@vercel/node";
-import {del} from "@vercel/blob";
-import {FieldValue} from "firebase-admin/firestore";
-import {randomUUID} from "node:crypto";
 import {verifyClerkRequest} from "../lib/clerk-auth.js";
-import {firestore} from "../lib/firebase-admin.js";
+import {consumeRateLimit} from "../lib/rate-limit.js";
+import {eraseMemberData} from "../lib/erase.js";
 import {privateJson, sendError} from "../lib/http.js";
 
-const RECORD_COLLECTIONS = [
-  "properties", "income", "expenses", "valuations", "documents",
-  "activity", "notifications", "conversations",
-];
-
+/**
+ * Workspace reset: clears every portfolio record but keeps the account. The
+ * account-deletion path lives in account.ts and shares the same eraser.
+ */
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   privateJson(response);
   if (request.method === "GET") {
@@ -25,38 +22,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const userId = await verifyClerkRequest(request);
-    const db = firestore();
-    const user = db.doc(`users/${userId}`);
-    const snapshots = await Promise.all(RECORD_COLLECTIONS.map((name) => user.collection(name).get()));
-    const documentSnapshot = snapshots[RECORD_COLLECTIONS.indexOf("documents")];
-    const storagePaths = documentSnapshot.docs
-      .map((document) => document.get("storagePath"))
-      .filter((path): path is string => typeof path === "string" && path.length > 0);
-
-    const references = snapshots.flatMap((snapshot) => snapshot.docs.map((document) => document.ref));
-    for (let offset = 0; offset < references.length; offset += 400) {
-      const batch = db.batch();
-      references.slice(offset, offset + 400).forEach((reference) => batch.delete(reference));
-      await batch.commit();
-    }
-    await Promise.all([
-      user.collection("settings").doc("quota").set({propertyCount: 0, updatedAt: FieldValue.serverTimestamp()}),
-      user.set({
-        revision: randomUUID(),
-        updatedAt: FieldValue.serverTimestamp(),
-        updatedAtEpochMillis: Date.now(),
-        entityCounts: {
-          properties: 0, income: 0, expenses: 0, valuations: 0,
-          documents: 0, activity: 0, notifications: 0, conversations: 0,
-        },
-      }, {merge: true}),
-      storagePaths.length > 0
-        ? del(storagePaths).catch((error) => console.error("Workspace file cleanup failed", {
-          message: error instanceof Error ? error.message : "unknown_error",
-        }))
-        : Promise.resolve(),
-    ]);
-    response.status(200).json({deletedRecords: references.length});
+    await consumeRateLimit(userId, "workspace");
+    const result = await eraseMemberData(userId, true);
+    response.status(200).json(result);
   } catch (error) {
     sendError(response, error, "Workspace erasure failed");
   }

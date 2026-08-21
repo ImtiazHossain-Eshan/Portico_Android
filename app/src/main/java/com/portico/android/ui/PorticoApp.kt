@@ -111,6 +111,9 @@ fun PorticoApp() {
                 if (BuildConfig.FIREBASE_CONFIGURED) {
                     if (FirebaseBackend.connect(context.applicationContext) is FirebaseConnection.Connected) {
                         store.syncCloud()
+                        // Market figures are context, not records: fetched once
+                        // per session, never persisted, never blocking.
+                        store.refreshMarket()
                         if (
                             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED

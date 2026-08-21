@@ -2,6 +2,7 @@ import type {VercelRequest, VercelResponse} from "@vercel/node";
 import {FieldValue} from "firebase-admin/firestore";
 import {randomUUID} from "node:crypto";
 import {verifyClerkRequest} from "../lib/clerk-auth.js";
+import {consumeRateLimit} from "../lib/rate-limit.js";
 import {firestore} from "../lib/firebase-admin.js";
 import {ApiError, bodyObject, privateJson, sendError} from "../lib/http.js";
 import {sendUserNotification} from "../lib/notifications.js";
@@ -161,6 +162,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const userId = await verifyClerkRequest(request);
+    await consumeRateLimit(userId, "subscription");
     const body = bodyObject(request);
     const action = typeof body.action === "string" ? body.action : "";
     if (action === "checkout") {

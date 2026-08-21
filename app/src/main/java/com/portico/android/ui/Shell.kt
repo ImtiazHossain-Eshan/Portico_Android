@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -33,14 +35,14 @@ import com.portico.android.ui.theme.PorticoTheme
  * single-column version when there is not.
  */
 
-private data class Destination(val route: String, val label: String, val glyph: Glyph)
+private data class Destination(val route: String, val labelRes: Int, val glyph: Glyph)
 
 private val destinations = listOf(
-    Destination(Route.DASHBOARD, "Overview", Glyph.OVERVIEW),
-    Destination(Route.PORTFOLIO, "Portfolio", Glyph.PORTFOLIO),
-    Destination(Route.REPORTS, "Reports", Glyph.REPORTS),
-    Destination(Route.ASSISTANT, "Assistant", Glyph.ASSISTANT),
-    Destination(Route.PROFILE, "Profile", Glyph.PROFILE)
+    Destination(Route.DASHBOARD, R.string.nav_overview, Glyph.OVERVIEW),
+    Destination(Route.PORTFOLIO, R.string.nav_portfolio, Glyph.PORTFOLIO),
+    Destination(Route.REPORTS, R.string.nav_reports, Glyph.REPORTS),
+    Destination(Route.ASSISTANT, R.string.nav_assistant, Glyph.ASSISTANT),
+    Destination(Route.PROFILE, R.string.nav_profile, Glyph.PROFILE)
 )
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
@@ -184,7 +186,7 @@ private fun PorticoNavBar(state: PorticoState) {
                         contentDescription = null
                     )
                 },
-                label = { Text(destination.label, maxLines = 1) },
+                label = { Text(stringResource(destination.labelRes), maxLines = 1) },
                 alwaysShowLabel = true,
                 colors = NavigationBarItemDefaults.colors(
                     indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
@@ -243,7 +245,7 @@ private fun PorticoRail(state: PorticoState) {
                         contentDescription = null
                     )
                 },
-                label = { Text(destination.label, maxLines = 1) },
+                label = { Text(stringResource(destination.labelRes), maxLines = 1) },
                 colors = NavigationRailItemDefaults.colors(
                     indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                     selectedTextColor = MaterialTheme.colorScheme.primary
@@ -386,7 +388,7 @@ private fun ShellContent(
                 Route.NOTIFICATIONS -> NotificationsScreen(state, pageModifier)
                 Route.SETTINGS_PREFERENCES -> PreferencesScreen(state, pageModifier)
                 Route.SETTINGS_SECURITY -> SecurityScreen(state, pageModifier)
-                Route.SETTINGS_PRIVACY -> PrivacyScreen(state, pageModifier)
+                Route.SETTINGS_PRIVACY -> PrivacyScreen(state, onSignOut, pageModifier)
                 Route.ADMIN -> AdminScreen(state, Modifier.fillMaxSize())
                 else -> DashboardScreen(state, pageModifier)
             }

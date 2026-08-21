@@ -8,7 +8,7 @@ const requiredEnvironment = [
   "FIREBASE_PRIVATE_KEY",
 ] as const;
 
-function firebaseApp() {
+export function firebaseApp() {
   const existing = getApps()[0];
   if (existing) return existing;
 

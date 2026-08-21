@@ -1,6 +1,7 @@
 import type {VercelRequest, VercelResponse} from "@vercel/node";
 import {del, get, put} from "@vercel/blob";
 import {ClerkAuthorizationError, verifyClerkRequest} from "../lib/clerk-auth.js";
+import {consumeRateLimit} from "../lib/rate-limit.js";
 
 export const config = {api: {bodyParser: false}};
 
@@ -90,6 +91,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const userId = await verifyClerkRequest(request);
+    await consumeRateLimit(userId, "files");
 
     if (request.method === "POST") {
       const contentType = singleHeader(request.headers["content-type"]).split(";")[0].trim().toLowerCase();

@@ -1,0 +1,114 @@
+<resources>
+    <!--
+        বাংলা / Bangla.
+
+        Financial terminology is translated where a settled Bangla term exists
+        and Bangladeshi investors actually use it. Where the Bangla alone would
+        be ambiguous, the English term is kept in brackets, which is how these
+        figures are discussed in practice here: nobody says "মূলধন হার" without
+        also saying "cap rate".
+
+        Currency amounts, dates and figures are formatted by the app, not
+        translated, so a taka figure reads the same in either language.
+    -->
+
+    <string name="app_name">Portico</string>
+    <string name="app_tagline">সম্পত্তির মূলধন, পরিমাপ করা</string>
+
+    <!-- Navigation -->
+    <string name="nav_overview">সারসংক্ষেপ</string>
+    <string name="nav_portfolio">পোর্টফোলিও</string>
+    <string name="nav_reports">প্রতিবেদন</string>
+    <string name="nav_assistant">সহকারী</string>
+    <string name="nav_profile">প্রোফাইল</string>
+
+    <!-- Entry and onboarding -->
+    <string name="entry_sign_in">সাইন ইন করুন বা অ্যাকাউন্ট খুলুন</string>
+    <string name="entry_demo">নমুনা তথ্য দিয়ে দেখুন</string>
+    <string name="onboarding_register">সব সম্পত্তি এক তালিকায়</string>
+    <string name="onboarding_return">আয় অনুমান নয়, হিসাব করা</string>
+    <string name="onboarding_net">যা আদায় হয় তা নয়, যা থাকে</string>
+    <string name="onboarding_answers">হিসাব দেখিয়ে দেওয়া উত্তর</string>
+
+    <!-- Authentication -->
+    <string name="auth_email">ইমেইল ঠিকানা</string>
+    <string name="auth_password">পাসওয়ার্ড</string>
+    <string name="auth_confirm_password">পাসওয়ার্ড নিশ্চিত করুন</string>
+    <string name="auth_full_name">পূর্ণ নাম</string>
+    <string name="auth_sign_in">সাইন ইন</string>
+    <string name="auth_create_account">অ্যাকাউন্ট খুলুন</string>
+    <string name="auth_forgot">পাসওয়ার্ড ভুলে গেছেন?</string>
+    <string name="auth_email_code">আমাকে কোড পাঠান</string>
+    <string name="auth_verify">যাচাই করুন</string>
+    <string name="auth_verification_code">যাচাইকরণ কোড</string>
+    <string name="auth_continue_google">Google দিয়ে চালিয়ে যান</string>
+    <string name="auth_continue_github">GitHub দিয়ে চালিয়ে যান</string>
+    <string name="auth_sign_out">সাইন আউট</string>
+    <string name="auth_no_account">এই ইমেইলে কোনো অ্যাকাউন্ট পাওয়া যায়নি।</string>
+    <string name="auth_password_rule">আপনার ওয়ার্কস্পেসে অন্তত %1$d অক্ষর প্রয়োজন।</string>
+
+    <!-- Common actions -->
+    <string name="action_save">সংরক্ষণ</string>
+    <string name="action_cancel">বাতিল</string>
+    <string name="action_delete">মুছুন</string>
+    <string name="action_edit">সম্পাদনা</string>
+    <string name="action_add">যোগ করুন</string>
+    <string name="action_close">বন্ধ</string>
+    <string name="action_back">পেছনে</string>
+    <string name="action_next">পরবর্তী</string>
+    <string name="action_retry">আবার চেষ্টা করুন</string>
+    <string name="action_done">সম্পন্ন</string>
+
+    <!-- Financial vocabulary -->
+    <string name="metric_portfolio_value">পোর্টফোলিওর মূল্য</string>
+    <string name="metric_total_return">মোট মুনাফা</string>
+    <string name="metric_roi">বিনিয়োগে মুনাফা (ROI)</string>
+    <string name="metric_cap_rate">ক্যাপ রেট (cap rate)</string>
+    <string name="metric_gross_yield">মোট আয়ের হার (gross yield)</string>
+    <string name="metric_net_yield">নিট আয়ের হার (net yield)</string>
+    <string name="metric_monthly_cashflow">মাসিক নগদ প্রবাহ</string>
+    <string name="metric_annual_income">বার্ষিক আয়</string>
+    <string name="metric_annual_expenses">বার্ষিক ব্যয়</string>
+    <string name="metric_gross_income">মোট আয়</string>
+    <string name="metric_operating_expenses">পরিচালন ব্যয়</string>
+    <string name="metric_taxes_and_fees">কর ও ফি</string>
+    <string name="metric_net_income">নিট আয়</string>
+    <string name="metric_purchase_price">ক্রয়মূল্য</string>
+    <string name="metric_current_value">বর্তমান মূল্য</string>
+    <string name="metric_appreciation">মূল্যবৃদ্ধি</string>
+
+    <!-- Property -->
+    <string name="property_name">সম্পত্তির নাম</string>
+    <string name="property_address">ঠিকানা</string>
+    <string name="property_region">শহর ও এলাকা</string>
+    <string name="property_country">দেশ</string>
+    <string name="property_type">সম্পত্তির ধরন</string>
+    <string name="property_size">আয়তন</string>
+    <string name="property_add">সম্পত্তি যোগ করুন</string>
+    <string name="property_photo_add">একটি ছবি যোগ করুন</string>
+    <string name="property_photo_added">ছবি যোগ করা হয়েছে</string>
+
+    <!-- States -->
+    <string name="state_loading">লোড হচ্ছে</string>
+    <string name="state_offline">আপনি অফলাইনে আছেন</string>
+    <string name="state_empty_portfolio">এখনো কোনো সম্পত্তি নেই</string>
+    <string name="state_error">কিছু একটা ভুল হয়েছে</string>
+
+    <!-- Settings -->
+    <string name="settings_preferences">পছন্দসমূহ</string>
+    <string name="settings_currency">মুদ্রা</string>
+    <string name="settings_language">ভাষা</string>
+    <string name="settings_appearance">চেহারা</string>
+    <string name="settings_security">নিরাপত্তা</string>
+    <string name="settings_privacy">গোপনীয়তা</string>
+    <string name="settings_notifications">বিজ্ঞপ্তি</string>
+    <string name="settings_theme_light">উজ্জ্বল</string>
+    <string name="settings_theme_dark">অন্ধকার</string>
+    <string name="settings_theme_system">সিস্টেম</string>
+    <string name="settings_change_password">পাসওয়ার্ড পরিবর্তন</string>
+    <string name="settings_delete_account">অ্যাকাউন্ট মুছে ফেলুন</string>
+    <string name="settings_language_system">সিস্টেমের ভাষা</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_bangla">বাংলা</string>
+    <string name="settings_language_note">নতুন ভাষায় সব লেখা পুনরায় পড়তে স্ক্রিনটি রিস্টার্ট হবে।</string>
+</resources>

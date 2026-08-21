@@ -23,12 +23,13 @@ service cloud.firestore {
         allow create: if false;
       }
 
-      // Billing facts and quotas are server-owned. The mobile client can read
-      // the effective plan but cannot grant itself Pro or forge a receipt.
+      // Billing facts, quotas and throttles are server-owned. The mobile client
+      // can read the effective plan but cannot grant itself Pro, forge a
+      // receipt, or clear the rate limiter that is throttling it.
       match /settings/{settingId} {
         allow read: if owns(userId);
         allow create, update, delete: if owns(userId) &&
-          !(settingId in ['subscription', 'quota', 'aiUsage']);
+          !(settingId in ['subscription', 'quota', 'aiUsage', 'rateLimit']);
       }
 
       match /payments/{paymentId} {
@@ -52,6 +53,37 @@ service cloud.firestore {
       // paths are closed by default.
       match /workspace/{document=**} {
         allow read, create, update, delete: if owns(userId);
+      }
+    }
+
+    /*
+     * Organizations.
+     *
+     * Membership is the read key: you can see an organization only if a member
+     * document exists for you under it. Every write is refused here and routed
+     * through the bridge, because role changes need rank checks that a security
+     * rule cannot express -- "may not grant a role at or above your own" needs
+     * to read the actor's role and the target's role and compare them, which is
+     * exactly what the endpoint does inside a request it has already
+     * authenticated.
+     */
+    match /organizations/{organizationId} {
+      function isMember() {
+        return signedIn() &&
+          exists(/databases/$(database)/documents/organizations/$(organizationId)/members/$(request.auth.uid));
+      }
+
+      allow read: if isMember();
+      allow write: if false;
+
+      match /members/{memberId} {
+        allow read: if isMember();
+        allow write: if false;
+      }
+
+      match /{document=**} {
+        allow read: if isMember();
+        allow write: if false;
       }
     }
 

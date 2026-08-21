@@ -18,28 +18,58 @@
     },
     "api/workspace.ts": {
       "maxDuration": 30
+    },
+    "api/account.ts": {
+      "maxDuration": 60
+    },
+    "api/assistant.ts": {
+      "maxDuration": 30
+    },
+    "api/market.ts": {
+      "maxDuration": 15
+    },
+    "api/organizations.ts": {
+      "maxDuration": 30
     }
   },
   "headers": [
     {
       "source": "/api/firebase-token",
       "headers": [
-        {"key": "Cache-Control", "value": "no-store"},
-        {"key": "X-Content-Type-Options", "value": "nosniff"}
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
       ]
     },
     {
       "source": "/api/files",
       "headers": [
-        {"key": "Cache-Control", "value": "private, no-store"},
-        {"key": "X-Content-Type-Options", "value": "nosniff"}
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
       ]
     },
     {
-      "source": "/api/(properties|subscription|notifications|workspace)",
+      "source": "/api/(properties|subscription|notifications|workspace|account|assistant|market|organizations)",
       "headers": [
-        {"key": "Cache-Control", "value": "private, no-store"},
-        {"key": "X-Content-Type-Options", "value": "nosniff"}
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
       ]
     }
   ]

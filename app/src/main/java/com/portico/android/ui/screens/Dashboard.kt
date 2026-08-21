@@ -149,6 +149,7 @@ fun DashboardScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 PropertyRow(
                     result = result,
                     currency = currency,
+                    store = state.store,
                     shareOfPortfolio = if (portfolio.portfolioValue > 0)
                         result.property.currentValue / portfolio.portfolioValue else 0.0,
                     onClick = { state.openProperty(result.property.id) }

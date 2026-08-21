@@ -22,6 +22,49 @@ data class AnalystReply(
 
 object Analyst {
 
+    /**
+     * The figures a cloud model is allowed to see.
+     *
+     * Computed results only. No street address, no document, no note, no
+     * tenant: those identify a person and a building, and none of them are
+     * needed to answer a question about return or yield. Property names are
+     * included because comparison questions are unanswerable without a label,
+     * and a name is the member's own wording rather than a locator.
+     */
+    fun factSheet(
+        results: List<PropertyFinancials>,
+        portfolio: PortfolioFinancials,
+        taxProfile: TaxProfile,
+        currency: String,
+        focus: Property? = null
+    ): String = buildString {
+        fun money(value: Double) = Money.format(value, currency)
+        fun rate(value: Double) = Money.percent(value)
+
+        appendLine("Currency: $currency")
+        appendLine("Jurisdiction: ${taxProfile.jurisdiction.name}, ${taxProfile.jurisdiction.countryName}")
+        appendLine()
+        appendLine("PORTFOLIO (${portfolio.propertyCount} properties)")
+        appendLine("  Value ${money(portfolio.portfolioValue)}; capital invested ${money(portfolio.investedCapital)}")
+        appendLine("  Annual gross ${money(portfolio.annualGrossIncome)}; operating costs ${money(portfolio.annualOperatingExpenses)}; tax ${money(portfolio.annualTaxes)}; net ${money(portfolio.annualNetIncome)}")
+        appendLine("  Monthly cashflow ${money(portfolio.monthlyCashflow)}")
+        appendLine("  Cap rate ${rate(portfolio.capRate)}; gross yield ${rate(portfolio.grossYield)}; net yield ${rate(portfolio.netYield)}")
+        appendLine("  Total return ${rate(portfolio.totalRoi)}; appreciation ${money(portfolio.appreciation)}")
+        appendLine()
+        appendLine("PROPERTIES")
+        results.forEach { r ->
+            val p = r.property
+            appendLine("  ${p.name} (${p.type}, ${p.region}, ${p.country})")
+            appendLine("    Value ${money(p.currentValue)}; bought ${money(p.purchasePrice)} on ${p.purchaseDate}; capital in ${money(p.initialInvestment)}")
+            appendLine("    Annual gross ${money(r.annualGrossIncome)}; costs ${money(r.annualOperatingExpenses)}; tax ${money(r.annualTaxes)}; net ${money(r.annualNetIncome)}")
+            appendLine("    Monthly cashflow ${money(r.monthlyCashflow)}; cap rate ${rate(r.capRate)}; net yield ${rate(r.netYield)}; total return ${rate(r.totalRoi)}")
+        }
+        if (focus != null) {
+            appendLine()
+            appendLine("The member is currently looking at: ${focus.name}")
+        }
+    }
+
     fun answer(
         question: String,
         results: List<PropertyFinancials>,
