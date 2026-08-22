@@ -1,0 +1,84 @@
+============================================================
+AI USAGE DECLARATION
+============================================================
+
+Name: Imtiaz Hossain
+Student ID: 23101137
+CSE 489 MID Exam
+Date: 22 August, 2026
+
+------------------------------------------------------------
+1. AI TOOLS USED (check all that apply)
+------------------------------------------------------------
+[ ] None
+[ ] ChatGPT
+[ ] GitHub Copilot
+[ ] Google Gemini
+[x] Claude
+[ ] Cursor
+[ ] Other: ___CODEX_____________
+
+------------------------------------------------------------
+2. PURPOSE OF AI USE (check all that apply)
+------------------------------------------------------------
+[x] Learning/understanding concepts
+[x] Debugging my code
+[ ] Generating code snippets
+[ ] Writing text content
+[ ] Design/styling ideas
+[x] Image generation
+[x] Other: Testing
+
+------------------------------------------------------------
+3. DESCRIPTION OF AI USE
+------------------------------------------------------------
+
+I used Claude (Anthropic), through Claude Code, across several
+sessions from 3 to 22 August 2026, along with Codex
+
+I used AI during the initial project setup and throughout the
+development process for debugging, fixing bugs, testing,
+refactoring, translation, documentation, and improving the
+application.
+
+Examples of AI-assisted work include
+
+- Initial project and application setup.
+- Building the Clerk to Firebase authentication bridge and the
+  Vercel serverless endpoints behind it.
+- Extracting 770 interface strings into Android string
+  resources and translating them into Bangla.
+- Diagnosing the per-app language switch that silently did
+  nothing because the activity was a ComponentActivity rather
+  than an AppCompatActivity.
+- Fixing the currency headline that broke across two lines
+  between the taka sign and its digits.
+- Writing the unit and instrumented test suites.
+- Exploring different implementation approaches and improving
+  the existing implementation.
+
+------------------------------------------------------------
+4. AI-ASSISTED SECTIONS
+------------------------------------------------------------
+
+List specific files/sections where AI helped significantly:
+
+File: app/build.gradle.kts        Section: Initial Setup, Signing, Dependencies
+File: app/src/main                Section: Bug Fixes, Debugging, Refactoring, and Improvements
+File: app/src/main/res/values-bn  Section: Bangla Translation
+File: app/src/test               Section: Unit Tests
+File: app/src/androidTest        Section: Instrumented Tests
+File: bridge/                     Section: Serverless Endpoints
+
+------------------------------------------------------------
+5. DECLARATION
+------------------------------------------------------------
+
+I declare that:
+- This disclosure is complete and accurate
+- I understand all code in my submission
+- I can explain and modify my work if asked
+- I take full responsibility for my submission
+
+Signature: Imtiaz Hossain
+Date: 22 August, 2026
