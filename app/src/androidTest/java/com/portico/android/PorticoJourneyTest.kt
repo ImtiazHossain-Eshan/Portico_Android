@@ -7,6 +7,11 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import android.app.LocaleManager
+import android.os.Build
+import android.os.LocaleList
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +32,21 @@ class PorticoJourneyTest {
 
     @get:Rule
     val rule = createAndroidComposeRule<MainActivity>()
+
+    /**
+     * These assertions match English text, so the language has to be pinned.
+     * Without this the suite passes or fails depending on what locale somebody
+     * last left the app in, which is not a property a test should have.
+     */
+    @Before
+    fun useEnglish() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        runCatching {
+            context.getSystemService(LocaleManager::class.java)?.applicationLocales =
+                LocaleList.forLanguageTags("en")
+        }
+    }
 
     /** Walks past onboarding into the demo portfolio. */
     private fun enterDemo() {

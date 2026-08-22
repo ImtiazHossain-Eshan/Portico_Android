@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,7 +42,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Your plan")
+            PanelHeader(stringResource(R.string.your_plan))
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.sm),
                 verticalAlignment = Alignment.CenterVertically
@@ -90,7 +91,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 Spacer(Modifier.height(Space.md))
             } else {
                 Hairline()
-                DataRow("Started", store.subscription.startDate.ifBlank { "-" })
+                DataRow(stringResource(R.string.started), store.subscription.startDate.ifBlank { "-" })
                 Hairline()
                 DataRow(
                     if (store.subscription.cancelAtPeriodEnd) "Access until" else "Renews",
@@ -99,23 +100,23 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 Hairline()
                 Box(Modifier.padding(Space.lg)) {
                     if (store.subscription.cancelAtPeriodEnd) {
-                        PrimaryButton("Resume subscription", Modifier.fillMaxWidth()) {
+                        PrimaryButton(stringResource(R.string.resume_subscription), Modifier.fillMaxWidth()) {
                             scope.launch {
                                 runCatching { store.resumeSubscription() }
-                                    .onSuccess { state.notify("Subscription resumed") }
-                                    .onFailure { state.notify(it.message ?: "Subscription could not be resumed") }
+                                    .onSuccess { state.notify(R.string.subscription_resumed) }
+                                    .onFailure { state.notify(it.message ?: store.string(R.string.subscription_could_not_be_resumed)) }
                             }
                         }
                     } else {
                         SecondaryButton(
-                            "Cancel subscription",
+                            stringResource(R.string.cancel_subscription),
                             Modifier.fillMaxWidth(),
                             destructive = true
                         ) {
                             scope.launch {
                                 runCatching { store.cancelSubscription() }
-                                    .onSuccess { state.notify("Cancelled. Access continues to the end of the period") }
-                                    .onFailure { state.notify(it.message ?: "Subscription could not be cancelled") }
+                                    .onSuccess { state.notify(R.string.cancelled_access_continues_to_the_end_of_the_p) }
+                                    .onFailure { state.notify(it.message ?: store.string(R.string.subscription_could_not_be_cancelled)) }
                             }
                         }
                     }
@@ -127,19 +128,19 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
             tier = PlanTier.FREE,
             current = current,
             features = listOf(
-                "Up to 2 properties" to true,
-                "ROI, cap rate, yields and cashflow" to true,
-                "Performance and cashflow reports" to true,
-                "Document library on device" to true,
-                "Allocation and comparison reports" to false,
+                stringResource(R.string.up_to_2_properties) to true,
+                stringResource(R.string.roi_cap_rate_yields_and_cashflow) to true,
+                stringResource(R.string.performance_and_cashflow_reports) to true,
+                stringResource(R.string.document_library_on_device) to true,
+                stringResource(R.string.allocation_and_comparison_reports) to false,
                 "Editable tax assumptions" to false,
                 "On-device assistant" to false
             ),
             onSelect = {
                 scope.launch {
                     runCatching { store.setPlan(PlanTier.FREE) }
-                        .onSuccess { state.notify("Switched to Free") }
-                        .onFailure { state.notify(it.message ?: "Plan could not be changed") }
+                        .onSuccess { state.notify(R.string.switched_to_free) }
+                        .onFailure { state.notify(it.message ?: store.string(R.string.plan_could_not_be_changed)) }
                 }
             }
         )
@@ -149,10 +150,10 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
             current = current,
             features = listOf(
                 "Unlimited properties" to true,
-                "ROI, cap rate, yields and cashflow" to true,
-                "Performance and cashflow reports" to true,
-                "Document library on device" to true,
-                "Allocation and comparison reports" to true,
+                stringResource(R.string.roi_cap_rate_yields_and_cashflow) to true,
+                stringResource(R.string.performance_and_cashflow_reports) to true,
+                stringResource(R.string.document_library_on_device) to true,
+                stringResource(R.string.allocation_and_comparison_reports) to true,
                 "Editable tax assumptions" to true,
                 "On-device assistant" to true
             ),
@@ -164,18 +165,18 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
         )
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Manage")
+            PanelHeader(stringResource(R.string.manage))
             NavRow(
-                "Billing history",
+                stringResource(R.string.billing_history),
                 glyph = Glyph.CURRENCY,
                 value = "${store.payments.size}",
-                supporting = "Every sandbox charge, successful or not"
+                supporting = stringResource(R.string.every_sandbox_charge_successful_or_not)
             ) { showPlanHistory = !showPlanHistory }
             if (showPlanHistory) {
                 if (store.payments.isEmpty()) {
                     EmptyState(
-                        title = "No charges yet",
-                        body = "Subscribing records a receipt here, including declines, so failed attempts are auditable too.",
+                        title = stringResource(R.string.no_charges_yet),
+                        body = stringResource(R.string.subscribing_records_a_receipt_here_including_d),
                         glyph = Glyph.CURRENCY
                     )
                 } else {
@@ -192,7 +193,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 }
             }
             Hairline()
-            NavRow("Workspace and team", glyph = Glyph.ENTERPRISE, supporting = "Organisations, roles and export") {
+            NavRow(stringResource(R.string.workspace_and_team), glyph = Glyph.ENTERPRISE, supporting = stringResource(R.string.organisations_roles_and_export)) {
                 state.navigate(Route.ENTERPRISE)
             }
         }
@@ -220,8 +221,8 @@ private fun PlanPanel(
             Column(Modifier.weight(1f)) {
                 Text(tier.label, style = MaterialTheme.typography.titleLarge)
                 Text(
-                    if (tier == PlanTier.FREE) "Everything needed to track a small portfolio"
-                    else "For portfolios past a couple of properties",
+                    if (tier == PlanTier.FREE) stringResource(R.string.everything_needed_to_track_a_small_portfolio)
+                    else stringResource(R.string.for_portfolios_past_a_couple_of_properties),
                     style = MaterialTheme.typography.bodySmall,
                     color = semantic.tertiaryText
                 )
@@ -233,7 +234,7 @@ private fun PlanPanel(
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Text("per month · sandbox", style = MaterialTheme.typography.labelSmall, color = semantic.tertiaryText)
+                    Text(stringResource(R.string.per_month_sandbox), style = MaterialTheme.typography.labelSmall, color = semantic.tertiaryText)
                 }
             }
         }
@@ -260,7 +261,7 @@ private fun PlanPanel(
         Spacer(Modifier.height(Space.md))
         Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
             if (isCurrent) {
-                SecondaryButton("Current plan", Modifier.fillMaxWidth(), enabled = false) {}
+                SecondaryButton(stringResource(R.string.current_plan), Modifier.fillMaxWidth(), enabled = false) {}
             } else {
                 PrimaryButton(
                     if (tier == PlanTier.PRO) "Subscribe" else "Switch to Free",
@@ -307,7 +308,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
         if (uri == null) return@rememberLauncherForActivityResult
         val result = PorticoImport.read(context, uri, store.properties.toList())
         if (result == null) {
-            state.notify("That file couldn't be read as CSV.")
+            state.notify(R.string.that_file_couldn_t_be_read_as_csv)
         } else {
             scope.launch {
                 runCatching { store.importProperties(result.imported, result.income, result.expenses) }
@@ -322,7 +323,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         if (error is com.portico.android.data.PorticoBackendException &&
                             error.code == "plan_limit_reached"
                         ) state.showPaywall = true
-                        else state.notify(error.message ?: "Import could not be completed")
+                        else state.notify(error.message ?: store.string(R.string.import_could_not_be_completed))
                     }
             }
         }
@@ -338,18 +339,18 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
              * section unreadable as a feature.
              */
             Panel(Modifier.padding(horizontal = Space.lg)) {
-                PanelHeader("Organisation")
+                PanelHeader(stringResource(R.string.organisation))
                 Column(
                     Modifier.padding(horizontal = Space.lg, vertical = Space.md),
                     verticalArrangement = Arrangement.spacedBy(Space.md)
                 ) {
                     Text(
                         if (store.organizationsLoading) "Checking your memberships." else
-                            "You are investing on your own account. Create an organisation to hold properties with other people and control who may see or change what.",
+                            stringResource(R.string.you_are_investing_on_your_own_account_create_a),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    PorticoField(newOrgName, { newOrgName = it }, "Organisation name", placeholder = "Rambla Capital")
+                    PorticoField(newOrgName, { newOrgName = it }, "Organisation name", placeholder = stringResource(R.string.rambla_capital))
                     PrimaryButton(
                         if (busy) "Creating..." else "Create organisation",
                         Modifier.fillMaxWidth(),
@@ -360,15 +361,15 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
                             runCatching { store.createOrganization(newOrgName.trim()) }
                                 .onSuccess {
                                     newOrgName = ""
-                                    state.notify("Organisation created. You are the owner.")
+                                    state.notify(R.string.organisation_created_you_are_the_owner)
                                 }
-                                .onFailure { state.notify(it.message ?: "The organisation could not be created") }
+                                .onFailure { state.notify(it.message ?: store.string(R.string.the_organisation_could_not_be_created)) }
                             busy = false
                         }
                     }
                     if (!store.usesSecureBackend) {
                         Text(
-                            "Sign in to create an organisation. Demo workspaces are single-member.",
+                            stringResource(R.string.sign_in_to_create_an_organisation_demo_workspa),
                             style = MaterialTheme.typography.bodySmall,
                             color = semantic.tertiaryText
                         )
@@ -377,19 +378,19 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
             }
         } else {
             Panel(Modifier.padding(horizontal = Space.lg)) {
-                PanelHeader("Organisation", supporting = "You are ${store.myRole.label.lowercase()}")
-                DataRow("Name", organization.name)
+                PanelHeader(stringResource(R.string.organisation), supporting = "You are ${store.myRole.label.lowercase()}")
+                DataRow(stringResource(R.string.name), organization.name)
                 Hairline()
-                DataRow("Members", members.size.toString())
+                DataRow(stringResource(R.string.members), members.size.toString())
                 Hairline()
-                DataRow("Properties", store.properties.size.toString())
+                DataRow(stringResource(R.string.properties), store.properties.size.toString())
                 Hairline()
-                DataRow("Created", organization.createdAt.take(10))
+                DataRow(stringResource(R.string.created), organization.createdAt.take(10))
             }
 
             Panel(Modifier.padding(horizontal = Space.lg)) {
                 PanelHeader(
-                    "Members and roles",
+                    stringResource(R.string.members_and_roles),
                     supporting = "${members.size} ${if (members.size == 1) "person" else "people"}"
                 )
                 members.forEachIndexed { index, member ->
@@ -413,7 +414,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
              */
             if (store.may(Permission.MANAGE_MEMBERS)) {
                 Panel(Modifier.padding(horizontal = Space.lg)) {
-                    PanelHeader("Invite a member", supporting = "They need a Portico account already")
+                    PanelHeader(stringResource(R.string.invite_a_member), supporting = stringResource(R.string.they_need_a_portico_account_already))
                     Column(
                         Modifier.padding(horizontal = Space.lg, vertical = Space.md),
                         verticalArrangement = Arrangement.spacedBy(Space.md)
@@ -421,7 +422,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         PorticoField(
                             inviteEmail, { inviteEmail = it }, "Email address",
                             keyboardType = KeyboardType.Email,
-                            placeholder = "colleague@example.com"
+                            placeholder = stringResource(R.string.colleague_example_com)
                         )
                         SegmentedRow(
                             OrgRole.entries.filter { it.rank < store.myRole.rank }.map { it.label },
@@ -439,7 +440,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                         inviteEmail = ""
                                         state.notify("Added to ${organization.name}")
                                     }
-                                    .onFailure { state.notify(it.message ?: "That invitation could not be completed") }
+                                    .onFailure { state.notify(it.message ?: store.string(R.string.that_invitation_could_not_be_completed)) }
                                 busy = false
                             }
                         }
@@ -451,8 +452,8 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
                 "What ${selectedRole.label} can do",
-                supporting = if (organization == null) "Roles apply once you create an organisation"
-                else "Tap a member above to see their permissions"
+                supporting = if (organization == null) stringResource(R.string.roles_apply_once_you_create_an_organisation)
+                else stringResource(R.string.tap_a_member_above_to_see_their_permissions)
             )
             SegmentedRow(
                 OrgRole.entries.map { it.label },
@@ -484,15 +485,15 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Operations")
+            PanelHeader(stringResource(R.string.operations))
             NavRow(
-                "Bulk property import",
+                stringResource(R.string.bulk_property_import),
                 glyph = Glyph.UPLOAD,
-                supporting = "Bring a register in as CSV"
+                supporting = stringResource(R.string.bring_a_register_in_as_csv)
             ) {
                 importResult = null
                 runCatching { importPicker.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "*/*")) }
-                    .onFailure { state.notify("No file picker available on this device.") }
+                    .onFailure { state.notify(R.string.no_file_picker_available_on_this_device) }
             }
             importResult?.let { result ->
                 Hairline()
@@ -518,26 +519,26 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
             }
             Hairline()
             NavRow(
-                "Export portfolio data",
+                stringResource(R.string.export_portfolio_data),
                 glyph = Glyph.DOCUMENT,
-                supporting = "Every property, income, expense and tax line as CSV"
+                supporting = stringResource(R.string.every_property_income_expense_and_tax_line_as)
             ) {
                 val intent = PorticoExport.shareIntent(context, store)
                 if (intent == null) {
-                    state.notify("Couldn't write the export files to this device.")
+                    state.notify(R.string.couldn_t_write_the_export_files_to_this_device)
                 } else {
                     runCatching { context.startActivity(Intent.createChooser(intent, "Export portfolio")) }
-                        .onFailure { state.notify("No app on this device can receive the export.") }
+                        .onFailure { state.notify(R.string.no_app_on_this_device_can_receive_the_export) }
                 }
             }
             Hairline()
-            NavRow("Admin platform", glyph = Glyph.ADMIN, supporting = "Users, organisations, subscriptions and audit") {
+            NavRow(stringResource(R.string.admin_platform), glyph = Glyph.ADMIN, supporting = stringResource(R.string.users_organisations_subscriptions_and_audit)) {
                 state.navigate(Route.ADMIN)
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Audit trail", supporting = "Every sensitive action is recorded")
+            PanelHeader(stringResource(R.string.audit_trail), supporting = stringResource(R.string.every_sensitive_action_is_recorded))
             store.auditTrail(limit = 5).forEachIndexed { index, entry ->
                 if (index > 0) Hairline()
                 DataRow(
@@ -549,8 +550,8 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         SyntheticNote(
-            "Organisation, members and audit entries are illustrative. Role-based access is modelled locally; " +
-                "enforcing it needs server-side rules."
+            stringResource(R.string.organisation_members_and_audit_entries_are_ill) +
+                stringResource(R.string.enforcing_it_needs_server_side_rules)
         )
     }
 }

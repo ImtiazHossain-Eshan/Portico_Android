@@ -1,5 +1,6 @@
 package com.portico.android.ui.design
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -80,7 +81,7 @@ fun ValueChart(
 
     if (series.size < 2) {
         Box(modifier, contentAlignment = Alignment.Center) {
-            Text("Not enough history yet", style = MaterialTheme.typography.bodySmall, color = semantic.tertiaryText)
+            Text(stringResource(R.string.not_enough_history_yet), style = MaterialTheme.typography.bodySmall, color = semantic.tertiaryText)
         }
         return
     }
@@ -237,12 +238,12 @@ fun ValueChart(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Low ${Money.compact(min, currency)}",
+                stringResource(R.string.chart_low_value, Money.compact(min, currency)),
                 style = MaterialTheme.typography.labelSmall,
                 color = semantic.tertiaryText
             )
             Text(
-                "High ${Money.compact(max, currency)}",
+                stringResource(R.string.chart_high_value, Money.compact(max, currency)),
                 style = MaterialTheme.typography.labelSmall,
                 color = semantic.tertiaryText
             )
@@ -261,6 +262,16 @@ fun ValueChart(
  * double rule. This same component renders on the dashboard, on a property, in
  * the tax module and in reports: one idea at four scales.
  */
+/** Maps a waterfall row's stable id to its translated label. */
+@Composable
+fun waterfallLabel(step: WaterfallStep): String = when (step.id) {
+    "gross" -> stringResource(R.string.gross_income)
+    "operating" -> stringResource(R.string.operating_expenses)
+    "tax" -> stringResource(R.string.taxes_and_fees)
+    "net" -> stringResource(R.string.net_income)
+    else -> step.label
+}
+
 @Composable
 fun WaterfallLedger(
     steps: List<WaterfallStep>,
@@ -285,8 +296,8 @@ fun WaterfallLedger(
         append("Income breakdown. ")
         steps.forEach { append("${it.label}: ${Money.format(it.amount, currency)}. ") }
         append(
-            if (net >= 0) "Net income is positive."
-            else "Net income is negative. This loses money after costs."
+            if (net >= 0) stringResource(R.string.net_income_is_positive)
+            else stringResource(R.string.net_income_is_negative_this_loses_money_after)
         )
     }
 
@@ -324,7 +335,7 @@ fun WaterfallLedger(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        step.label,
+                        waterfallLabel(step),
                         style = if (isTotal) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
                         color = if (isTotal) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f)
@@ -357,7 +368,7 @@ fun WaterfallLedger(
                 if (!isTotal && scale > 0) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "${Money.percent(abs(step.amount) / scale * 100, 0)} of gross",
+                        stringResource(R.string.pct_of_gross, Money.percent(abs(step.amount) / scale * 100, 0)),
                         style = MaterialTheme.typography.labelSmall,
                         color = semantic.tertiaryText
                     )

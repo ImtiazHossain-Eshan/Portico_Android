@@ -1,5 +1,6 @@
 package com.portico.android.ui.design
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -74,15 +75,17 @@ fun PorticoLockup(
     showTagline: Boolean = true,
     tint: Color = MaterialTheme.colorScheme.onBackground
 ) {
+    // Hoisted: a semantics block is not a composable scope.
+    val brand = stringResource(R.string.portico_2)
     Row(
-        modifier = modifier.semantics { contentDescription = "Portico" },
+        modifier = modifier.semantics { contentDescription = brand },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         PorticoMark(size = markSize, tint = tint, contentDescription = null)
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                "PORTICO",
+                stringResource(R.string.portico),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 3.2.sp
@@ -91,7 +94,7 @@ fun PorticoLockup(
             )
             if (showTagline) {
                 Text(
-                    "Property capital, measured",
+                    stringResource(R.string.property_capital_measured),
                     style = MaterialTheme.typography.labelSmall,
                     color = PorticoTheme.semantic.tertiaryText
                 )

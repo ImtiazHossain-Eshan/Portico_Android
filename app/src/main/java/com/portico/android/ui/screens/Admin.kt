@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -114,7 +115,7 @@ private fun AdminBody(state: PorticoState) {
         AdminSection.ACTIVITY -> AdminActivity(state)
     }
     SyntheticNote(
-        "Platform figures are illustrative. This build has no server, so no real user or payment data exists."
+        stringResource(R.string.platform_figures_are_illustrative_this_build_h)
     )
 }
 
@@ -124,22 +125,22 @@ private fun AdminBody(state: PorticoState) {
 private fun AdminOverview(state: PorticoState) {
     val semantic = PorticoTheme.semantic
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Platform", supporting = "Last 30 days")
+        PanelHeader(stringResource(R.string.platform), supporting = stringResource(R.string.last_30_days))
         MetricGrid(
             metrics = listOf(
-                Metric("Total users", "1,284", "+8.4%", 8.4),
-                Metric("Active users", "742", "+3.1%", 3.1),
-                Metric("Properties tracked", "4,918", "+11.2%", 11.2),
-                Metric("Paid subscriptions", "213", "+5.7%", 5.7),
-                Metric("Documents stored", "9,340", "+14.0%", 14.0),
-                Metric("Assistant queries", "2,106", "-2.3%", -2.3)
+                Metric(stringResource(R.string.total_users), "1,284", "+8.4%", 8.4),
+                Metric(stringResource(R.string.active_users), "742", "+3.1%", 3.1),
+                Metric(stringResource(R.string.properties_tracked), "4,918", "+11.2%", 11.2),
+                Metric(stringResource(R.string.paid_subscriptions), "213", "+5.7%", 5.7),
+                Metric(stringResource(R.string.documents_stored), "9,340", "+14.0%", 14.0),
+                Metric(stringResource(R.string.assistant_queries), "2,106", "-2.3%", -2.3)
             ),
             columns = if (LocalWidthClass.current.isAtLeastMedium) 3 else 2
         )
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Signups", supporting = "Weekly, trailing quarter")
+        PanelHeader(stringResource(R.string.signups), supporting = stringResource(R.string.weekly_trailing_quarter))
         Spacer(Modifier.height(Space.sm))
         CashflowColumns(
             values = listOf(42.0, 55.0, 48.0, 61.0, 73.0, 66.0, 81.0, 94.0, 88.0, 102.0, 97.0, 116.0),
@@ -150,12 +151,12 @@ private fun AdminOverview(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Needs attention")
-        DataRow("Failed payments", "6", supporting = "Retry scheduled", valueColor = semantic.loss)
+        PanelHeader(stringResource(R.string.needs_attention))
+        DataRow(stringResource(R.string.failed_payments), "6", supporting = stringResource(R.string.retry_scheduled), valueColor = semantic.loss)
         Hairline()
-        DataRow("Accounts locked", "3", supporting = "Ten failed sign-ins", valueColor = semantic.loss)
+        DataRow(stringResource(R.string.accounts_locked), "3", supporting = stringResource(R.string.ten_failed_sign_ins), valueColor = semantic.loss)
         Hairline()
-        DataRow("Storage above quota", "2 organisations", valueColor = MaterialTheme.colorScheme.primary)
+        DataRow(stringResource(R.string.storage_above_quota), "2 organisations", valueColor = MaterialTheme.colorScheme.primary)
     }
 }
 
@@ -201,7 +202,7 @@ private fun AdminUsers(state: PorticoState) {
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
         PanelHeader(
-            "Users",
+            stringResource(R.string.users),
             supporting = "${users.size} accounts · ${users.count { it.status == "Locked" }} locked"
         )
         AdminTable(
@@ -225,8 +226,8 @@ private fun AdminUsers(state: PorticoState) {
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
         PanelHeader(
-            "Account actions",
-            supporting = selected?.let { "${it.name} · ${it.status}" } ?: "Choose an account below"
+            stringResource(R.string.account_actions),
+            supporting = selected?.let { "${it.name} · ${it.status}" } ?: stringResource(R.string.choose_an_account_below)
         )
         users.forEach { user ->
             DataRow(
@@ -249,7 +250,7 @@ private fun AdminUsers(state: PorticoState) {
             horizontalArrangement = Arrangement.spacedBy(Space.sm)
         ) {
             SecondaryButton(
-                "Unlock",
+                stringResource(R.string.unlock),
                 Modifier.weight(1f),
                 glyph = Glyph.KEY,
                 enabled = target != null && target.status != "Active"
@@ -257,7 +258,7 @@ private fun AdminUsers(state: PorticoState) {
                 target?.let { setStatus(it, "Active", "${it.name} unlocked, sign-in counter cleared") }
             }
             SecondaryButton(
-                "Suspend",
+                stringResource(R.string.suspend),
                 Modifier.weight(1f),
                 glyph = Glyph.LOCK,
                 destructive = true,
@@ -274,7 +275,7 @@ private fun AdminUsers(state: PorticoState) {
 @Composable
 private fun AdminOrganizations(state: PorticoState) {
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Organisations")
+        PanelHeader(stringResource(R.string.organisations))
         AdminTable(
             headers = listOf("Organisation", "Members", "Properties", "Created"),
             weights = listOf(2.4f, 1.2f, 1.4f, 1.4f),
@@ -287,7 +288,7 @@ private fun AdminOrganizations(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Roles in use", supporting = "Across all organisations")
+        PanelHeader(stringResource(R.string.roles_in_use), supporting = stringResource(R.string.across_all_organisations))
         OrgRole.entries.forEachIndexed { index, role ->
             if (index > 0) Hairline()
             DataRow(
@@ -305,7 +306,7 @@ private fun AdminOrganizations(state: PorticoState) {
 private fun AdminSubscriptions(state: PorticoState) {
     val semantic = PorticoTheme.semantic
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Plans")
+        PanelHeader(stringResource(R.string.plans))
         AdminTable(
             headers = listOf("Plan", "Property limit", "Subscribers", "Share"),
             weights = listOf(1.6f, 1.6f, 1.4f, 1.2f),
@@ -317,7 +318,7 @@ private fun AdminSubscriptions(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Recent subscription events")
+        PanelHeader(stringResource(R.string.recent_subscription_events))
         listOf(
             Triple("Upgraded to Pro", "marco@costainvest.uy", "Today"),
             Triple("Payment failed", "ana@plataestate.ar", "Yesterday"),
@@ -335,10 +336,10 @@ private fun AdminSubscriptions(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Payments")
+        PanelHeader(stringResource(R.string.payments))
         EmptyState(
-            title = "No payment provider connected",
-            body = "Transactions, invoices and refunds appear here once billing is wired to a provider.",
+            title = stringResource(R.string.no_payment_provider_connected),
+            body = stringResource(R.string.transactions_invoices_and_refunds_appear_here),
             glyph = Glyph.CURRENCY
         )
     }
@@ -349,7 +350,7 @@ private fun AdminSubscriptions(state: PorticoState) {
 @Composable
 private fun AdminAnalytics(state: PorticoState) {
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Feature usage", supporting = "Share of active users, last 30 days")
+        PanelHeader(stringResource(R.string.feature_usage), supporting = stringResource(R.string.share_of_active_users_last_30_days))
         listOf(
             "Dashboard" to 0.98,
             "Portfolio register" to 0.87,
@@ -372,13 +373,13 @@ private fun AdminAnalytics(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Retention")
+        PanelHeader(stringResource(R.string.retention))
         MetricGrid(
             metrics = listOf(
-                Metric("Day 1", "68%"),
-                Metric("Day 7", "41%"),
-                Metric("Day 30", "27%"),
-                Metric("Median properties", "3")
+                Metric(stringResource(R.string.day_1), "68%"),
+                Metric(stringResource(R.string.day_7), "41%"),
+                Metric(stringResource(R.string.day_30), "27%"),
+                Metric(stringResource(R.string.median_properties), "3")
             ),
             columns = if (LocalWidthClass.current.isAtLeastMedium) 4 else 2
         )
@@ -393,7 +394,7 @@ private fun AdminActivity(state: PorticoState) {
     Panel(Modifier.padding(horizontal = Space.lg)) {
         val entries = state.store.auditTrail()
         PanelHeader(
-            "Audit log",
+            stringResource(R.string.audit_log),
             supporting = if (entries.isEmpty()) "Nothing recorded yet" else "${entries.size} recorded actions"
         )
         entries.forEachIndexed { index, entry ->
@@ -407,9 +408,9 @@ private fun AdminActivity(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Security events")
+        PanelHeader(stringResource(R.string.security_events))
         listOf(
-            Triple("Account locked after 10 failed sign-ins", "lucia@ramblacapital.uy", true),
+            Triple(stringResource(R.string.account_locked_after_10_failed_sign_ins), "lucia@ramblacapital.uy", true),
             Triple("Password reset requested", "diego@ramblacapital.uy", false),
             Triple("New device sign-in", "marco@costainvest.uy", false)
         ).forEachIndexed { index, (event, who, severe) ->
@@ -424,14 +425,14 @@ private fun AdminActivity(state: PorticoState) {
     }
 
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("System")
-        DataRow("Build", "Debug · offline-capable")
+        PanelHeader(stringResource(R.string.system))
+        DataRow(stringResource(R.string.build), "Debug · offline-capable")
         Hairline()
-        DataRow("Storage", "On-device DataStore")
+        DataRow(stringResource(R.string.storage), "On-device DataStore")
         Hairline()
-        DataRow("Identity provider", "Clerk (development instance)")
+        DataRow(stringResource(R.string.identity_provider), "Clerk (development instance)")
         Hairline()
-        DataRow("Backend", "Not connected", valueColor = semantic.tertiaryText)
+        DataRow(stringResource(R.string.backend), "Not connected", valueColor = semantic.tertiaryText)
     }
 }
 

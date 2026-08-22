@@ -1,7 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -26,8 +27,8 @@ fun PropertyDetailScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
     if (result == null) {
         EmptyState(
-            title = "Property not found",
-            body = "This record is no longer in your register. It may have been deleted from another device.",
+            title = stringResource(R.string.property_not_found),
+            body = stringResource(R.string.this_record_is_no_longer_in_your_register_it_m),
             actionLabel = "Back to portfolio",
             onAction = { state.selectDestination(Route.PORTFOLIO) },
             modifier = modifier
@@ -36,7 +37,19 @@ fun PropertyDetailScreen(state: PorticoState, modifier: Modifier = Modifier) {
     }
 
     val property = result.property
-    val tabs = listOf("Overview", "Income", "Expenses", "Documents", "Tax")
+    /*
+     * Two lists: the keys the state stores and the `when` below compares, and
+     * the labels shown. Translating the stored value would break navigation,
+     * so the selector matches by position instead of by text.
+     */
+    val tabKeys = listOf("Overview", "Income", "Expenses", "Documents", "Tax")
+    val tabs = listOf(
+        stringResource(R.string.title_overview),
+        stringResource(R.string.income),
+        stringResource(R.string.expenses),
+        stringResource(R.string.documents),
+        stringResource(R.string.tax)
+    )
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -51,26 +64,30 @@ fun PropertyDetailScreen(state: PorticoState, modifier: Modifier = Modifier) {
         Column(Modifier.padding(horizontal = Space.lg)) {
             SectionLabel("${property.location} · ${property.type}")
             Spacer(Modifier.height(Space.xs))
-            Text(
+            FigureText(
                 Money.format(property.currentValue, currency),
                 style = MaterialTheme.typography.displayMedium
             )
             Spacer(Modifier.height(Space.xs))
             DeltaLine(
                 delta = result.appreciation,
-                text = "${Money.signed(result.appreciation, currency)}   ${Money.signedPercent(result.capitalRoi)} on cash in"
+                text = stringResource(
+                    R.string.delta_on_cash_in,
+                    Money.signed(result.appreciation, currency),
+                    Money.signedPercent(result.capitalRoi)
+                )
             )
             Spacer(Modifier.height(Space.md))
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(Space.sm)
             ) {
-                SecondaryButton("Edit property", Modifier.weight(1f), glyph = Glyph.EDIT) {
+                SecondaryButton(stringResource(R.string.edit_property), Modifier.weight(1f), glyph = Glyph.EDIT) {
                     state.loadDraftFrom(property)
                     state.navigate(Route.ADD_PROPERTY)
                 }
                 SecondaryButton(
-                    "Delete",
+                    stringResource(R.string.delete),
                     Modifier.weight(1f),
                     glyph = Glyph.DELETE,
                     destructive = true
@@ -87,23 +104,26 @@ fun PropertyDetailScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 .padding(horizontal = Space.lg),
             horizontalArrangement = Arrangement.spacedBy(Space.sm)
         ) {
-            SecondaryButton("Add income", glyph = Glyph.INCOME) {
+            SecondaryButton(stringResource(R.string.add_income), glyph = Glyph.INCOME) {
                 state.transactionIsIncome = true
                 state.showTransactionSheet = true
             }
-            SecondaryButton("Add expense", glyph = Glyph.EXPENSE) {
+            SecondaryButton(stringResource(R.string.add_expense), glyph = Glyph.EXPENSE) {
                 state.transactionIsIncome = false
                 state.showTransactionSheet = true
             }
-            SecondaryButton("Valuation", glyph = Glyph.VALUATION) { state.showValuationSheet = true }
-            SecondaryButton("Upload", glyph = Glyph.UPLOAD) {
+            SecondaryButton(stringResource(R.string.valuation), glyph = Glyph.VALUATION) { state.showValuationSheet = true }
+            SecondaryButton(stringResource(R.string.upload), glyph = Glyph.UPLOAD) {
                 state.uploadPropertyId = property.id
                 state.uploadStage = com.portico.android.ui.UploadStage.FILE
                 state.showUploadSheet = true
             }
         }
 
-        SegmentedRow(tabs, state.propertyTab) { state.propertyTab = it }
+        SegmentedRow(
+            tabs,
+            tabs[tabKeys.indexOf(state.propertyTab).coerceAtLeast(0)]
+        ) { label -> state.propertyTab = tabKeys[tabs.indexOf(label)] }
 
         when (state.propertyTab) {
             "Income" -> PropertyIncomeTab(state, result)
@@ -138,7 +158,7 @@ private fun PropertyOverviewTab(state: PorticoState, result: PropertyFinancials)
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Performance", supporting = "Interpolated from purchase to current value")
+            PanelHeader(stringResource(R.string.performance), supporting = stringResource(R.string.interpolated_from_purchase_to_current_value))
             ValueChart(
                 series = Finance.valueSeries(
                     property, pointsFor(state.chartRange),
@@ -149,37 +169,40 @@ private fun PropertyOverviewTab(state: PorticoState, result: PropertyFinancials)
                 animate = !reduceMotion
             )
             Spacer(Modifier.height(Space.md))
-            SegmentedRow(ChartRangeOptions, state.chartRange.label) { label ->
-                state.chartRange = com.portico.android.ui.ChartRange.entries.first { it.label == label }
+            run {
+                val ranges = chartRangeOptions()
+                SegmentedRow(ranges, ranges[com.portico.android.ui.ChartRange.entries.indexOf(state.chartRange)]) { label ->
+                    state.chartRange = com.portico.android.ui.ChartRange.entries[ranges.indexOf(label)]
+                }
             }
             Spacer(Modifier.height(Space.md))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Return and yield")
+            PanelHeader(stringResource(R.string.return_and_yield))
             MetricGrid(
                 metrics = listOf(
-                    rateMetric("Total ROI", result.totalRoi),
-                    Metric("Cap rate", Money.percent(result.capRate), "on current value"),
-                    Metric("Gross yield", Money.percent(result.grossYield), "before costs"),
-                    Metric("Net yield", Money.percent(result.netYield), "after costs and tax"),
-                    rateMetric("Cash on cash", result.cashOnCash),
-                    rateMetric("Capital ROI", result.capitalRoi)
+                    rateMetric(stringResource(R.string.total_roi), result.totalRoi),
+                    Metric(stringResource(R.string.cap_rate), Money.percent(result.capRate), stringResource(R.string.supp_on_current)),
+                    Metric(stringResource(R.string.gross_yield), Money.percent(result.grossYield), stringResource(R.string.supp_before_costs)),
+                    Metric(stringResource(R.string.net_yield), Money.percent(result.netYield), stringResource(R.string.after_costs_and_tax)),
+                    rateMetric(stringResource(R.string.cash_on_cash), result.cashOnCash),
+                    rateMetric(stringResource(R.string.capital_roi), result.capitalRoi)
                 ),
                 columns = if (LocalWidthClass.current.isAtLeastMedium) 3 else 2
             )
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Monthly", supporting = "What moves through the account each month")
-            DataRow("Gross income", Money.format(result.monthlyGrossIncome, currency))
+            PanelHeader(stringResource(R.string.monthly), supporting = stringResource(R.string.what_moves_through_the_account_each_month))
+            DataRow(stringResource(R.string.gross_income), Money.format(result.monthlyGrossIncome, currency))
             Hairline()
-            DataRow("Operating expenses", Money.format(-result.monthlyOperatingExpenses, currency), valueColor = PorticoTheme.semantic.loss)
+            DataRow(stringResource(R.string.operating_expenses), Money.format(-result.monthlyOperatingExpenses, currency), valueColor = PorticoTheme.semantic.loss)
             Hairline()
-            DataRow("Taxes and fees", Money.format(-result.monthlyTaxes, currency), valueColor = PorticoTheme.semantic.loss)
+            DataRow(stringResource(R.string.taxes_and_fees), Money.format(-result.monthlyTaxes, currency), valueColor = PorticoTheme.semantic.loss)
             TotalRule()
             DataRow(
-                "Net cashflow",
+                stringResource(R.string.net_cashflow),
                 Money.format(result.monthlyCashflow, currency),
                 emphasise = true,
                 valueColor = PorticoTheme.semantic.forDelta(result.monthlyCashflow)
@@ -188,40 +211,40 @@ private fun PropertyOverviewTab(state: PorticoState, result: PropertyFinancials)
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Acquisition")
-            DataRow("Purchase price", Money.format(property.purchasePrice, currency))
+            PanelHeader(stringResource(R.string.acquisition))
+            DataRow(stringResource(R.string.purchase_price), Money.format(property.purchasePrice, currency))
             Hairline()
-            DataRow("Cash invested", Money.format(property.initialInvestment, currency))
+            DataRow(stringResource(R.string.cash_invested), Money.format(property.initialInvestment, currency))
             Hairline()
             if (property.financingAmount > 0) {
-                DataRow("Financed", Money.format(property.financingAmount, currency))
+                DataRow(stringResource(R.string.financed), Money.format(property.financingAmount, currency))
                 Hairline()
             }
-            DataRow("Purchase date", property.purchaseDate)
+            DataRow(stringResource(R.string.purchase_date), property.purchaseDate)
             Hairline()
-            DataRow("Held for", "${"%.1f".format(result.holdingYears)} years")
+            DataRow(stringResource(R.string.held_for), "${"%.1f".format(java.util.Locale.ROOT, result.holdingYears)} years")
             Hairline()
-            DataRow("Size", "${property.sizeSqm.toInt()} m²")
+            DataRow(stringResource(R.string.size), "${property.sizeSqm.toInt()} m²")
             Hairline()
-            DataRow("Price per m²", Money.format(
+            DataRow(stringResource(R.string.price_per_m2), Money.format(
                 if (property.sizeSqm > 0) property.currentValue / property.sizeSqm else 0.0, currency
             ))
             Hairline()
-            DataRow("Address", property.address, supporting = property.location)
+            DataRow(stringResource(R.string.address), property.address, supporting = property.location)
             if (property.note.isNotBlank()) {
                 Hairline()
-                DataRow("Note", "", supporting = property.note)
+                DataRow(stringResource(R.string.note), "", supporting = property.note)
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Manage")
-            NavRow("Valuation and comparables", glyph = Glyph.VALUATION) {
+            PanelHeader(stringResource(R.string.manage))
+            NavRow(stringResource(R.string.valuation_and_comparables), glyph = Glyph.VALUATION) {
                 state.valuationPropertyId = property.id
                 state.navigate(Route.VALUATION)
             }
             Hairline()
-            NavRow("Ask the assistant about this property", glyph = Glyph.ASSISTANT) {
+            NavRow(stringResource(R.string.ask_the_assistant_about_this_property), glyph = Glyph.ASSISTANT) {
                 state.assistantContextPropertyId = property.id
                 state.selectDestination(Route.ASSISTANT)
             }
@@ -239,11 +262,11 @@ private fun PropertyIncomeTab(state: PorticoState, result: PropertyFinancials) {
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Income", supporting = "Monthly, recurring unless noted")
+            PanelHeader(stringResource(R.string.income), supporting = stringResource(R.string.monthly_recurring_unless_noted))
             if (entries.isEmpty()) {
                 EmptyState(
-                    title = "No income recorded",
-                    body = "Add the rent this property collects and Portico can work out its yield and cashflow.",
+                    title = stringResource(R.string.no_income_recorded),
+                    body = stringResource(R.string.add_the_rent_this_property_collects_and_portic),
                     glyph = Glyph.INCOME,
                     actionLabel = "Add income",
                     onAction = { state.transactionIsIncome = true; state.showTransactionSheet = true }
@@ -263,19 +286,19 @@ private fun PropertyIncomeTab(state: PorticoState, result: PropertyFinancials) {
                         trailing = {
                             GlyphButton(Glyph.DELETE, "Remove ${entry.category}") {
                                 store.removeIncome(entry.id)
-                                state.notify("Income entry removed")
+                                state.notify(R.string.income_entry_removed)
                             }
                         }
                     )
                 }
                 TotalRule()
-                DataRow("Monthly total", Money.format(result.monthlyGrossIncome, currency), emphasise = true)
-                DataRow("Annual total", Money.format(result.annualGrossIncome, currency))
+                DataRow(stringResource(R.string.monthly_total), Money.format(result.monthlyGrossIncome, currency), emphasise = true)
+                DataRow(stringResource(R.string.annual_total), Money.format(result.annualGrossIncome, currency))
                 Spacer(Modifier.height(Space.sm))
             }
         }
         Box(Modifier.padding(horizontal = Space.lg)) {
-            PrimaryButton("Add income", Modifier.fillMaxWidth(), glyph = Glyph.ADD) {
+            PrimaryButton(stringResource(R.string.add_income), Modifier.fillMaxWidth(), glyph = Glyph.ADD) {
                 state.transactionIsIncome = true
                 state.showTransactionSheet = true
             }
@@ -294,11 +317,11 @@ private fun PropertyExpensesTab(state: PorticoState, result: PropertyFinancials)
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Expenses", supporting = "Monthly, recurring unless noted")
+            PanelHeader(stringResource(R.string.expenses), supporting = stringResource(R.string.monthly_recurring_unless_noted))
             if (entries.isEmpty()) {
                 EmptyState(
-                    title = "No expenses recorded",
-                    body = "Maintenance, insurance, fees and taxes all reduce net yield. Add them to see the real return.",
+                    title = stringResource(R.string.no_expenses_recorded),
+                    body = stringResource(R.string.maintenance_insurance_fees_and_taxes_all_reduc),
                     glyph = Glyph.EXPENSE,
                     actionLabel = "Add expense",
                     onAction = { state.transactionIsIncome = false; state.showTransactionSheet = true }
@@ -318,19 +341,19 @@ private fun PropertyExpensesTab(state: PorticoState, result: PropertyFinancials)
                         trailing = {
                             GlyphButton(Glyph.DELETE, "Remove ${entry.category}") {
                                 store.removeExpense(entry.id)
-                                state.notify("Expense removed")
+                                state.notify(R.string.expense_removed)
                             }
                         }
                     )
                 }
                 TotalRule()
-                DataRow("Operating monthly", Money.format(-result.monthlyOperatingExpenses, currency), emphasise = true, valueColor = semantic.loss)
-                DataRow("Operating annually", Money.format(-result.annualOperatingExpenses, currency), valueColor = semantic.loss)
+                DataRow(stringResource(R.string.operating_monthly), Money.format(-result.monthlyOperatingExpenses, currency), emphasise = true, valueColor = semantic.loss)
+                DataRow(stringResource(R.string.operating_annually), Money.format(-result.annualOperatingExpenses, currency), valueColor = semantic.loss)
                 Spacer(Modifier.height(Space.sm))
             }
         }
         Box(Modifier.padding(horizontal = Space.lg)) {
-            PrimaryButton("Add expense", Modifier.fillMaxWidth(), glyph = Glyph.ADD) {
+            PrimaryButton(stringResource(R.string.add_expense), Modifier.fillMaxWidth(), glyph = Glyph.ADD) {
                 state.transactionIsIncome = false
                 state.showTransactionSheet = true
             }
@@ -347,11 +370,11 @@ private fun PropertyDocumentsTab(state: PorticoState, property: Property) {
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Documents", supporting = "Private to this workspace")
+            PanelHeader(stringResource(R.string.documents), supporting = stringResource(R.string.private_to_this_workspace))
             if (docs.isEmpty()) {
                 EmptyState(
-                    title = "No documents yet",
-                    body = "Keep the deed, lease, insurance and tax receipts for this property together and on-device.",
+                    title = stringResource(R.string.no_documents_yet),
+                    body = stringResource(R.string.keep_the_deed_lease_insurance_and_tax_receipts),
                     glyph = Glyph.DOCUMENT,
                     actionLabel = "Upload a document",
                     onAction = {
@@ -371,7 +394,7 @@ private fun PropertyDocumentsTab(state: PorticoState, property: Property) {
             }
         }
         Box(Modifier.padding(horizontal = Space.lg)) {
-            PrimaryButton("Upload document", Modifier.fillMaxWidth(), glyph = Glyph.UPLOAD) {
+            PrimaryButton(stringResource(R.string.upload_document), Modifier.fillMaxWidth(), glyph = Glyph.UPLOAD) {
                 state.uploadPropertyId = property.id
                 state.uploadStage = com.portico.android.ui.UploadStage.FILE
                 state.showUploadSheet = true
@@ -396,9 +419,9 @@ private fun PropertyTaxTab(state: PorticoState, result: PropertyFinancials) {
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Gross to net",
+                stringResource(R.string.gross_to_net),
                 supporting = "Annual, ${profile.jurisdiction.name}",
-                action = "Assumptions",
+                action = stringResource(R.string.assumptions),
                 onAction = { state.navigate(Route.TAX_ASSUMPTIONS) }
             )
             WaterfallLedger(
@@ -410,7 +433,7 @@ private fun PropertyTaxTab(state: PorticoState, result: PropertyFinancials) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Tax lines", supporting = profile.jurisdiction.countryName)
+            PanelHeader(stringResource(R.string.tax_lines), supporting = profile.jurisdiction.countryName)
             lines.forEachIndexed { index, line ->
                 if (index > 0) Hairline()
                 DataRow(
@@ -421,18 +444,18 @@ private fun PropertyTaxTab(state: PorticoState, result: PropertyFinancials) {
                 )
             }
             TotalRule()
-            DataRow("Annual tax", Money.format(result.annualTaxes, currency), emphasise = true, valueColor = PorticoTheme.semantic.loss)
+            DataRow(stringResource(R.string.annual_tax), Money.format(result.annualTaxes, currency), emphasise = true, valueColor = PorticoTheme.semantic.loss)
             Spacer(Modifier.height(Space.sm))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("After tax")
-            DataRow("Net yield", Money.percent(result.netYield))
+            PanelHeader(stringResource(R.string.after_tax))
+            DataRow(stringResource(R.string.net_yield), Money.percent(result.netYield))
             Hairline()
-            DataRow("Gross yield", Money.percent(result.grossYield))
+            DataRow(stringResource(R.string.gross_yield), Money.percent(result.grossYield))
             Hairline()
             DataRow(
-                "Tax as share of gross",
+                stringResource(R.string.tax_as_share_of_gross),
                 Money.percent(
                     if (result.annualGrossIncome > 0) result.annualTaxes / result.annualGrossIncome * 100 else 0.0
                 )
@@ -483,26 +506,26 @@ fun TransactionSheet(state: PorticoState, property: Property, onDismiss: () -> U
                     onValueChange = { amount = it; error = null },
                     label = if (isIncome) "Monthly amount" else "Monthly amount",
                     currency = store.profile.currency,
-                    supporting = if (recurring) "Repeats every month" else "One-off, spread across the year",
+                    supporting = if (recurring) "Repeats every month" else stringResource(R.string.one_off_spread_across_the_year),
                     error = error
                 )
             }
 
-            ChoiceRow("Category", categories, category) { category = it }
+            ChoiceRow(stringResource(R.string.category), categories, category) { category = it }
 
             Box(Modifier.padding(horizontal = Space.lg)) {
                 PorticoField(
                     value = note,
                     onValueChange = { note = it },
-                    label = "Note (optional)",
-                    placeholder = "Unit A, quarterly billing…"
+                    label = stringResource(R.string.note_optional),
+                    placeholder = stringResource(R.string.unit_a_quarterly_billing)
                 )
             }
 
             SwitchRow(
-                label = "Recurring monthly",
+                label = stringResource(R.string.recurring_monthly),
                 checked = recurring,
-                supporting = "Turn off for a one-time amount",
+                supporting = stringResource(R.string.turn_off_for_a_one_time_amount),
                 onCheckedChange = { recurring = it }
             )
 
@@ -510,11 +533,11 @@ fun TransactionSheet(state: PorticoState, property: Property, onDismiss: () -> U
                 Modifier.fillMaxWidth().padding(horizontal = Space.lg),
                 horizontalArrangement = Arrangement.spacedBy(Space.sm)
             ) {
-                SecondaryButton("Cancel", Modifier.weight(1f)) { onDismiss() }
+                SecondaryButton(stringResource(R.string.cancel), Modifier.weight(1f)) { onDismiss() }
                 PrimaryButton(if (isIncome) "Add income" else "Add expense", Modifier.weight(1f)) {
                     val value = amount.toDoubleOrNull()
                     if (value == null || value <= 0) {
-                        error = "Enter an amount greater than zero."
+                        error = store.string(R.string.enter_an_amount_greater_than_zero)
                         return@PrimaryButton
                     }
                     val today = SimpleDate.today().format()
@@ -557,7 +580,7 @@ fun ValuationSheet(
             verticalArrangement = Arrangement.spacedBy(Space.lg)
         ) {
             Column(Modifier.padding(horizontal = Space.lg)) {
-                Text("Update valuation", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.update_valuation), style = MaterialTheme.typography.titleLarge)
                 Text(
                     property.name,
                     style = MaterialTheme.typography.bodySmall,
@@ -568,14 +591,14 @@ fun ValuationSheet(
                 CurrencyField(
                     value = value,
                     onValueChange = { value = it; error = null },
-                    label = "Current value",
+                    label = stringResource(R.string.current_value),
                     currency = currency,
                     supporting = "Was ${Money.format(property.currentValue, currency)}",
                     error = error
                 )
             }
             ChoiceRow(
-                "Source",
+                stringResource(R.string.source),
                 listOf("Owner estimate", "Comparable model", "Broker", "Formal appraisal"),
                 source
             ) { source = it }
@@ -583,13 +606,13 @@ fun ValuationSheet(
             if (delta != 0.0) {
                 Panel(Modifier.padding(horizontal = Space.lg)) {
                     DataRow(
-                        "Change",
+                        stringResource(R.string.change),
                         Money.signed(delta, currency),
                         valueColor = PorticoTheme.semantic.forDelta(delta)
                     )
                     Hairline()
                     DataRow(
-                        "Net yield after change",
+                        stringResource(R.string.net_yield_after_change),
                         Money.percent(
                             if (newValue > 0) result.annualNetIncome / newValue * 100 else 0.0
                         )
@@ -601,15 +624,15 @@ fun ValuationSheet(
                 Modifier.fillMaxWidth().padding(horizontal = Space.lg),
                 horizontalArrangement = Arrangement.spacedBy(Space.sm)
             ) {
-                SecondaryButton("Cancel", Modifier.weight(1f)) { onDismiss() }
-                PrimaryButton("Save valuation", Modifier.weight(1f)) {
+                SecondaryButton(stringResource(R.string.cancel), Modifier.weight(1f)) { onDismiss() }
+                PrimaryButton(stringResource(R.string.save_valuation), Modifier.weight(1f)) {
                     val parsed = value.toDoubleOrNull()
                     if (parsed == null || parsed <= 0) {
-                        error = "Enter a value greater than zero."
+                        error = store.string(R.string.enter_a_value_greater_than_zero)
                         return@PrimaryButton
                     }
                     store.updateValuation(property.id, parsed, source)
-                    state.notify("Valuation updated")
+                    state.notify(R.string.valuation_updated)
                     onDismiss()
                 }
             }

@@ -105,7 +105,7 @@ fun PorticoShell(
                             PorticoIcon(
                                 Glyph.ADD,
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                contentDescription = "Add property"
+                                contentDescription = stringResource(R.string.add_property)
                             )
                         }
                     }
@@ -140,11 +140,11 @@ private fun PropertyLimitDialog(state: PorticoState) {
                 contentDescription = null
             )
         },
-        title = { Text("Upgrade to add another property") },
+        title = { Text(stringResource(R.string.upgrade_to_add_another_property)) },
         text = {
             Text(
                 "Your Free plan includes $limit properties, and both are in use. " +
-                    "Upgrade to Pro to remove the property limit and keep growing your portfolio."
+                    stringResource(R.string.upgrade_to_pro_to_remove_the_property_limit_an)
             )
         },
         confirmButton = {
@@ -154,12 +154,12 @@ private fun PropertyLimitDialog(state: PorticoState) {
                     state.navigate(Route.SUBSCRIPTION)
                 }
             ) {
-                Text("View Pro plan")
+                Text(stringResource(R.string.view_pro_plan))
             }
         },
         dismissButton = {
             TextButton(onClick = { state.showPaywall = false }) {
-                Text("Not now")
+                Text(stringResource(R.string.not_now))
             }
         },
         containerColor = PorticoTheme.semantic.panel
@@ -224,7 +224,7 @@ private fun PorticoRail(state: PorticoState) {
                     PorticoIcon(
                         Glyph.ADD,
                         tint = MaterialTheme.colorScheme.onPrimary,
-                        contentDescription = "Add property"
+                        contentDescription = stringResource(R.string.add_property)
                     )
                 }
                 Spacer(Modifier.height(Space.sm))
@@ -263,31 +263,31 @@ private fun ShellTopBar(state: PorticoState) {
     val property = store.propertyById(state.selectedPropertyId)
 
     val title = when (state.route) {
-        Route.DASHBOARD -> store.profile.name.substringBefore(" ").ifBlank { "Overview" }
-        Route.PORTFOLIO -> "Portfolio"
-        Route.REPORTS -> "Reports"
-        Route.ASSISTANT -> "Assistant"
-        Route.PROFILE -> "Profile"
-        Route.PROPERTY -> property?.name ?: "Property"
+        Route.DASHBOARD -> store.profile.name.substringBefore(" ").ifBlank { stringResource(R.string.title_overview) }
+        Route.PORTFOLIO -> stringResource(R.string.nav_portfolio)
+        Route.REPORTS -> stringResource(R.string.nav_reports)
+        Route.ASSISTANT -> stringResource(R.string.nav_assistant)
+        Route.PROFILE -> stringResource(R.string.nav_profile)
+        Route.PROPERTY -> property?.name ?: stringResource(R.string.property)
         Route.ADD_PROPERTY -> if (state.editingPropertyId != null) "Edit property" else "Add property"
-        Route.DOCUMENTS -> "Documents"
-        Route.TAX -> "Tax position"
-        Route.TAX_ASSUMPTIONS -> "Tax assumptions"
-        Route.VALUATION -> "Valuation"
-        Route.ACQUISITION -> "Acquisition"
-        Route.SUBSCRIPTION -> "Plans"
-        Route.CHECKOUT -> "Checkout"
-        Route.ENTERPRISE -> "Workspace"
-        Route.NOTIFICATIONS -> "Notifications"
-        Route.SETTINGS_PREFERENCES -> "Preferences"
-        Route.SETTINGS_SECURITY -> "Security"
-        Route.SETTINGS_PRIVACY -> "Privacy"
+        Route.DOCUMENTS -> stringResource(R.string.documents)
+        Route.TAX -> stringResource(R.string.tax_position)
+        Route.TAX_ASSUMPTIONS -> stringResource(R.string.title_tax_assump)
+        Route.VALUATION -> stringResource(R.string.valuation)
+        Route.ACQUISITION -> stringResource(R.string.acquisition)
+        Route.SUBSCRIPTION -> stringResource(R.string.plans)
+        Route.CHECKOUT -> stringResource(R.string.title_checkout)
+        Route.ENTERPRISE -> stringResource(R.string.workspace)
+        Route.NOTIFICATIONS -> stringResource(R.string.notifications)
+        Route.SETTINGS_PREFERENCES -> stringResource(R.string.preferences)
+        Route.SETTINGS_SECURITY -> stringResource(R.string.security)
+        Route.SETTINGS_PRIVACY -> stringResource(R.string.privacy_and_data)
         Route.ADMIN -> "Admin"
         else -> "Portico"
     }
 
     val subtitle = when (state.route) {
-        Route.DASHBOARD -> if (state.demoMode) "Demo workspace" else store.profile.email
+        Route.DASHBOARD -> if (state.demoMode) stringResource(R.string.demo_workspace) else store.profile.email
         Route.PORTFOLIO -> "${store.properties.size} properties"
         else -> null
     }
@@ -300,7 +300,7 @@ private fun ShellTopBar(state: PorticoState) {
                 }
                 Column {
                     Text(
-                        if (state.route == Route.DASHBOARD) "Good day, $title" else title,
+                        if (state.route == Route.DASHBOARD) stringResource(R.string.greeting_day, title) else title,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1
@@ -354,7 +354,7 @@ private fun ShellContent(
         transitionSpec = {
             (fadeIn(tween(180)) togetherWith fadeOut(tween(120)))
         },
-        label = "route",
+        label = stringResource(R.string.route),
         modifier = modifier
     ) { route ->
         val scroll = rememberScrollState()

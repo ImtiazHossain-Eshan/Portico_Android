@@ -32,7 +32,7 @@ fun SplashScreen(onFinished: () -> Unit, modifier: Modifier = Modifier) {
     val alpha by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
         animationSpec = tween(320),
-        label = "splash-fade"
+        label = stringResource(R.string.splash_fade)
     )
 
     LaunchedEffect(Unit) {
@@ -51,7 +51,7 @@ fun SplashScreen(onFinished: () -> Unit, modifier: Modifier = Modifier) {
             PorticoMark(size = 72.dp)
             Spacer(Modifier.height(Space.lg))
             Text(
-                "PORTICO",
+                stringResource(R.string.portico),
                 style = MaterialTheme.typography.titleMedium.copy(letterSpacing = 4.sp8()),
                 color = MaterialTheme.colorScheme.onBackground
             )
@@ -77,29 +77,29 @@ private data class OnboardingPage(
      * cannot be built outside one would have to be rebuilt on every recomposition.
      */
     val titleRes: Int,
-    val body: String
+    val bodyRes: Int
 )
 
 private val onboardingPages = listOf(
     OnboardingPage(
         Glyph.PORTFOLIO,
         R.string.onboarding_register,
-        "Purchase price, current value, rent and running costs, the facts each decision rests on, kept together."
+        R.string.purchase_price_current_value_rent_and_running
     ),
     OnboardingPage(
         Glyph.REPORTS,
         R.string.onboarding_return,
-        "ROI, cap rate, gross and net yield and cashflow are computed from what you enter, so they move when your records do."
+        R.string.roi_cap_rate_gross_and_net_yield_and_cashflow
     ),
     OnboardingPage(
         Glyph.TAX,
         R.string.onboarding_net,
-        "Gross rent falls through expenses and tax to a net figure, modelled for Bangladesh, Uruguay and Argentina, and editable by you."
+        R.string.gross_rent_falls_through_expenses_and_tax_to_a
     ),
     OnboardingPage(
         Glyph.ASSISTANT,
         R.string.onboarding_answers,
-        "Ask which property earns least after tax, or what a rent change would do. Every answer comes with the arithmetic."
+        R.string.ask_which_property_earns_least_after_tax_or_wh
     )
 )
 
@@ -126,7 +126,7 @@ fun OnboardingScreen(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             PorticoLockup(markSize = 30.dp, showTagline = false)
             Spacer(Modifier.weight(1f))
-            TextButton(onClick = onSignIn) { Text("Skip") }
+            TextButton(onClick = onSignIn) { Text(stringResource(R.string.skip)) }
         }
 
         // Weighted rather than centred: content sits in the upper-middle so the
@@ -153,7 +153,7 @@ fun OnboardingScreen(
             )
             Spacer(Modifier.height(Space.md))
             Text(
-                current.body,
+                stringResource(current.bodyRes),
                 style = MaterialTheme.typography.bodyLarge,
                 color = semantic.tertiaryText,
                 textAlign = TextAlign.Center,
@@ -185,7 +185,7 @@ fun OnboardingScreen(
             Spacer(Modifier.height(Space.sm))
             SecondaryButton(stringResource(R.string.entry_demo), Modifier.fillMaxWidth(), onClick = onUseDemo)
         } else {
-            PrimaryButton("Next", Modifier.fillMaxWidth(), glyph = Glyph.FORWARD, glyphTrailing = true) {
+            PrimaryButton(stringResource(R.string.next), Modifier.fillMaxWidth(), glyph = Glyph.FORWARD, glyphTrailing = true) {
                 state.onboardingPage = page + 1
             }
             Spacer(Modifier.height(Space.sm))

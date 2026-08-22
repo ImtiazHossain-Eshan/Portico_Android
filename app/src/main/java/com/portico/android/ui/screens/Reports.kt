@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,17 +28,26 @@ fun ReportsScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val results = store.financials()
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
+        val sections = ReportSection.entries.map {
+            when (it) {
+                ReportSection.PERFORMANCE -> stringResource(R.string.report_performance)
+                ReportSection.CASHFLOW -> stringResource(R.string.report_cashflow)
+                ReportSection.ALLOCATION -> stringResource(R.string.report_allocation)
+                ReportSection.COMPARISON -> stringResource(R.string.report_comparison)
+                ReportSection.GROSS_NET -> stringResource(R.string.report_gross_net)
+            }
+        }
         SegmentedRow(
-            options = ReportSection.entries.map { it.label },
+            options = sections,
             selected = state.reportSection.label
         ) { label ->
-            state.reportSection = ReportSection.entries.first { it.label == label }
+            state.reportSection = ReportSection.entries[sections.indexOf(label)]
         }
 
         if (results.isEmpty()) {
             EmptyState(
-                title = "Nothing to report yet",
-                body = "Reports are built from your properties. Add one and every chart here fills in.",
+                title = stringResource(R.string.nothing_to_report_yet),
+                body = stringResource(R.string.reports_are_built_from_your_properties_add_one),
                 glyph = Glyph.REPORTS,
                 actionLabel = "Add a property",
                 onAction = { state.resetDraft(); state.navigate(Route.ADD_PROPERTY) }
@@ -65,9 +75,12 @@ private fun PerformanceReport(state: PorticoState, results: List<PropertyFinanci
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Portfolio value", supporting = "Across ${results.size} properties")
-            SegmentedRow(ChartRangeOptions, state.chartRange.label) { label ->
-                state.chartRange = ChartRange.entries.first { it.label == label }
+            PanelHeader(stringResource(R.string.portfolio_value), supporting = stringResource(R.string.across_n_properties, results.size))
+            run {
+                val ranges = chartRangeOptions()
+                SegmentedRow(ranges, ranges[ChartRange.entries.indexOf(state.chartRange)]) { label ->
+                    state.chartRange = ChartRange.entries[ranges.indexOf(label)]
+                }
             }
             Spacer(Modifier.height(Space.md))
             ValueChart(
@@ -83,7 +96,7 @@ private fun PerformanceReport(state: PorticoState, results: List<PropertyFinanci
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Return by property", supporting = "Total ROI on cash invested")
+            PanelHeader(stringResource(R.string.return_by_property), supporting = stringResource(R.string.total_roi_on_cash_invested))
             val peak = results.maxOfOrNull { abs(it.totalRoi) } ?: 1.0
             results.sortedByDescending { it.totalRoi }.forEach { result ->
                 MagnitudeBar(
@@ -98,13 +111,13 @@ private fun PerformanceReport(state: PorticoState, results: List<PropertyFinanci
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Portfolio rates")
+            PanelHeader(stringResource(R.string.portfolio_rates))
             MetricGrid(
                 metrics = listOf(
-                    rateMetric("Total ROI", portfolio.totalRoi),
-                    rateMetric("Capital ROI", portfolio.capitalRoi),
-                    rateMetric("Cash on cash", portfolio.cashOnCash),
-                    Metric("Cap rate", Money.percent(portfolio.capRate), "on current value")
+                    rateMetric(stringResource(R.string.total_roi), portfolio.totalRoi),
+                    rateMetric(stringResource(R.string.capital_roi), portfolio.capitalRoi),
+                    rateMetric(stringResource(R.string.cash_on_cash), portfolio.cashOnCash),
+                    Metric(stringResource(R.string.cap_rate), Money.percent(portfolio.capRate), "on current value")
                 ),
                 columns = 2
             )
@@ -128,15 +141,15 @@ private fun CashflowReport(state: PorticoState, results: List<PropertyFinancials
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Annual cashflow", supporting = "Income less operating costs and tax")
-            DataRow("Gross income", Money.format(portfolio.annualGrossIncome, currency), valueColor = semantic.gain)
+            PanelHeader(stringResource(R.string.annual_cashflow), supporting = stringResource(R.string.income_less_operating_costs_and_tax))
+            DataRow(stringResource(R.string.gross_income), Money.format(portfolio.annualGrossIncome, currency), valueColor = semantic.gain)
             Hairline()
-            DataRow("Operating expenses", Money.format(-portfolio.annualOperatingExpenses, currency), valueColor = semantic.loss)
+            DataRow(stringResource(R.string.operating_expenses), Money.format(-portfolio.annualOperatingExpenses, currency), valueColor = semantic.loss)
             Hairline()
-            DataRow("Taxes and fees", Money.format(-portfolio.annualTaxes, currency), valueColor = semantic.loss)
+            DataRow(stringResource(R.string.taxes_and_fees), Money.format(-portfolio.annualTaxes, currency), valueColor = semantic.loss)
             TotalRule()
             DataRow(
-                "Net cashflow",
+                stringResource(R.string.net_cashflow),
                 Money.format(portfolio.annualNetIncome, currency),
                 emphasise = true,
                 valueColor = semantic.forDelta(portfolio.annualNetIncome)
@@ -145,14 +158,14 @@ private fun CashflowReport(state: PorticoState, results: List<PropertyFinancials
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Monthly projection", supporting = "Recurring position repeated across the year")
+            PanelHeader(stringResource(R.string.monthly_projection), supporting = stringResource(R.string.recurring_position_repeated_across_the_year))
             Spacer(Modifier.height(Space.sm))
             CashflowColumns(values = monthly, labels = labels, currency = currency)
             Spacer(Modifier.height(Space.md))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Cashflow by property")
+            PanelHeader(stringResource(R.string.cashflow_by_property))
             results.sortedByDescending { it.monthlyCashflow }.forEachIndexed { index, result ->
                 if (index > 0) Hairline()
                 DataRow(
@@ -188,7 +201,7 @@ private fun AllocationPanel(title: String, shares: List<Pair<String, Double>>) {
     if (shares.isEmpty()) return
     val palette = allocationPalette(shares.size)
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader(title, supporting = "Share of portfolio value")
+        PanelHeader(title, supporting = stringResource(R.string.share_of_portfolio_value))
         Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
             AllocationDonut(
                 slices = shares.mapIndexed { index, (label, share) ->
@@ -218,7 +231,7 @@ private fun ComparisonReport(state: PorticoState, results: List<PropertyFinancia
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Choose properties", supporting = "${chosen.size} of ${results.size} in the comparison")
+            PanelHeader(stringResource(R.string.choose_properties), supporting = "${chosen.size} of ${results.size} in the comparison")
             results.forEach { result ->
                 PropertyPickerRow(
                     property = result.property,
@@ -240,8 +253,8 @@ private fun ComparisonReport(state: PorticoState, results: List<PropertyFinancia
 
         if (chosen.isEmpty()) {
             EmptyState(
-                title = "Select at least one property",
-                body = "Pick properties above to compare their value, return and cashflow side by side.",
+                title = stringResource(R.string.select_at_least_one_property),
+                body = stringResource(R.string.pick_properties_above_to_compare_their_value_r),
                 glyph = Glyph.COMPARE
             )
             return@Column
@@ -319,9 +332,9 @@ private fun GrossNetReport(state: PorticoState, results: List<PropertyFinancials
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Portfolio",
+                stringResource(R.string.portfolio),
                 supporting = "Annual, ${store.taxProfile.jurisdiction.name}",
-                action = "Assumptions",
+                action = stringResource(R.string.assumptions),
                 onAction = { state.navigate(Route.TAX_ASSUMPTIONS) }
             )
             WaterfallLedger(
@@ -333,19 +346,19 @@ private fun GrossNetReport(state: PorticoState, results: List<PropertyFinancials
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Gross against net", supporting = "The gap is what costs and tax take")
-            DataRow("Gross yield", Money.percent(portfolio.grossYield))
+            PanelHeader(stringResource(R.string.gross_against_net), supporting = stringResource(R.string.the_gap_is_what_costs_and_tax_take))
+            DataRow(stringResource(R.string.gross_yield), Money.percent(portfolio.grossYield))
             Hairline()
-            DataRow("Net yield", Money.percent(portfolio.netYield), emphasise = true)
+            DataRow(stringResource(R.string.net_yield), Money.percent(portfolio.netYield), emphasise = true)
             Hairline()
             DataRow(
-                "Lost to costs and tax",
+                stringResource(R.string.lost_to_costs_and_tax),
                 Money.percent(portfolio.grossYield - portfolio.netYield),
                 valueColor = semantic.loss
             )
             Hairline()
             DataRow(
-                "Share of gross retained",
+                stringResource(R.string.share_of_gross_retained),
                 Money.percent(
                     if (portfolio.annualGrossIncome > 0)
                         portfolio.annualNetIncome / portfolio.annualGrossIncome * 100 else 0.0
@@ -354,7 +367,7 @@ private fun GrossNetReport(state: PorticoState, results: List<PropertyFinancials
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Per property")
+            PanelHeader(stringResource(R.string.per_property))
             results.forEachIndexed { index, result ->
                 if (index > 0) Hairline()
                 Column(

@@ -13,7 +13,8 @@
   <img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-E8A33D?style=flat-square&logo=android&logoColor=white&labelColor=141416" />
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-E8A33D?style=flat-square&logo=kotlin&logoColor=white&labelColor=141416" />
   <img alt="Firebase" src="https://img.shields.io/badge/Data-Firebase-E8A33D?style=flat-square&logo=firebase&logoColor=white&labelColor=141416" />
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-42%20passing-E8A33D?style=flat-square&labelColor=141416" />
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-105%20passing-E8A33D?style=flat-square&labelColor=141416" />
+  <img alt="English and Bangla" src="https://img.shields.io/badge/Languages-English%20%C2%B7%20%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE-E8A33D?style=flat-square&labelColor=141416" />
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-E8A33D?style=flat-square&labelColor=141416" /></a>
 </p>
 
@@ -42,7 +43,7 @@ than storing impressive-looking percentages.
 
 | Financial truth | Private workspace | Local intelligence | Adaptive interface |
 | --- | --- | --- | --- |
-| Gross-to-net calculations reconcile to the underlying records. | Clerk sessions and owner-scoped Firestore collections isolate each account. | Portfolio questions are answered on-device; no conversation or financial context reaches a cloud model. | Phone navigation becomes a rail and wider working surface on tablets. |
+| Gross-to-net calculations reconcile to the underlying records. | Clerk sessions and owner-scoped Firestore collections isolate each account. | Portfolio questions are answered on-device by default. Cloud analysis is opt-in and sends computed figures only, never an address or a document. | Phone navigation becomes a rail and wider working surface on tablets. |
 
 <div align="center">
 <img src="docs/screenshots/02-dashboard.png" width="300" alt="Dashboard showing portfolio value and performance chart" />
@@ -62,32 +63,43 @@ you add is analysed by exactly the same rules as the seeded ones.
 
 ## Product tour
 
+Every screenshot below is the release build running on a device, not a mockup.
+
 ### Register and property
 
 | Portfolio register | Property detail |
 | --- | --- |
-| <img src="docs/screenshots/04-portfolio.png" width="290" alt="Portfolio register with search, filter and sort" /> | <img src="docs/screenshots/05-property.png" width="290" alt="Property detail with value chart and return metrics" /> |
+| <img src="docs/screenshots/04-portfolio.png" width="290" alt="Portfolio register with search, filter and sort" /> | <img src="docs/screenshots/05-property.png" width="290" alt="Property detail with return and yield metrics" /> |
 | Search, filter by country, region, type and performance, and sort, all operating on computed financials, so *sort by net yield* ranks by the same number the property page shows. | Value over time with a scrub interaction, then return and yield, the monthly chain, acquisition facts, income, expenses, documents and tax. |
 
 ### Analysis
 
-| Allocation reports | Assistant |
+| Allocation reports | Assistant, with the working shown |
 | --- | --- |
-| <img src="docs/screenshots/07-reports.png" width="290" alt="Allocation donuts by country, region and property type" /> | <img src="docs/screenshots/09-assistant-answer.png" width="290" alt="Assistant answering a question with the arithmetic shown" /> |
-| Five reports: performance, cashflow, allocation, property comparison and gross-vs-net. Allocation converts currencies before comparing shares. | Answers questions about your own portfolio **on-device**, and shows the arithmetic. No API key ships and none is called. |
+| <img src="docs/screenshots/07-allocation.png" width="290" alt="Allocation by country, region and property type" /> | <img src="docs/screenshots/09-assistant-answer.png" width="290" alt="Assistant answering with the arithmetic shown" /> |
+| Five reports: performance, cashflow, allocation, property comparison and gross-vs-net. Allocation converts currencies before comparing shares. | Every answer carries the arithmetic that produced it, so a figure can be checked rather than trusted. |
 
 ### Tax and payments
 
 | Bangladesh tax rules | Sandbox checkout |
 | --- | --- |
-| <img src="docs/screenshots/06-tax-bangladesh.png" width="290" alt="Editable Bangladesh tax rates with their working shown" /> | <img src="docs/screenshots/11-checkout.png" width="290" alt="Sandbox checkout with order summary and test cards" /> |
-| Every rate is a draggable assumption carrying its own working. `0.75 × 12% = 9% of gross rent` makes the 25% maintenance allowance auditable. | Card validation, processing, decline paths, receipts and billing history. Nothing is charged and no provider is contacted. |
+| <img src="docs/screenshots/11-tax-bangladesh.png" width="290" alt="Editable Bangladesh tax rates with their working shown" /> | <img src="docs/screenshots/12-checkout.png" width="290" alt="Sandbox checkout with order summary and test cards" /> |
+| Every rate is an editable assumption carrying its own working. `0.75 x 12% = 9% of gross rent` makes the 25% maintenance allowance auditable. | Card validation, processing, decline paths, receipts and billing history. Nothing is charged and no provider is contacted. |
+
+### Bangla
+
+Portico ships in English and Bangla: 770 translated strings covering the
+interface a member actually works in.
+
+| Dashboard | Gross to net |
+| --- | --- |
+| <img src="docs/screenshots/13-bangla.png" width="290" alt="Dashboard rendered in Bangla" /> | <img src="docs/screenshots/14-bangla-waterfall.png" width="290" alt="Gross-to-net waterfall rendered in Bangla" /> |
 
 ### Entry and theme
 
 | Onboarding | Light theme |
 | --- | --- |
-| <img src="docs/screenshots/01-onboarding.png" width="290" alt="Onboarding explaining the product" /> | <img src="docs/screenshots/10-dashboard-light.png" width="290" alt="Dashboard in the light theme" /> |
+| <img src="docs/screenshots/01-onboarding.png" width="290" alt="Onboarding explaining the product" /> | <img src="docs/screenshots/15-light.png" width="290" alt="The same gross-to-net panel in the light theme" /> |
 
 ### Tablet and desktop-style layouts
 
@@ -95,8 +107,8 @@ Navigation is structural: a bottom bar on a phone, a rail from 600dp, and a
 wider working area with three-column metrics from 840dp.
 
 <div align="center">
-<img src="docs/screenshots/12-tablet-dashboard.png" width="420" alt="Tablet dashboard with navigation rail" />
-<img src="docs/screenshots/13-tablet-admin.png" width="420" alt="Admin platform with section rail and multi-column user table" />
+<img src="docs/screenshots/16-tablet-dashboard.png" width="420" alt="Tablet dashboard with navigation rail" />
+<img src="docs/screenshots/17-tablet-admin.png" width="420" alt="Admin platform with section rail and multi-column tables" />
 </div>
 
 The admin platform gets a desk layout, with its own section rail and real
@@ -109,16 +121,17 @@ on any device.
 
 | Area | What works end to end |
 | --- | --- |
-| **Portfolio** | Search, filter and sort; property detail; six-step property capture; edit and delete; server-enforced Free-plan limit. |
+| **Portfolio** | Search, filter and sort; property detail; six-step capture with live analysis; photographs; edit and delete; server-enforced Free-plan limit. |
 | **Financial analysis** | ROI, capital ROI, cash-on-cash, cap rate, gross/net yield, monthly/annual cashflow, value history and gross-to-net waterfall. |
 | **Reports** | Performance, cashflow, allocation, property comparison and gross-versus-net analysis with cross-currency normalization. |
 | **Tax** | Editable assumptions for nine jurisdictions across Bangladesh, Uruguay and Argentina, with the arithmetic attached to every rate. |
-| **Documents** | Private library, Android system picker, upload/download/delete, categories, viewer and recovery states. |
-| **Portico Intelligence** | On-device portfolio and property analysis, comparisons and what-if scenarios with the working shown. |
+| **Documents** | Private library, Android system picker, upload/download/delete, categories, an in-app PDF reader and recovery states. |
+| **Portico Intelligence** | On-device portfolio analysis, comparisons and what-if scenarios with the working shown. Cloud analysis via Gemma is opt-in and sends computed figures only. |
 | **Valuation and acquisition** | Comparable-based estimates and a search-to-decision flow using the same finance engine as owned properties. |
 | **Plans and payments** | Free/Pro rules, server-owned sandbox checkout, receipts, billing history, cancellation and resume,without charging a card. |
-| **Account and workspace** | Clerk email/OAuth authentication, session management, preferences, appearance, notifications, privacy, roles and admin surfaces. |
+| **Account and workspace** | Clerk email/OAuth authentication, in-app password change, live session management, account deletion, organisations with server-enforced roles, and admin surfaces. |
 | **Portability** | CSV export/import with duplicate detection and line-level rejection reporting. |
+| **Languages** | English and Bangla across 770 interface strings, switchable in-app and from Android's per-app language settings. Assistant prose and backend messages remain English. |
 
 ---
 
@@ -230,17 +243,33 @@ inside the APK or repository.
 ## Tests
 
 ```bash
-JAVA_HOME="/c/Program Files/Android/Android Studio/jbr" gradle :app:testDebugUnitTest
+./gradlew :app:testDebugUnitTest
 ```
 
-42 JVM tests cover the four things most worth locking down:
+```bash
+./gradlew :app:connectedDebugAndroidTest
+```
 
-| Suite | Covers |
-| --- | --- |
-| `FinanceTest` | The gross-to-net chain reconciling, cap rate excluding tax where net yield does not, negative cashflow surviving unclamped, recorded tax replacing the jurisdiction assumption rather than stacking, portfolio rates recomputed from totals rather than averaged |
-| `ExchangeTest` | Round trips, cross-currency routing through the base, mixed-currency aggregation, and the invariance property above |
-| `SandboxPaymentTest` | Mod-10 validation, expiry and CVC rules, every decline branch, and that the full card number never reaches a persisted record |
-| `PorticoImportTest` | Quoted commas, header-order independence, duplicate skipping, and rejected rows reported with their line number |
+**105 tests: 98 on the JVM and 7 on a device.** The unit suites cover the domain
+layer, which is pure Kotlin with no Android dependency and therefore testable
+without an emulator.
+
+| Suite | Tests | Covers |
+| --- | --- | --- |
+| `TaxTest` | 22 | Every jurisdiction's arithmetic against figures worked out by hand, that each rule's published working matches the rate it charges, capital gains staying out of the annual chain, and overrides clamping to a sane range |
+| `AccessControlTest` | 16 | The role ladder, that a senior role never holds less than a junior one, that an unreadable role degrades to least privilege, and that a tampered plan tier can never read as paid |
+| `SandboxPaymentTest` | 14 | Mod-10 validation, expiry and CVC rules, every decline branch, and that a full card number never reaches a persisted record |
+| `ExchangeTest` | 13 | Round trips, cross-currency routing through the base, mixed-currency aggregation, and rate invariance across display currencies |
+| `AnalystTest` | 11 | That an answer names the property its own arithmetic points at, that a question outside the records is refused rather than guessed, and that every answer carries its working |
+| `FinanceTest` | 8 | The gross-to-net chain reconciling, cap rate excluding tax where net yield does not, negative cashflow surviving unclamped, and portfolio rates recomputed from totals rather than averaged |
+| `AssistantPrivacyTest` | 7 | That the fact sheet sent to a cloud model can never contain a street address, a private note or a record id |
+| `PorticoImportTest` | 7 | Quoted commas, header-order independence, duplicate skipping, and rejected rows reported with their line number |
+| `PorticoJourneyTest` | 7 | On a device: launch, demo entry, every primary destination, the register, property detail, the waterfall reaching the screen, and the assistant answering |
+
+`AssistantPrivacyTest` is the one worth reading. The privacy screen promises that
+addresses and documents never leave the device, and that file is what keeps the
+promise true a year from now, when someone adds a field to `Property` and
+reaches for the obvious `appendLine(property)`.
 
 ---
 
@@ -276,16 +305,32 @@ server-owned sandbox subscriptions, FCM Installation-ID registration and deliver
 import/export, and session revocation all hit real systems. Existing schema-v1
 workspace snapshots migrate to the normalized schema on authenticated sync.
 
-**Illustrative, and labelled as such in the app.** The three seeded properties,
-comparable properties, market signals, acquisition listings, organisation
-members, audit entries and admin platform metrics. Every tax rate and every
-exchange rate is an assumption you can edit.
+Organisations, membership and roles are real: created through the bridge,
+stored in Firestore, and enforced server-side. Nobody can grant a role at or
+above their own, and the last owner cannot be removed. Account deletion is real
+and complete: records, private files, the Firebase identity and the Clerk
+identity all go, behind a typed confirmation the server re-checks. The audit
+trail is derived from activity actually recorded in the workspace.
 
-**Not connected.** Real payment processing, cloud AI and external
-property data remain integration seams. Checkout is intentionally labelled
-sandbox and never charges a card. Portico Intelligence is intentionally
-on-device: no backend AI endpoint exists, and portfolio context, questions and
-conversation history are not sent to an external model.
+**Illustrative, and labelled as such in the app.** The seeded properties,
+comparable properties, market signals, acquisition listings and admin platform
+metrics. Every tax rate and every exchange rate is an assumption you can edit.
+
+Market reference data is served by a provider record rather than baked into the
+app: `/api/market` reads Firestore's `public` tree, and every response states
+whether its figures were observed or modelled. Today it reports `modelled`,
+because claiming otherwise would be the dishonest half of the feature. Pointing
+it at a real portal is a change of one collection, not a change of shape.
+
+**Not connected.** Real payment processing. Checkout is labelled sandbox on
+every surface and never charges a card; swapping in a processor means replacing
+`SandboxProcessor.authorise` and nothing else.
+
+**Optional.** Cloud analysis. The assistant answers on-device by default, and
+that stays the answer of record: its arithmetic is what the working panel shows.
+Turning on cloud analysis sends computed figures to Gemma for wording only, and
+a test asserts that the payload can never carry a street address, a private note
+or a record id. The key lives on the server; no model key ships in the APK.
 
 ### Cloud data layout
 
@@ -307,16 +352,43 @@ server.
 
 ## Language
 
-The app ships in English only.
+Portico ships in **English and Bangla**, with 770 translated strings covering
+the interface: navigation, every screen's labels and headings, buttons, form
+fields, empty states, dialogs and the settings tree. The screens a member spends
+their time in, dashboard, register, property, reports and tax, render entirely
+in Bangla.
 
-There was a language selector offering Spanish and Portuguese; it changed a
-preference and nothing else, which is precisely the kind of control that only
-reports rather than does. It has been removed rather than left as decoration.
+**What is still English**, stated plainly rather than glossed over: the
+assistant's composed answers, the notes attached to each tax rule, payment
+decline messages and backend error strings. Those live in `domain/` and `data/`,
+which are pure Kotlin with no Android dependency and therefore cannot resolve a
+string resource. Translating them means either giving up that separation or
+returning keys from the domain for the UI to resolve, which is a design decision
+rather than a mechanical one. Roughly 260 strings sit behind it.
 
-Doing it properly means 628 distinct strings (421 labels, 207 sentences)
-extracted and translated, and financial terminology is not somewhere to guess.
-The seam is clean if you want it: strings are inline in the composables, so
-extraction to `strings.xml` plus a `values-bn` or `values-es` set is mechanical.
+Change it in **Profile -> Preferences -> Language**, or from Android's own
+per-app language list in system Settings. The app declares a `locales_config`,
+so it appears there without any extra work.
+
+Three decisions worth recording.
+
+**Financial figures stay in Latin digits in both languages.** Under a Bangla
+locale the platform formatter emits Bengali numerals, which rendered `$12.67M`
+as `$১২.৬৭M`: a Latin currency symbol against Bengali digits, in a column meant
+to align digit-for-digit. `Money` formats against `Locale.ROOT`, so a taka
+figure reads the same either way.
+
+**Financial terms carry the English alongside the Bangla** where the Bangla
+alone would be ambiguous: `ক্যাপ রেট (cap rate)`, `নিট আয়ের হার (net yield)`.
+That is how these figures are actually discussed by investors here, and it beats
+inventing a term nobody uses.
+
+**The assistant's suggested questions display in Bangla but are sent in
+English.** The analyst matches English keywords, so translating what it receives
+would stop it understanding its own suggestions.
+
+Names stay as written: property names, member names and currency codes are data,
+not language.
 
 ---
 

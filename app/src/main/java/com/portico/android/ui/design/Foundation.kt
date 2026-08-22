@@ -1,7 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.portico.android.ui.design
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -18,6 +19,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -340,6 +346,95 @@ fun NavRow(
  * The dominant figure on a screen: value large in tabular figures, a signed
  * delta beneath. Nothing else competes for this slot.
  */
+/**
+ * A headline money figure that shrinks rather than wraps.
+ *
+ * The display scale is sized for a dollar portfolio. The same holdings in taka
+ * are two orders of magnitude longer, so a figure set at 46sp runs past the
+ * screen and Compose breaks it across two lines, orphaning a digit. A wrapped
+ * number is unreadable as a number: the eye stops trusting it.
+ *
+ * Compacting to a suffix was the other option and it is worse here. This is the
+ * one figure on the dashboard that should be exact; rounding the headline to
+ * two significant figures defeats the point of the screen. So the text keeps
+ * its precision and gives up type size instead, stepping down until it fits on
+ * one line.
+ *
+ * Tracking scales with the size, otherwise the negative letter-spacing that
+ * flatters 46sp starts crushing glyphs together at 28sp.
+ */
+/**
+ * A headline money figure.
+ *
+ * Two problems, one component.
+ *
+ * The first is a line-breaking defect. A currency symbol outside Latin script
+ * -- the taka mark U+09F3, for instance -- falls back to a different font at
+ * display weights, and Compose then inserts a mandatory break between the
+ * symbol and the first digit. It is not a width problem: the two-character
+ * string "<taka>2" breaks onto two lines inside a container twelve times wider
+ * than it needs. Nothing in the style fixes it; LineBreak.Simple, an explicit
+ * Ltr direction and word joiners were all tried and all still break. So the
+ * symbol is drawn in its own Text and the digits in another, and no single
+ * Text ever holds the mixed run.
+ *
+ * The second is length. The display scale is sized for a dollar portfolio, and
+ * the same holdings in taka are two orders of magnitude longer. Rather than
+ * round the one figure on the screen that should be exact, the type shrinks
+ * until the number fits on one line. Tracking scales with it, because the
+ * negative letter-spacing that flatters 46sp crushes glyphs at 28sp.
+ */
+@Composable
+fun FigureText(
+    text: String,
+    style: TextStyle,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onBackground,
+    minScale: Float = 0.5f
+) {
+    // Everything before the first digit is the symbol, including any sign.
+    val split = remember(text) {
+        val first = text.indexOfFirst { it.isDigit() }
+        if (first <= 0) "" to text else text.take(first) to text.substring(first)
+    }
+    val (prefix, digits) = split
+
+    val measurer = rememberTextMeasurer()
+    BoxWithConstraints(modifier) {
+        val available = constraints.maxWidth
+
+        val fitted = remember(text, style, available) {
+            fun widthOf(candidate: TextStyle): Int {
+                fun measure(value: String) =
+                    if (value.isEmpty()) 0
+                    else measurer.measure(
+                        AnnotatedString(value), candidate, maxLines = 1, softWrap = false
+                    ).size.width
+                return measure(prefix) + measure(digits)
+            }
+
+            var candidate = style
+            val floor = style.fontSize.value * minScale
+            while (candidate.fontSize.value > floor && widthOf(candidate) > available) {
+                val scale = 0.94f
+                candidate = candidate.copy(
+                    fontSize = candidate.fontSize * scale,
+                    lineHeight = candidate.lineHeight * scale,
+                    letterSpacing = candidate.letterSpacing * scale
+                )
+            }
+            candidate
+        }
+
+        Row(verticalAlignment = Alignment.Bottom) {
+            if (prefix.isNotEmpty()) {
+                Text(prefix, style = fitted, color = color, maxLines = 1, softWrap = false)
+            }
+            Text(digits, style = fitted, color = color, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
 @Composable
 fun MetricReadout(
     label: String,
@@ -353,10 +448,9 @@ fun MetricReadout(
     Column(modifier) {
         SectionLabel(label)
         Spacer(Modifier.height(Space.xs))
-        Text(
+        FigureText(
             value,
-            style = if (compact) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onBackground
+            style = if (compact) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayLarge
         )
         if (delta != null && deltaText != null) {
             Spacer(Modifier.height(Space.xs))
@@ -514,7 +608,7 @@ fun PrimaryButton(
                 color = MaterialTheme.colorScheme.onPrimary
             )
             Spacer(Modifier.width(Space.md))
-            Text("Working…", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.working_2), style = MaterialTheme.typography.labelLarge)
         } else {
             if (glyph != null && !glyphTrailing) {
                 PorticoIcon(glyph, size = 18.dp, tint = MaterialTheme.colorScheme.onPrimary, contentDescription = null)
@@ -608,11 +702,11 @@ fun SegmentedRow(
             val isSelected = option == selected
             val background by animateColorAsState(
                 if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                tween(160), label = "segment-bg"
+                tween(160), label = stringResource(R.string.segment_bg)
             )
             val content by animateColorAsState(
                 if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                tween(160), label = "segment-fg"
+                tween(160), label = stringResource(R.string.segment_fg)
             )
             Box(
                 Modifier
@@ -786,7 +880,7 @@ fun rememberTickFlash(key: Any?, direction: Double, enabled: Boolean = true): Co
     val alpha by animateFloatAsState(
         targetValue = if (settled) 0f else 0.16f,
         animationSpec = tween(durationMillis = 640),
-        label = "tick-flash"
+        label = stringResource(R.string.tick_flash)
     )
     LaunchedEffect(key) { settled = true }
     return target.copy(alpha = alpha)

@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -72,7 +73,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                             failureReason = error.message
                         ),
                         reason = "Checkout unavailable",
-                        recovery = error.message ?: "Nothing was charged. Check your connection and try again."
+                        recovery = error.message ?: store.string(R.string.nothing_was_charged_check_your_connection_and)
                     )
                     state.checkoutStage = CheckoutStage.DECLINED
                 }
@@ -89,7 +90,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 OrderSummary(plan)
 
                 Panel(Modifier.padding(horizontal = Space.lg)) {
-                    PanelHeader("Card details", supporting = "Test cards only, never a real card")
+                    PanelHeader(stringResource(R.string.card_details), supporting = stringResource(R.string.test_cards_only_never_a_real_card))
                     Column(
                         Modifier.padding(horizontal = Space.lg, vertical = Space.sm),
                         verticalArrangement = Arrangement.spacedBy(Space.md)
@@ -100,7 +101,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                 card = card.copy(number = raw.filter(Char::isDigit).take(19))
                                 if (submitted) validation = SandboxProcessor.validate(card)
                             },
-                            label = "Card number",
+                            label = stringResource(R.string.card_number),
                             placeholder = "4242 4242 4242 4242",
                             keyboardType = KeyboardType.Number,
                             error = if (submitted) validation.numberError else null,
@@ -115,8 +116,8 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                     card = card.copy(expiry = shown)
                                     if (submitted) validation = SandboxProcessor.validate(card)
                                 },
-                                label = "Expiry",
-                                placeholder = "MM/YY",
+                                label = stringResource(R.string.expiry),
+                                placeholder = stringResource(R.string.mm_yy),
                                 keyboardType = KeyboardType.Number,
                                 error = if (submitted) validation.expiryError else null,
                                 modifier = Modifier.weight(1f)
@@ -127,7 +128,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                     card = card.copy(cvc = raw.filter(Char::isDigit).take(4))
                                     if (submitted) validation = SandboxProcessor.validate(card)
                                 },
-                                label = "CVC",
+                                label = stringResource(R.string.cvc),
                                 placeholder = "123",
                                 keyboardType = KeyboardType.Number,
                                 isPassword = true,
@@ -141,7 +142,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                 card = card.copy(name = it)
                                 if (submitted) validation = SandboxProcessor.validate(card)
                             },
-                            label = "Name on card",
+                            label = stringResource(R.string.name_on_card),
                             error = if (submitted) validation.nameError else null
                         )
                     }
@@ -165,7 +166,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         glyph = Glyph.LOCK,
                         onClick = ::pay
                     )
-                    SecondaryButton("Cancel", Modifier.fillMaxWidth()) {
+                    SecondaryButton(stringResource(R.string.cancel), Modifier.fillMaxWidth()) {
                         state.checkoutStage = CheckoutStage.DETAILS
                         if (!state.goBack()) state.selectDestination(Route.SUBSCRIPTION)
                     }
@@ -181,7 +182,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 Text("Authorising ${plan.displayPrice}", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(Space.xs))
                 Text(
-                    "Do not close the app",
+                    stringResource(R.string.do_not_close_the_app),
                     style = MaterialTheme.typography.bodySmall,
                     color = semantic.tertiaryText
                 )
@@ -191,7 +192,7 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 val payment = (outcome as? PaymentResult.Succeeded)?.payment
                 SuccessState(
                     title = "You're on ${plan.name}",
-                    body = "Your register is unlimited and every report is unlocked. Nothing was charged. This is sandbox mode.",
+                    body = stringResource(R.string.your_register_is_unlimited_and_every_report_is),
                     actionLabel = "Back to Portico",
                     onAction = {
                         state.checkoutStage = CheckoutStage.DETAILS
@@ -209,8 +210,8 @@ fun CheckoutScreen(state: PorticoState, modifier: Modifier = Modifier) {
             CheckoutStage.DECLINED -> {
                 val declined = outcome as? PaymentResult.Declined
                 ErrorState(
-                    title = declined?.reason ?: "Payment didn't go through",
-                    body = declined?.recovery ?: "Nothing was charged. Try a different card.",
+                    title = declined?.reason ?: stringResource(R.string.payment_didn_t_go_through),
+                    body = declined?.recovery ?: stringResource(R.string.nothing_was_charged_try_a_different_card),
                     retryLabel = "Try another card",
                     onRetry = {
                         outcome = null
@@ -245,7 +246,7 @@ private fun SandboxBanner() {
     ) {
         PorticoIcon(Glyph.INFO, size = 16.dp, tint = MaterialTheme.colorScheme.primary, contentDescription = null)
         Column {
-            Text("SANDBOX", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.sandbox), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             Text(
                 SANDBOX_NOTICE,
                 style = MaterialTheme.typography.bodySmall,
@@ -258,14 +259,14 @@ private fun SandboxBanner() {
 @Composable
 private fun OrderSummary(plan: SubscriptionPlan) {
     Panel(Modifier.padding(horizontal = Space.lg), accent = true) {
-        PanelHeader("You're subscribing to")
+        PanelHeader(stringResource(R.string.you_re_subscribing_to))
         DataRow(plan.name, plan.displayPricePerInterval, emphasise = true)
         Hairline()
-        DataRow("Properties", "Unlimited")
+        DataRow(stringResource(R.string.properties), "Unlimited")
         Hairline()
-        DataRow("Billing", "Recurring ${plan.interval}ly until cancelled")
+        DataRow(stringResource(R.string.billing), "Recurring ${plan.interval}ly until cancelled")
         Hairline()
-        DataRow("Charged today", plan.displayPrice, emphasise = true)
+        DataRow(stringResource(R.string.charged_today), plan.displayPrice, emphasise = true)
         Spacer(Modifier.height(Space.sm))
     }
 }
@@ -275,7 +276,7 @@ private fun OrderSummary(plan: SubscriptionPlan) {
 private fun TestCardTable(onPick: (String) -> Unit) {
     val semantic = PorticoTheme.semantic
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Test cards", supporting = "Tap one to fill the form")
+        PanelHeader(stringResource(R.string.test_cards), supporting = stringResource(R.string.tap_one_to_fill_the_form))
         SandboxProcessor.testCards.forEachIndexed { index, testCard ->
             if (index > 0) Hairline()
             Row(
@@ -294,12 +295,12 @@ private fun TestCardTable(onPick: (String) -> Unit) {
                         color = if (testCard.outcome == PaymentStatus.SUCCEEDED) semantic.gain else semantic.loss
                     )
                 }
-                PorticoIcon(Glyph.ADD, size = 16.dp, tint = semantic.tertiaryText, contentDescription = "Use this card")
+                PorticoIcon(Glyph.ADD, size = 16.dp, tint = semantic.tertiaryText, contentDescription = stringResource(R.string.use_this_card))
             }
         }
         Column(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
             Text(
-                "Any future expiry and any 3-digit code work.",
+                stringResource(R.string.any_future_expiry_and_any_3_digit_code_work),
                 style = MaterialTheme.typography.labelSmall,
                 color = semantic.tertiaryText
             )
@@ -311,29 +312,29 @@ private fun TestCardTable(onPick: (String) -> Unit) {
 private fun ReceiptPanel(payment: Payment, plan: SubscriptionPlan, renewsOn: String?) {
     val semantic = PorticoTheme.semantic
     Panel(Modifier.padding(horizontal = Space.lg)) {
-        PanelHeader("Receipt", supporting = "Sandbox, no funds moved")
-        DataRow("Reference", payment.id.takeLast(12).uppercase())
+        PanelHeader(stringResource(R.string.receipt), supporting = stringResource(R.string.sandbox_no_funds_moved))
+        DataRow(stringResource(R.string.reference), payment.id.takeLast(12).uppercase())
         Hairline()
-        DataRow("Plan", plan.name)
+        DataRow(stringResource(R.string.plan), plan.name)
         Hairline()
-        DataRow("Amount", payment.displayAmount, emphasise = true)
+        DataRow(stringResource(R.string.amount), payment.displayAmount, emphasise = true)
         Hairline()
         DataRow(
-            "Status",
+            stringResource(R.string.status),
             payment.paymentStatus.name.lowercase().replaceFirstChar { it.uppercase() },
             valueColor = if (payment.succeeded) semantic.gain else semantic.loss
         )
         Hairline()
-        DataRow("Card", "${payment.cardBrand} ending ${payment.cardLast4}")
+        DataRow(stringResource(R.string.card), "${payment.cardBrand} ending ${payment.cardLast4}")
         Hairline()
-        DataRow("Date", payment.date)
+        DataRow(stringResource(R.string.date), payment.date)
         if (renewsOn != null) {
             Hairline()
-            DataRow("Renews", renewsOn)
+            DataRow(stringResource(R.string.renews), renewsOn)
         }
         payment.failureReason?.let {
             Hairline()
-            DataRow("Reason", it, valueColor = semantic.loss)
+            DataRow(stringResource(R.string.reason), it, valueColor = semantic.loss)
         }
     }
 }

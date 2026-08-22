@@ -1,7 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -55,8 +56,8 @@ fun DocumentsScreen(state: PorticoState, modifier: Modifier = Modifier) {
             PorticoField(
                 value = state.documentQuery,
                 onValueChange = { state.documentQuery = it },
-                label = "Search documents",
-                placeholder = "Lease, deed, receipt…",
+                label = stringResource(R.string.search_documents),
+                placeholder = stringResource(R.string.lease_deed_receipt),
                 trailing = {
                     if (state.documentQuery.isNotBlank()) {
                         GlyphButton(Glyph.CLOSE, "Clear search") { state.documentQuery = "" }
@@ -71,20 +72,20 @@ fun DocumentsScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Library",
+                stringResource(R.string.library),
                 supporting = "${visible.size} documents · private to this workspace"
             )
             when {
                 store.documents.isEmpty() -> EmptyState(
-                    title = "No documents yet",
-                    body = "Keep deeds, leases, insurance and tax receipts with the property they belong to.",
+                    title = stringResource(R.string.no_documents_yet),
+                    body = stringResource(R.string.keep_deeds_leases_insurance_and_tax_receipts_w),
                     glyph = Glyph.DOCUMENT,
                     actionLabel = "Upload a document",
                     onAction = { state.uploadStage = UploadStage.PROPERTY; state.showUploadSheet = true }
                 )
                 visible.isEmpty() -> EmptyState(
                     title = "Nothing in ${state.documentCategory}",
-                    body = "No document matches this category and search.",
+                    body = stringResource(R.string.no_document_matches_this_category_and_search),
                     glyph = Glyph.SEARCH,
                     actionLabel = "Show all",
                     onAction = { state.documentCategory = "All"; state.documentQuery = "" }
@@ -100,14 +101,14 @@ fun DocumentsScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Box(Modifier.padding(horizontal = Space.lg)) {
-            PrimaryButton("Upload document", Modifier.fillMaxWidth(), glyph = Glyph.UPLOAD) {
+            PrimaryButton(stringResource(R.string.upload_document), Modifier.fillMaxWidth(), glyph = Glyph.UPLOAD) {
                 state.uploadStage = UploadStage.PROPERTY
                 state.showUploadSheet = true
             }
         }
 
         SyntheticNote(
-            "Private files are encrypted in transit and can only be fetched through your signed-in Portico session."
+            stringResource(R.string.private_files_are_encrypted_in_transit_and_can)
         )
     }
 
@@ -170,8 +171,8 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                     )
 
                     document.storagePath.isBlank() -> ErrorState(
-                        title = "No file attached",
-                        body = "This record has details but no stored file. It came from the sample portfolio. Upload a file to attach one.",
+                        title = stringResource(R.string.no_file_attached),
+                        body = stringResource(R.string.this_record_has_details_but_no_stored_file_it),
                         retryLabel = "Upload a file",
                         onRetry = {
                             state.uploadPropertyId = document.propertyId
@@ -210,7 +211,7 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                         val isPdf = document.fileName.substringAfterLast('.', "")
                             .equals("pdf", ignoreCase = true)
                         PrimaryButton(
-                            if (isPdf) "Read document" else "Open in document viewer",
+                            if (isPdf) "Read document" else stringResource(R.string.open_in_document_viewer),
                             glyph = if (isPdf) Glyph.DOCUMENT else Glyph.EXTERNAL,
                             loading = opening
                         ) {
@@ -233,7 +234,7 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                                         context.startActivity(intent)
                                     }
                                 }.onFailure { error ->
-                                    state.notify(error.message ?: "This document could not be opened.")
+                                    state.notify(error.message ?: store.string(R.string.this_document_could_not_be_opened))
                                 }
                                 opening = false
                             }
@@ -244,23 +245,23 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Details")
-            DataRow("Category", document.category)
+            PanelHeader(stringResource(R.string.details))
+            DataRow(stringResource(R.string.category), document.category)
             Hairline()
-            DataRow("Property", store.propertyById(document.propertyId)?.name ?: "Unassigned")
+            DataRow(stringResource(R.string.property), store.propertyById(document.propertyId)?.name ?: "Unassigned")
             Hairline()
-            DataRow("Uploaded", document.uploadedAt)
+            DataRow(stringResource(R.string.uploaded), document.uploadedAt)
             Hairline()
-            DataRow("Size", document.readableSize)
+            DataRow(stringResource(R.string.size), document.readableSize)
             Hairline()
-            DataRow("Visibility", "Private to this workspace")
+            DataRow(stringResource(R.string.visibility), stringResource(R.string.private_to_this_workspace))
         }
 
         pdfHandle?.let { handle ->
             Panel(Modifier.padding(horizontal = Space.lg)) {
                 PanelHeader(
-                    "Document",
-                    action = "Close",
+                    stringResource(R.string.document),
+                    action = stringResource(R.string.close),
                     onAction = {
                         handle.close()
                         pdfHandle = null
@@ -283,9 +284,9 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                     runCatching { store.removeDocument(document.id) }
                         .onSuccess {
                             state.viewerDocumentId = null
-                            state.notify("Document deleted")
+                            state.notify(R.string.document_deleted)
                         }
-                        .onFailure { state.notify(it.message ?: "Document could not be deleted") }
+                        .onFailure { state.notify(it.message ?: store.string(R.string.document_could_not_be_deleted)) }
                     deleting = false
                 }
             }
@@ -306,7 +307,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
     val semantic = PorticoTheme.semantic
     var failed by remember { mutableStateOf(false) }
-    var failureMessage by remember { mutableStateOf("The file couldn't be uploaded. Check your connection and try again.") }
+    var failureMessage by remember { mutableStateOf(store.string(R.string.the_file_couldn_t_be_uploaded_check_your_conne)) }
 
     val picker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -339,7 +340,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
                 state.uploadStage = UploadStage.DONE
             }.onFailure { error ->
                 failed = true
-                failureMessage = error.message ?: "The private upload did not finish."
+                failureMessage = error.message ?: store.string(R.string.the_private_upload_did_not_finish)
                 state.uploadStage = UploadStage.FAILED
             }
         }
@@ -353,17 +354,17 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
             when (state.uploadStage) {
                 UploadStage.PROPERTY -> {
                     Column(Modifier.padding(horizontal = Space.lg)) {
-                        Text("Which property?", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.which_property), style = MaterialTheme.typography.titleLarge)
                         Text(
-                            "Documents are filed against the property they belong to.",
+                            stringResource(R.string.documents_are_filed_against_the_property_they),
                             style = MaterialTheme.typography.bodySmall,
                             color = semantic.tertiaryText
                         )
                     }
                     if (store.properties.isEmpty()) {
                         EmptyState(
-                            title = "No properties yet",
-                            body = "Add a property first, then its documents have somewhere to live.",
+                            title = stringResource(R.string.no_properties_yet),
+                            body = stringResource(R.string.add_a_property_first_then_its_documents_have_s),
                             glyph = Glyph.PORTFOLIO
                         )
                     } else {
@@ -375,7 +376,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
                         }
                         Box(Modifier.padding(horizontal = Space.lg)) {
                             PrimaryButton(
-                                "Continue",
+                                stringResource(R.string.continue_label),
                                 Modifier.fillMaxWidth(),
                                 enabled = state.uploadPropertyId != null
                             ) { state.uploadStage = UploadStage.FILE }
@@ -385,7 +386,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
 
                 UploadStage.FILE -> {
                     Column(Modifier.padding(horizontal = Space.lg)) {
-                        Text("Choose a file", style = MaterialTheme.typography.titleLarge)
+                        Text(stringResource(R.string.choose_a_file), style = MaterialTheme.typography.titleLarge)
                         Text(
                             store.propertyById(state.uploadPropertyId)?.name ?: "Unassigned",
                             style = MaterialTheme.typography.bodySmall,
@@ -393,12 +394,12 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
                         )
                     }
                     ChoiceRow(
-                        "Category",
+                        stringResource(R.string.category),
                         DocumentCategory.entries.map { it.label },
                         state.uploadCategory
                     ) { state.uploadCategory = it }
                     Box(Modifier.padding(horizontal = Space.lg)) {
-                        PrimaryButton("Browse files", Modifier.fillMaxWidth(), glyph = Glyph.UPLOAD) {
+                        PrimaryButton(stringResource(R.string.browse_files), Modifier.fillMaxWidth(), glyph = Glyph.UPLOAD) {
                             failed = false
                             runCatching {
                                 picker.launch(arrayOf("application/pdf", "image/*"))
@@ -410,7 +411,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
                     }
                     if (failed) {
                         Box(Modifier.padding(horizontal = Space.lg)) {
-                            InlineError("Couldn't open the file picker on this device.")
+                            InlineError(stringResource(R.string.couldn_t_open_the_file_picker_on_this_device))
                         }
                     }
                 }
@@ -425,7 +426,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
                 }
 
                 UploadStage.DONE -> SuccessState(
-                    title = "Document saved",
+                    title = stringResource(R.string.document_saved),
                     body = "${state.uploadFileName} is filed under ${state.uploadCategory}.",
                     actionLabel = "Done",
                     onAction = {
@@ -438,7 +439,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
                 )
 
                 UploadStage.FAILED -> ErrorState(
-                    title = "Upload didn't finish",
+                    title = stringResource(R.string.upload_didn_t_finish),
                     body = failureMessage,
                     retryLabel = "Try again",
                     onRetry = { failed = false; state.uploadStage = UploadStage.FILE },
