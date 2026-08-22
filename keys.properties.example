@@ -1,0 +1,10 @@
+# Copy to keys.properties (gitignored) and fill in.
+#
+# CLERK_PUBLISHABLE_KEY   Clerk Dashboard -> API keys -> Publishable key (pk_test_... / pk_live_...)
+# FIREBASE_TOKEN_BRIDGE_URL  Your deployed bridge, ending in /api/firebase-token
+# PORTICO_FILE_API_URL    Optional. Defaults to the bridge URL with /files instead of /firebase-token.
+#
+# Without these the project still builds; the app simply cannot authenticate.
+CLERK_PUBLISHABLE_KEY=
+FIREBASE_TOKEN_BRIDGE_URL=
+PORTICO_FILE_API_URL=

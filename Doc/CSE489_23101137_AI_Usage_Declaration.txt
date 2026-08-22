@@ -16,7 +16,7 @@ Date: 22 August, 2026
 [ ] Google Gemini
 [x] Claude
 [ ] Cursor
-[ ] Other: ___CODEX_____________
+[x] Other: ___CODEX_____________
 
 ------------------------------------------------------------
 2. PURPOSE OF AI USE (check all that apply)
