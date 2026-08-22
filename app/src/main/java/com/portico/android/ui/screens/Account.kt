@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -94,7 +95,7 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
                 } else {
                     AsyncImage(
                         model = avatar,
-                        contentDescription = "Your profile photograph",
+                        contentDescription = stringResource(R.string.your_profile_photograph),
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -109,83 +110,83 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
                     color = semantic.tertiaryText
                 )
             }
-            if (state.demoMode) StatusChip("Demo", tone = semantic.neutral)
+            if (state.demoMode) StatusChip(stringResource(R.string.demo), tone = semantic.neutral)
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             MetricGrid(
                 metrics = listOf(
-                    Metric("Properties", store.properties.size.toString()),
-                    Metric("Portfolio", Money.compact(portfolio.portfolioValue, profile.currency)),
-                    Metric("Plan", store.subscription.tier.label)
+                    Metric(stringResource(R.string.properties), store.properties.size.toString()),
+                    Metric(stringResource(R.string.portfolio), Money.compact(portfolio.portfolioValue, profile.currency)),
+                    Metric(stringResource(R.string.plan), store.subscription.tier.label)
                 ),
                 columns = 3
             )
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Account")
-            NavRow("Preferences", glyph = Glyph.SETTINGS, value = profile.currency,
-                supporting = "Currency, exchange rates, jurisdiction, appearance") {
+            PanelHeader(stringResource(R.string.account))
+            NavRow(stringResource(R.string.preferences), glyph = Glyph.SETTINGS, value = profile.currency,
+                supporting = stringResource(R.string.currency_exchange_rates_jurisdiction_appearanc)) {
                 state.navigate(Route.SETTINGS_PREFERENCES)
             }
             Hairline()
-            NavRow("Notifications", glyph = Glyph.NOTIFICATION,
-                value = if (store.unreadNotifications > 0) "${store.unreadNotifications} new" else null,
-                supporting = "What Portico tells you about") {
+            NavRow(stringResource(R.string.notifications), glyph = Glyph.NOTIFICATION,
+                value = if (store.unreadNotifications > 0) stringResource(R.string.n_new, store.unreadNotifications) else null,
+                supporting = stringResource(R.string.what_portico_tells_you_about)) {
                 state.navigate(Route.NOTIFICATIONS)
             }
             Hairline()
-            NavRow("Security", glyph = Glyph.LOCK, supporting = "Password, sessions and sign-in") {
+            NavRow(stringResource(R.string.security), glyph = Glyph.LOCK, supporting = stringResource(R.string.password_sessions_and_sign_in)) {
                 state.navigate(Route.SETTINGS_SECURITY)
             }
             Hairline()
-            NavRow("Privacy and data", glyph = Glyph.SHIELD, supporting = "What is stored and how to remove it") {
+            NavRow(stringResource(R.string.privacy_and_data), glyph = Glyph.SHIELD, supporting = stringResource(R.string.what_is_stored_and_how_to_remove_it)) {
                 state.navigate(Route.SETTINGS_PRIVACY)
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Portfolio tools")
-            NavRow("Documents", glyph = Glyph.DOCUMENT, value = store.documents.size.toString()) {
+            PanelHeader(stringResource(R.string.portfolio_tools))
+            NavRow(stringResource(R.string.documents), glyph = Glyph.DOCUMENT, value = store.documents.size.toString()) {
                 state.navigate(Route.DOCUMENTS)
             }
             Hairline()
-            NavRow("Tax position", glyph = Glyph.TAX, value = store.taxProfile.jurisdiction.name) {
+            NavRow(stringResource(R.string.tax_position), glyph = Glyph.TAX, value = store.taxProfile.jurisdiction.name) {
                 state.navigate(Route.TAX)
             }
             Hairline()
-            NavRow("Valuation", glyph = Glyph.VALUATION, supporting = "Compare against the market") {
+            NavRow(stringResource(R.string.valuation), glyph = Glyph.VALUATION, supporting = stringResource(R.string.compare_against_the_market)) {
                 state.navigate(Route.VALUATION)
             }
             Hairline()
-            NavRow("Acquisition", glyph = Glyph.ACQUISITION, supporting = "Analyse a property before buying") {
+            NavRow(stringResource(R.string.acquisition), glyph = Glyph.ACQUISITION, supporting = stringResource(R.string.analyse_a_property_before_buying)) {
                 state.navigate(Route.ACQUISITION)
             }
             Hairline()
-            NavRow("Plans", glyph = Glyph.SUBSCRIPTION, value = store.subscription.tier.label) {
+            NavRow(stringResource(R.string.plans), glyph = Glyph.SUBSCRIPTION, value = store.subscription.tier.label) {
                 state.navigate(Route.SUBSCRIPTION)
             }
             Hairline()
-            NavRow("Workspace", glyph = Glyph.ENTERPRISE, supporting = "Members, roles and export") {
+            NavRow(stringResource(R.string.workspace), glyph = Glyph.ENTERPRISE, supporting = stringResource(R.string.members_roles_and_export)) {
                 state.navigate(Route.ENTERPRISE)
             }
             Hairline()
-            NavRow("Admin platform", glyph = Glyph.ADMIN, supporting = "Users, subscriptions, analytics and audit") {
+            NavRow(stringResource(R.string.admin_platform), glyph = Glyph.ADMIN, supporting = stringResource(R.string.users_subscriptions_analytics_and_audit)) {
                 state.navigate(Route.ADMIN)
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Session")
-            NavRow("Sign out", glyph = Glyph.LOGOUT, tint = MaterialTheme.colorScheme.error) {
+            PanelHeader(stringResource(R.string.session))
+            NavRow(stringResource(R.string.sign_out), glyph = Glyph.LOGOUT, tint = MaterialTheme.colorScheme.error) {
                 state.showLogoutDialog = true
             }
         }
 
         Box(Modifier.padding(horizontal = Space.lg)) {
             Text(
-                "Portico · Imtiaz Hossain · 23101137",
+                stringResource(R.string.portico_imtiaz_hossain_23101137),
                 style = MaterialTheme.typography.labelSmall,
                 color = semantic.tertiaryText
             )
@@ -195,16 +196,16 @@ fun ProfileScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
     if (state.showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { state.showLogoutDialog = false },
-            title = { Text("Sign out of Portico?") },
-            text = { Text("Your device cache remains private. Sign in again to resume secure cloud sync.") },
+            title = { Text(stringResource(R.string.sign_out_of_portico)) },
+            text = { Text(stringResource(R.string.your_device_cache_remains_private_sign_in_agai)) },
             confirmButton = {
                 TextButton(onClick = {
                     state.showLogoutDialog = false
                     onSignOut()
-                }) { Text("Sign out", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.sign_out), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { state.showLogoutDialog = false }) { Text("Stay signed in") }
+                TextButton(onClick = { state.showLogoutDialog = false }) { Text(stringResource(R.string.stay_signed_in)) }
             },
             containerColor = PorticoTheme.semantic.panel
         )
@@ -224,24 +225,24 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Profile")
+            PanelHeader(stringResource(R.string.profile))
             Box(Modifier.padding(Space.lg)) {
                 Column(verticalArrangement = Arrangement.spacedBy(Space.md)) {
                     PorticoField(
                         value = editingName,
                         onValueChange = { editingName = it },
-                        label = "Display name"
+                        label = stringResource(R.string.display_name)
                     )
-                    PrimaryButton("Save name", Modifier.fillMaxWidth(), enabled = editingName != profile.name) {
+                    PrimaryButton(stringResource(R.string.save_name), Modifier.fillMaxWidth(), enabled = editingName != profile.name) {
                         store.setProfile { it.copy(name = editingName.trim()) }
-                        state.notify("Name updated")
+                        state.notify(R.string.name_updated)
                     }
                 }
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Currency", supporting = "Every figure in the app is shown in this currency")
+            PanelHeader(stringResource(R.string.currency), supporting = stringResource(R.string.every_figure_in_the_app_is_shown_in_this_curre))
             SegmentedRow(Money.currencies, profile.currency) { currency ->
                 store.setProfile { it.copy(currency = currency) }
                 state.notify("Now showing $currency")
@@ -251,13 +252,13 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Exchange rates",
-                supporting = "Units per 1 USD. Used whenever a property is held in another currency.",
+                stringResource(R.string.exchange_rates),
+                supporting = stringResource(R.string.units_per_1_usd_used_whenever_a_property_is_he),
                 action = if (store.exchangeRates.isEdited) "Reset" else null,
                 onAction = if (store.exchangeRates.isEdited) {
                     {
                         store.setExchangeRates { it.reset() }
-                        state.notify("Exchange rates reset to defaults")
+                        state.notify(R.string.exchange_rates_reset_to_defaults)
                     }
                 } else null
             )
@@ -267,7 +268,7 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     DataRow(
                         "${row.currency} ${row.symbol}",
                         "base",
-                        supporting = "Every other rate is quoted against this"
+                        supporting = stringResource(R.string.every_other_rate_is_quoted_against_this)
                     )
                 } else {
                     var draft by remember(row.currency, row.perUsd) {
@@ -298,7 +299,7 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                     }
                                 }
                             },
-                            label = "per USD",
+                            label = stringResource(R.string.per_usd),
                             keyboardType = KeyboardType.Decimal,
                             modifier = Modifier.width(150.dp)
                         )
@@ -307,13 +308,13 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
             }
             if (store.exchangeRates.updated.isNotBlank()) {
                 Hairline()
-                DataRow("You last set these", store.exchangeRates.updated)
+                DataRow(stringResource(R.string.you_last_set_these), store.exchangeRates.updated)
             }
             SyntheticNote(FX_NOTICE)
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Tax jurisdiction")
+            PanelHeader(stringResource(R.string.tax_jurisdiction))
             NavRow(
                 store.taxProfile.jurisdiction.name,
                 glyph = Glyph.TAX,
@@ -322,41 +323,41 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Appearance")
+            PanelHeader(stringResource(R.string.appearance))
             SegmentedRow(
                 listOf(Appearance.SYSTEM, Appearance.LIGHT, Appearance.DARK),
                 preferences.theme
             ) { theme -> store.setPreferences { it.copy(theme = theme) } }
             Spacer(Modifier.height(Space.md))
             SwitchRow(
-                label = "Reduce motion",
+                label = stringResource(R.string.reduce_motion),
                 checked = preferences.reducedMotion,
-                supporting = "Turn off chart reveals and value transitions",
+                supporting = stringResource(R.string.turn_off_chart_reveals_and_value_transitions),
                 glyph = Glyph.APPEARANCE,
                 onCheckedChange = { value -> store.setPreferences { it.copy(reducedMotion = value) } }
             )
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Notify me about")
+            PanelHeader(stringResource(R.string.notify_me_about))
             SwitchRow(
-                "Rent received",
+                stringResource(R.string.rent_received),
                 preferences.notificationsRent,
-                supporting = "When income is recorded against a property",
+                supporting = stringResource(R.string.when_income_is_recorded_against_a_property),
                 glyph = Glyph.INCOME
             ) { value -> store.setPreferences { it.copy(notificationsRent = value) } }
             Hairline()
             SwitchRow(
-                "Documents and leases",
+                stringResource(R.string.documents_and_leases),
                 preferences.notificationsDocuments,
-                supporting = "Expiring leases and missing paperwork",
+                supporting = stringResource(R.string.expiring_leases_and_missing_paperwork),
                 glyph = Glyph.DOCUMENT
             ) { value -> store.setPreferences { it.copy(notificationsDocuments = value) } }
             Hairline()
             SwitchRow(
-                "Market movement",
+                stringResource(R.string.market_movement),
                 preferences.notificationsMarket,
-                supporting = "Needs a connected data provider",
+                supporting = stringResource(R.string.needs_a_connected_data_provider),
                 glyph = Glyph.TREND
             ) { value -> store.setPreferences { it.copy(notificationsMarket = value) } }
         }
@@ -370,12 +371,15 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
          */
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(stringResource(R.string.settings_language))
-            val language = AppLanguage.current()
+            val languageContext = LocalContext.current
+            val language = AppLanguage.current(languageContext)
             SegmentedRow(
                 AppLanguage.entries.map { it.label },
                 language.label
             ) { label ->
-                AppLanguage.entries.firstOrNull { it.label == label }?.let(AppLanguage::apply)
+                AppLanguage.entries.firstOrNull { it.label == label }?.let {
+                    AppLanguage.apply(languageContext, it)
+                }
             }
             Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
                 Text(
@@ -393,21 +397,21 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
          * way, so turning it off never removes a capability.
          */
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Portico Intelligence")
+            PanelHeader(stringResource(R.string.portico_intelligence))
             SwitchRow(
-                "Cloud analysis",
+                stringResource(R.string.cloud_analysis),
                 preferences.cloudAssistant,
                 supporting = if (preferences.cloudAssistant) {
-                    "Computed figures are sent to Gemma for wording. No address, document or note is included."
+                    stringResource(R.string.computed_figures_are_sent_to_gemma_for_wording)
                 } else {
-                    "Answers are worked out on this device. Nothing is sent anywhere."
+                    stringResource(R.string.answers_are_worked_out_on_this_device_nothing)
                 },
                 glyph = Glyph.ASSISTANT
             ) { value -> store.setPreferences { it.copy(cloudAssistant = value) } }
             if (preferences.cloudAssistant) {
                 Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
                     Text(
-                        "Sent: property names, types, regions and the figures Portico computed. Never sent: street addresses, documents, notes or your identity. The arithmetic shown under each answer is always the device's own.",
+                        stringResource(R.string.sent_property_names_types_regions_and_the_figu),
                         style = MaterialTheme.typography.bodySmall,
                         color = semantic.tertiaryText
                     )
@@ -416,14 +420,14 @@ fun PreferencesScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         SyntheticNote(
-            "Preferences sync with your private workspace. Push delivery still needs a messaging service, which is not connected."
+            stringResource(R.string.preferences_sync_with_your_private_workspace_p)
         )
     }
 }
 
 /** Rates read better without trailing zeros: 122 rather than 122.00. */
 private fun formatRate(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else "%.4f".format(value).trimEnd('0').trimEnd('.')
+    if (value % 1.0 == 0.0) value.toLong().toString() else "%.4f".format(java.util.Locale.ROOT, value).trimEnd('0').trimEnd('.')
 
 // ---------------------------------------------------------------- security
 
@@ -443,29 +447,29 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Sign-in")
+            PanelHeader(stringResource(R.string.sign_in))
             DataRow(
-                "Method",
-                if (state.demoMode) "Demo workspace" else "Email and password",
+                stringResource(R.string.method),
+                if (state.demoMode) stringResource(R.string.demo_workspace) else stringResource(R.string.email_and_password),
                 supporting = if (state.demoMode) "No account attached" else "Managed by Clerk"
             )
             Hairline()
-            DataRow("Session", if (state.signedIn) "Active on this device" else "Local only")
+            DataRow(stringResource(R.string.session), if (state.signedIn) stringResource(R.string.active_on_this_device) else "Local only")
             Hairline()
-            DataRow("Password policy", "15 characters minimum", supporting = "Set by your workspace")
+            DataRow(stringResource(R.string.password_policy), "15 characters minimum", supporting = stringResource(R.string.set_by_your_workspace))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Active sessions",
-                supporting = if (sessions.isEmpty()) "Nothing signed in remotely"
-                else "${sessions.size} session${if (sessions.size == 1) "" else "s"} on your account"
+                stringResource(R.string.active_sessions),
+                supporting = if (sessions.isEmpty()) stringResource(R.string.nothing_signed_in_remotely)
+                else stringResource(R.string.n_sessions_on_account, sessions.size)
             )
             if (sessions.isEmpty()) {
                 DataRow(
-                    "This device",
+                    stringResource(R.string.this_device),
                     if (state.demoMode) "Demo" else "Local",
-                    supporting = "No remote session to revoke"
+                    supporting = stringResource(R.string.no_remote_session_to_revoke)
                 )
             } else {
                 sessions.forEachIndexed { index, session ->
@@ -485,7 +489,7 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                     revoking = true
                                     when (Clerk.auth.revokeSession(session)) {
                                         is ClerkResult.Success -> state.notify("Session on $where revoked")
-                                        is ClerkResult.Failure<*> -> state.notify("Couldn't revoke that session.")
+                                        is ClerkResult.Failure<*> -> state.notify(R.string.couldn_t_revoke_that_session)
                                     }
                                     revoking = false
                                 }
@@ -497,24 +501,24 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Manage")
+            PanelHeader(state.store.string(R.string.manage))
             NavRow(
-                "Change password",
+                state.store.string(R.string.change_password),
                 glyph = Glyph.KEY,
-                supporting = "Set a new password without leaving Portico"
+                supporting = state.store.string(R.string.set_a_new_password_without_leaving_portico)
             ) {
                 state.showPasswordDialog = true
             }
             Hairline()
             NavRow(
-                "Sign out everywhere else",
+                state.store.string(R.string.sign_out_everywhere_else),
                 glyph = Glyph.LOGOUT,
-                supporting = if (otherSessions.isEmpty()) "No other sessions to end"
+                supporting = if (otherSessions.isEmpty()) state.store.string(R.string.no_other_sessions_to_end)
                 else "Ends ${otherSessions.size} other session${if (otherSessions.size == 1) "" else "s"}",
                 tint = if (otherSessions.isEmpty()) semantic.tertiaryText else MaterialTheme.colorScheme.error
             ) {
                 if (otherSessions.isEmpty()) {
-                    state.notify("You're only signed in on this device.")
+                    state.notify(R.string.you_re_only_signed_in_on_this_device)
                     return@NavRow
                 }
                 scope.launch {
@@ -531,7 +535,7 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     state.notify(
                         when {
                             failed == 0 -> "Signed out of $revoked other session${if (revoked == 1) "" else "s"}"
-                            revoked == 0 -> "Couldn't reach the session service."
+                            revoked == 0 -> state.store.string(R.string.couldn_t_reach_the_session_service)
                             else -> "$revoked ended, $failed could not be reached."
                         }
                     )
@@ -545,24 +549,24 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     horizontalArrangement = Arrangement.spacedBy(Space.sm)
                 ) {
                     CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
-                    Text("Contacting the session service", style = MaterialTheme.typography.bodySmall, color = semantic.tertiaryText)
+                    Text(stringResource(R.string.contacting_the_session_service), style = MaterialTheme.typography.bodySmall, color = semantic.tertiaryText)
                 }
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("How Portico protects your records")
-            DataRow("Financial records", "Private cloud sync", supporting = "Owner-scoped Firestore with an offline device cache")
+            PanelHeader(state.store.string(R.string.how_portico_protects_your_records))
+            DataRow(state.store.string(R.string.financial_records), "Private cloud sync", supporting = state.store.string(R.string.owner_scoped_firestore_with_an_offline_device))
             Hairline()
-            DataRow("Documents", "Private cloud files", supporting = "Fetched only through your authenticated session")
+            DataRow(state.store.string(R.string.documents), "Private cloud files", supporting = state.store.string(R.string.fetched_only_through_your_authenticated_sessio))
             Hairline()
-            DataRow("Password", "Never stored by Portico", supporting = "Handled by the identity provider")
+            DataRow(state.store.string(R.string.password), state.store.string(R.string.never_stored_by_portico), supporting = state.store.string(R.string.handled_by_the_identity_provider))
             Hairline()
-            DataRow("Failed sign-ins", "Locks after 10 attempts", supporting = "For 60 minutes")
+            DataRow(state.store.string(R.string.failed_sign_ins), state.store.string(R.string.locks_after_10_attempts), supporting = state.store.string(R.string.for_60_minutes))
         }
 
         SyntheticNote(
-            "Firestore and private file storage enforce per-user access. Passwords and server credentials never ship in the APK."
+            stringResource(R.string.firestore_and_private_file_storage_enforce_per)
         )
     }
 
@@ -580,6 +584,7 @@ fun SecurityScreen(state: PorticoState, modifier: Modifier = Modifier) {
  */
 @Composable
 private fun ChangePasswordDialog(state: PorticoState) {
+    val passwordContext = LocalContext.current
     val scope = rememberCoroutineScope()
     var current by remember { mutableStateOf("") }
     var next by remember { mutableStateOf("") }
@@ -597,7 +602,7 @@ private fun ChangePasswordDialog(state: PorticoState) {
 
     AlertDialog(
         onDismissRequest = { if (!working) state.showPasswordDialog = false },
-        title = { Text("Change password") },
+        title = { Text(stringResource(R.string.change_password)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(Space.md)) {
                 PorticoField(
@@ -615,12 +620,12 @@ private fun ChangePasswordDialog(state: PorticoState) {
                 PorticoField(
                     confirm, { confirm = it }, "Confirm new password",
                     isPassword = true, enabled = !working,
-                    error = if (mismatch) "The two entries do not match." else null
+                    error = if (mismatch) stringResource(R.string.the_two_entries_do_not_match) else null
                 )
                 SwitchRow(
-                    "Sign out other devices",
+                    stringResource(R.string.sign_out_other_devices),
                     signOutOthers,
-                    supporting = "Recommended if you think someone else has the old password"
+                    supporting = stringResource(R.string.recommended_if_you_think_someone_else_has_the)
                 ) { signOutOthers = it }
                 error?.let { InlineError(it) }
             }
@@ -632,7 +637,7 @@ private fun ChangePasswordDialog(state: PorticoState) {
                     error = null
                     val user = Clerk.user
                     if (user == null) {
-                        error = "You are not signed in."
+                        error = state.store.string(R.string.you_are_not_signed_in)
                     } else {
                         when (val result = user.updatePassword(
                             User.UpdatePasswordParams(
@@ -643,9 +648,9 @@ private fun ChangePasswordDialog(state: PorticoState) {
                         )) {
                             is ClerkResult.Success -> {
                                 state.showPasswordDialog = false
-                                state.notify("Password changed")
+                                state.notify(R.string.password_changed)
                             }
-                            is ClerkResult.Failure -> error = explainPasswordFailure(result)
+                            is ClerkResult.Failure -> error = explainPasswordFailure(passwordContext, result)
                         }
                     }
                     working = false
@@ -654,7 +659,7 @@ private fun ChangePasswordDialog(state: PorticoState) {
         },
         dismissButton = {
             TextButton(enabled = !working, onClick = { state.showPasswordDialog = false }) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         },
         containerColor = PorticoTheme.semantic.panel
@@ -662,22 +667,22 @@ private fun ChangePasswordDialog(state: PorticoState) {
 }
 
 /** Clerk's codes, turned into something a person can act on. */
-private fun explainPasswordFailure(failure: ClerkResult.Failure<*>): String {
+private fun explainPasswordFailure(context: Context, failure: ClerkResult.Failure<*>): String {
     val response = failure.error as? ClerkErrorResponse
     val code = response?.errors?.firstOrNull()?.code.orEmpty()
     if (code.isEmpty() && failure.throwable != null) {
-        return "Can't reach the identity service. Check your connection and try again."
+        return context.getString(R.string.can_t_reach_the_identity_service_check_your_co)
     }
     return when {
         code.contains("incorrect") || code.contains("verification") ->
-            "That current password is not right."
+            context.getString(R.string.that_current_password_is_not_right)
         code == "form_password_length_too_short" || code.contains("length") ->
             PasswordPolicy.summary
         code == "form_password_pwned" ->
-            "That password appears in a known breach list. Choose another."
+            context.getString(R.string.that_password_appears_in_a_known_breach_list_c)
         code.contains("rate") || code.contains("too_many") ->
-            "Too many attempts. Wait a few minutes and try again."
-        else -> "The password could not be changed. Check your connection and try again."
+            context.getString(R.string.too_many_attempts_wait_a_few_minutes_and_try_a)
+        else -> context.getString(R.string.the_password_could_not_be_changed_check_your_c)
     }
 }
 
@@ -693,58 +698,58 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("What this app stores")
-            DataRow("Properties", store.properties.size.toString())
+            PanelHeader(stringResource(R.string.what_this_app_stores))
+            DataRow(stringResource(R.string.properties), store.properties.size.toString())
             Hairline()
-            DataRow("Income and expense records", (store.income.size + store.expenses.size).toString())
+            DataRow(stringResource(R.string.income_and_expense_records), (store.income.size + store.expenses.size).toString())
             Hairline()
-            DataRow("Documents", store.documents.size.toString())
+            DataRow(stringResource(R.string.documents), store.documents.size.toString())
             Hairline()
-            DataRow("Conversations", store.conversations.size.toString())
+            DataRow(stringResource(R.string.conversations), store.conversations.size.toString())
             Hairline()
-            DataRow("Location", "This device only")
+            DataRow(stringResource(R.string.location), stringResource(R.string.this_device_only))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Your data")
+            PanelHeader(stringResource(R.string.your_data))
             NavRow(
-                "Export everything",
+                stringResource(R.string.export_everything),
                 glyph = Glyph.DOCUMENT,
-                supporting = "${PorticoExport.recordCount(store)} records as CSV"
+                supporting = stringResource(R.string.n_records_as_csv, PorticoExport.recordCount(store))
             ) {
                 val intent = PorticoExport.shareIntent(context, store)
                 if (intent == null) {
-                    state.notify("Couldn't write the export files to this device.")
+                    state.notify(R.string.couldn_t_write_the_export_files_to_this_device)
                 } else {
                     runCatching { context.startActivity(Intent.createChooser(intent, "Export portfolio")) }
-                        .onFailure { state.notify("No app on this device can receive the export.") }
+                        .onFailure { state.notify(R.string.no_app_on_this_device_can_receive_the_export) }
                 }
             }
             Hairline()
             NavRow(
-                "Sample portfolio",
+                stringResource(R.string.sample_portfolio),
                 glyph = Glyph.REFRESH,
-                supporting = if (state.demoMode) "Restore the demonstration records" else "Available separately from the demo cockpit"
+                supporting = if (state.demoMode) stringResource(R.string.restore_the_demonstration_records) else stringResource(R.string.available_separately_from_the_demo_cockpit)
             ) {
                 if (state.demoMode) {
                     store.resetToSeed()
-                    state.notify("Sample portfolio restored")
+                    state.notify(R.string.sample_portfolio_restored)
                 } else {
-                    state.notify("Sign out and choose Enter the demo cockpit to explore sample records")
+                    state.notify(R.string.sign_out_and_choose_enter_the_demo_cockpit_to)
                 }
             }
             Hairline()
             NavRow(
-                "Erase all records",
+                stringResource(R.string.erase_all_records),
                 glyph = Glyph.DELETE,
-                supporting = "Removes every synced property, record and private document",
+                supporting = stringResource(R.string.removes_every_synced_property_record_and_priva),
                 tint = MaterialTheme.colorScheme.error
             ) { state.showDeleteAccountDialog = true }
             Hairline()
             NavRow(
-                "Delete account",
+                stringResource(R.string.delete_account),
                 glyph = Glyph.DELETE,
-                supporting = "Erases the workspace and closes the account permanently",
+                supporting = stringResource(R.string.erases_the_workspace_and_closes_the_account_pe),
                 tint = MaterialTheme.colorScheme.error
             ) {
                 state.deleteIdentityConfirmation = ""
@@ -753,17 +758,17 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Principles")
+            PanelHeader(stringResource(R.string.principles))
             Column(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
                 listOf(
-                    "Financial records are isolated to your authenticated Firestore workspace.",
+                    stringResource(R.string.financial_records_are_isolated_to_your_authent),
                     if (store.preferences.cloudAssistant) {
-                        "Cloud analysis is on: computed figures go to Gemma, addresses and documents never do."
+                        stringResource(R.string.cloud_analysis_is_on_computed_figures_go_to_ge)
                     } else {
-                        "Assistant analysis runs locally; no question is sent anywhere."
+                        stringResource(R.string.assistant_analysis_runs_locally_no_question_is)
                     },
-                    "Document bytes use private Blob storage; metadata stays in Firestore.",
-                    "Deleting a property deletes everything attached to it."
+                    stringResource(R.string.document_bytes_use_private_blob_storage_metada),
+                    stringResource(R.string.deleting_a_property_deletes_everything_attache)
                 ).forEach { line ->
                     Row(Modifier.padding(vertical = 6.dp)) {
                         PorticoIcon(Glyph.CHECK, size = 14.dp, tint = semantic.gain, contentDescription = null)
@@ -775,17 +780,17 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
         }
 
         SyntheticNote(
-            "A production deployment would add a data-processing agreement, retention policy and GDPR request handling."
+            stringResource(R.string.a_production_deployment_would_add_a_data_proce)
         )
     }
 
     if (state.showDeleteAccountDialog) {
         AlertDialog(
             onDismissRequest = { state.showDeleteAccountDialog = false },
-            title = { Text("Erase every record?") },
+            title = { Text(stringResource(R.string.erase_every_record)) },
             text = {
                 Text(
-                    "This removes all properties, income, expenses, private documents and conversations from this workspace. It cannot be undone."
+                    stringResource(R.string.this_removes_all_properties_income_expenses_pr)
                 )
             },
             confirmButton = {
@@ -795,14 +800,14 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
                             .onSuccess {
                                 state.showDeleteAccountDialog = false
                                 state.selectDestination(Route.DASHBOARD)
-                                state.notify("All records erased")
+                                state.notify(R.string.all_records_erased)
                             }
-                            .onFailure { state.notify(it.message ?: "Records could not be erased") }
+                            .onFailure { state.notify(it.message ?: store.string(R.string.records_could_not_be_erased)) }
                     }
-                }) { Text("Erase everything", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.erase_everything), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { state.showDeleteAccountDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { state.showDeleteAccountDialog = false }) { Text(stringResource(R.string.cancel)) }
             },
             containerColor = PorticoTheme.semantic.panel
         )
@@ -820,19 +825,19 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
             onDismissRequest = {
                 if (!state.deletingIdentity) state.showDeleteIdentityDialog = false
             },
-            title = { Text("Delete your account?") },
+            title = { Text(stringResource(R.string.delete_your_account)) },
             text = {
                 Column {
                     Text(
-                        "Every property, income and expense record, private document, receipt and conversation is erased, and your sign-in is closed. This cannot be undone and support cannot restore it."
+                        stringResource(R.string.every_property_income_and_expense_record_priva)
                     )
                     Spacer(Modifier.height(Space.md))
                     PorticoField(
                         value = state.deleteIdentityConfirmation,
                         onValueChange = { state.deleteIdentityConfirmation = it },
-                        label = "Type DELETE to confirm",
+                        label = stringResource(R.string.type_delete_to_confirm),
                         enabled = !state.deletingIdentity,
-                        supporting = if (confirmed) null else "The word must match exactly."
+                        supporting = if (confirmed) null else stringResource(R.string.the_word_must_match_exactly)
                     )
                 }
             },
@@ -850,7 +855,7 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
                                 .onSuccess { complete ->
                                     state.notify(
                                         if (complete) "Account deleted"
-                                        else "Records deleted. Closing the sign-in did not complete; contact support if you can still sign in."
+                                        else store.string(R.string.records_deleted_closing_the_sign_in_did_not_co)
                                     )
                                     onSignOut()
                                 }
@@ -858,7 +863,7 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
                                     // The device cache is wiped either way, so
                                     // signing out keeps the app honest about
                                     // what is left.
-                                    state.notify(it.message ?: "The account could not be fully deleted")
+                                    state.notify(it.message ?: store.string(R.string.the_account_could_not_be_fully_deleted))
                                     onSignOut()
                                 }
                         }
@@ -878,7 +883,7 @@ fun PrivacyScreen(state: PorticoState, onSignOut: () -> Unit, modifier: Modifier
                 TextButton(
                     enabled = !state.deletingIdentity,
                     onClick = { state.showDeleteIdentityDialog = false }
-                ) { Text("Keep my account") }
+                ) { Text(stringResource(R.string.keep_my_account)) }
             },
             containerColor = PorticoTheme.semantic.panel
         )
@@ -895,7 +900,7 @@ fun NotificationsScreen(state: PorticoState, modifier: Modifier = Modifier) {
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Notifications",
+                stringResource(R.string.notifications),
                 supporting = if (store.unreadNotifications > 0) "${store.unreadNotifications} unread" else "All read",
                 action = if (store.unreadNotifications > 0) "Mark all read" else null,
                 onAction = if (store.unreadNotifications > 0) {
@@ -904,8 +909,8 @@ fun NotificationsScreen(state: PorticoState, modifier: Modifier = Modifier) {
             )
             if (store.notifications.isEmpty()) {
                 EmptyState(
-                    title = "Nothing to catch up on",
-                    body = "Rent, lease expiries and tax changes will show up here.",
+                    title = stringResource(R.string.nothing_to_catch_up_on),
+                    body = stringResource(R.string.rent_lease_expiries_and_tax_changes_will_show),
                     glyph = Glyph.NOTIFICATION
                 )
             } else {
@@ -917,7 +922,7 @@ fun NotificationsScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         supporting = "${notification.message}  ·  ${notification.timestamp}",
                         onClick = { store.markNotificationRead(notification.id) },
                         trailing = if (!notification.read) {
-                            { StatusChip("New", tone = MaterialTheme.colorScheme.primary) }
+                            { StatusChip(stringResource(R.string.new_label), tone = MaterialTheme.colorScheme.primary) }
                         } else null
                     )
                 }
@@ -925,8 +930,8 @@ fun NotificationsScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Settings")
-            NavRow("Choose what to be notified about", glyph = Glyph.SETTINGS) {
+            PanelHeader(stringResource(R.string.settings))
+            NavRow(stringResource(R.string.choose_what_to_be_notified_about), glyph = Glyph.SETTINGS) {
                 state.navigate(Route.SETTINGS_PREFERENCES)
             }
         }

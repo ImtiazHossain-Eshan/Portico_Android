@@ -74,16 +74,29 @@ data class PropertyFinancials(
 
     /** Ordered rows for the gross-to-net waterfall, ready to draw. */
     fun waterfall(): List<WaterfallStep> = listOf(
-        WaterfallStep("Gross income", annualGrossIncome, WaterfallKind.OPENING),
-        WaterfallStep("Operating expenses", -annualOperatingExpenses, WaterfallKind.DEDUCTION),
-        WaterfallStep("Taxes and fees", -annualTaxes, WaterfallKind.DEDUCTION),
-        WaterfallStep("Net income", annualNetIncome, WaterfallKind.TOTAL)
+        WaterfallStep("gross", "Gross income", annualGrossIncome, WaterfallKind.OPENING),
+        WaterfallStep("operating", "Operating expenses", -annualOperatingExpenses, WaterfallKind.DEDUCTION),
+        WaterfallStep("tax", "Taxes and fees", -annualTaxes, WaterfallKind.DEDUCTION),
+        WaterfallStep("net", "Net income", annualNetIncome, WaterfallKind.TOTAL)
     )
 }
 
 enum class WaterfallKind { OPENING, DEDUCTION, TOTAL }
 
-data class WaterfallStep(val label: String, val amount: Double, val kind: WaterfallKind)
+/**
+ * One row of the gross-to-net chain.
+ *
+ * [id] is a stable key, not prose. The domain layer is pure Kotlin with no
+ * Android dependency, so it cannot resolve a translated label; the UI maps the
+ * id to a string resource. The English [label] stays for CSV export and tests,
+ * which are not user-facing surfaces.
+ */
+data class WaterfallStep(
+    val id: String,
+    val label: String,
+    val amount: Double,
+    val kind: WaterfallKind
+)
 
 /** Portfolio-level roll-up. Sums the parts rather than averaging the rates. */
 data class PortfolioFinancials(
@@ -108,10 +121,10 @@ data class PortfolioFinancials(
     val isEmpty: Boolean get() = propertyCount == 0
 
     fun waterfall(): List<WaterfallStep> = listOf(
-        WaterfallStep("Gross income", annualGrossIncome, WaterfallKind.OPENING),
-        WaterfallStep("Operating expenses", -annualOperatingExpenses, WaterfallKind.DEDUCTION),
-        WaterfallStep("Taxes and fees", -annualTaxes, WaterfallKind.DEDUCTION),
-        WaterfallStep("Net income", annualNetIncome, WaterfallKind.TOTAL)
+        WaterfallStep("gross", "Gross income", annualGrossIncome, WaterfallKind.OPENING),
+        WaterfallStep("operating", "Operating expenses", -annualOperatingExpenses, WaterfallKind.DEDUCTION),
+        WaterfallStep("tax", "Taxes and fees", -annualTaxes, WaterfallKind.DEDUCTION),
+        WaterfallStep("net", "Net income", annualNetIncome, WaterfallKind.TOTAL)
     )
 }
 
@@ -306,7 +319,7 @@ data class SimpleDate(val year: Int, val month: Int, val day: Int) {
         return (months + dayFraction) / 12.0
     }
 
-    fun format(): String = "%02d %s %d".format(day, MONTH_NAMES[(month - 1).coerceIn(0, 11)], year)
+    fun format(): String = "%02d %s %d".format(java.util.Locale.ROOT, day, MONTH_NAMES[(month - 1).coerceIn(0, 11)], year)
 
     companion object {
         val MONTH_NAMES = listOf(
@@ -348,6 +361,17 @@ data class SimpleDate(val year: Int, val month: Int, val day: Int) {
 // ------------------------------------------------------------- formatting
 
 object Money {
+    /*
+     * Figures are formatted against Locale.ROOT, never the device locale.
+     *
+     * Under a Bangla locale the default formatter emits Bengali digits, so a
+     * portfolio would render as "$১২.৬৭M": a Latin currency symbol against
+     * Bengali numerals, in a column that is meant to align digit-for-digit.
+     * Financial figures stay in Latin digits in every language, which is also
+     * what the tabular-figure type scale assumes.
+     */
+    private val FIGURES: java.util.Locale = java.util.Locale.ROOT
+
     /** "$1,240,500", with no cents, because no figure in this product needs them. */
     fun format(value: Double, currency: String = "USD"): String {
         val symbol = symbolFor(currency)
@@ -368,17 +392,18 @@ object Money {
         val sign = if (value < 0) "-" else ""
         val magnitude = abs(value)
         return when {
-            magnitude >= 1_000_000 -> "$sign$symbol%.2fM".format(magnitude / 1_000_000)
-            magnitude >= 1_000 -> "$sign$symbol%.1fk".format(magnitude / 1_000)
+            magnitude >= 1_000_000 -> "$sign$symbol%.2fM".format(FIGURES, magnitude / 1_000_000)
+            magnitude >= 1_000 -> "$sign$symbol%.1fk".format(FIGURES, magnitude / 1_000)
             else -> "$sign$symbol${grouped(magnitude)}"
         }
     }
 
-    fun percent(value: Double, decimals: Int = 1): String = "%.${decimals}f%%".format(value)
+    fun percent(value: Double, decimals: Int = 1): String =
+        "%.${decimals}f%%".format(FIGURES, value)
 
     fun signedPercent(value: Double, decimals: Int = 1): String {
         val sign = if (value < 0) "" else "+"
-        return "$sign%.${decimals}f%%".format(value)
+        return "$sign%.${decimals}f%%".format(FIGURES, value)
     }
 
     private fun grouped(value: Double): String {

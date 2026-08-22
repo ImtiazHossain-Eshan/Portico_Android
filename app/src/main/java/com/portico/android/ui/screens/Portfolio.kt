@@ -1,7 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -32,20 +33,20 @@ fun PortfolioScreen(state: PorticoState, modifier: Modifier = Modifier) {
     Column(modifier.padding(bottom = 128.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Position", supporting = "${portfolio.propertyCount} properties")
+            PanelHeader(stringResource(R.string.position), supporting = "${portfolio.propertyCount} properties")
             MetricGrid(
                 metrics = listOf(
-                    Metric("Portfolio value", Money.compact(portfolio.portfolioValue, currency), "current"),
-                    Metric("Invested", Money.compact(portfolio.investedCapital, currency), "cash in"),
-                    rateMetric("Total ROI", portfolio.totalRoi),
-                    Metric("Net yield", Money.percent(portfolio.netYield), "after costs and tax"),
+                    Metric(stringResource(R.string.portfolio_value), Money.compact(portfolio.portfolioValue, currency), "current"),
+                    Metric(stringResource(R.string.invested), Money.compact(portfolio.investedCapital, currency), "cash in"),
+                    rateMetric(stringResource(R.string.total_roi), portfolio.totalRoi),
+                    Metric(stringResource(R.string.net_yield), Money.percent(portfolio.netYield), stringResource(R.string.after_costs_and_tax)),
                     Metric(
-                        "Monthly net",
+                        stringResource(R.string.monthly_net),
                         Money.format(portfolio.monthlyCashflow, currency),
                         direction = portfolio.monthlyCashflow
                     ),
                     Metric(
-                        "Annual net",
+                        stringResource(R.string.annual_net),
                         Money.compact(portfolio.annualNetIncome, currency),
                         direction = portfolio.annualNetIncome
                     )
@@ -59,8 +60,8 @@ fun PortfolioScreen(state: PorticoState, modifier: Modifier = Modifier) {
             PorticoField(
                 value = state.portfolioQuery,
                 onValueChange = { state.portfolioQuery = it },
-                label = "Search properties",
-                placeholder = "Name, region or address",
+                label = stringResource(R.string.search_properties),
+                placeholder = stringResource(R.string.name_region_or_address),
                 trailing = {
                     if (state.portfolioQuery.isNotBlank()) {
                         GlyphButton(Glyph.CLOSE, "Clear search") { state.portfolioQuery = "" }
@@ -96,23 +97,23 @@ fun PortfolioScreen(state: PorticoState, modifier: Modifier = Modifier) {
         // ---- register -------------------------------------------------------
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Register",
+                stringResource(R.string.register),
                 supporting = if (visible.size == store.properties.size) "${visible.size} properties"
                 else "${visible.size} of ${store.properties.size} shown"
             )
             when {
                 store.properties.isEmpty() -> EmptyState(
-                    title = "No properties yet",
-                    body = "Add your first holding and Portico will work out its return, yield and cashflow.",
+                    title = stringResource(R.string.no_properties_yet),
+                    body = stringResource(R.string.add_your_first_holding_and_portico_will_work_o),
                     glyph = Glyph.PORTFOLIO,
                     actionLabel = "Add a property",
                     onAction = { state.resetDraft(); state.navigate(Route.ADD_PROPERTY) }
                 )
                 visible.isEmpty() -> EmptyState(
-                    title = "Nothing matches",
-                    body = "No property matches this search and filter combination. Clear them to see the full register.",
+                    title = stringResource(R.string.nothing_matches),
+                    body = stringResource(R.string.no_property_matches_this_search_and_filter_com),
                     glyph = Glyph.SEARCH,
-                    actionLabel = "Clear search and filters",
+                    actionLabel = stringResource(R.string.clear_search_and_filters),
                     onAction = { state.portfolioQuery = ""; state.clearFilters() }
                 )
                 else -> visible.forEachIndexed { index, result ->
@@ -166,15 +167,15 @@ private fun FilterSheet(state: PorticoState, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(Space.lg)
         ) {
             Text(
-                "Filter register",
+                stringResource(R.string.filter_register),
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = Space.lg)
             )
-            ChoiceRow("Country", countries, state.filterCountry) { state.filterCountry = it }
-            ChoiceRow("Region", regions, state.filterRegion) { state.filterRegion = it }
-            ChoiceRow("Property type", types, state.filterType) { state.filterType = it }
+            ChoiceRow(stringResource(R.string.country), countries, state.filterCountry) { state.filterCountry = it }
+            ChoiceRow(stringResource(R.string.region), regions, state.filterRegion) { state.filterRegion = it }
+            ChoiceRow(stringResource(R.string.property_type), types, state.filterType) { state.filterType = it }
             ChoiceRow(
-                "Performance",
+                stringResource(R.string.performance),
                 listOf("All", "Positive cashflow", "Negative cashflow"),
                 state.filterPerformance
             ) { state.filterPerformance = it }
@@ -183,7 +184,7 @@ private fun FilterSheet(state: PorticoState, onDismiss: () -> Unit) {
                 Modifier.fillMaxWidth().padding(horizontal = Space.lg),
                 horizontalArrangement = Arrangement.spacedBy(Space.sm)
             ) {
-                SecondaryButton("Clear all", Modifier.weight(1f)) { state.clearFilters() }
+                SecondaryButton(stringResource(R.string.clear_all), Modifier.weight(1f)) { state.clearFilters() }
                 PrimaryButton("Show ${state.visibleProperties().size}", Modifier.weight(1f)) { onDismiss() }
             }
         }

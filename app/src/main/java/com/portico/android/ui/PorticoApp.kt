@@ -1,5 +1,6 @@
 package com.portico.android.ui
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 /*
  * PORTICO: DIRECTION CONTRACT
  *
@@ -86,7 +87,7 @@ fun PorticoApp() {
     val notificationPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (!granted) state.notify("Notifications remain off. You can enable them from Android settings.")
+        if (!granted) state.notify(R.string.notifications_remain_off_you_can_enable_them_f)
     }
 
     val clerkConfigured = BuildConfig.CLERK_PUBLISHABLE_KEY.isNotBlank()

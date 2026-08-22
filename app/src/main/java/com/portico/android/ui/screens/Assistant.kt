@@ -1,7 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -80,7 +81,7 @@ fun AssistantScreen(state: PorticoState, modifier: Modifier = Modifier) {
             delay(700)
             if (state.offline) {
                 state.assistantLoading = false
-                state.assistantError = "You're offline. Analysis runs on this device, so try again once the app settles."
+                state.assistantError = store.string(R.string.you_re_offline_analysis_runs_on_this_device_so)
                 return@launch
             }
             /*
@@ -173,9 +174,9 @@ private fun ContextBar(state: PorticoState, focus: Property?) {
             PorticoIcon(Glyph.ASSISTANT, size = 18.dp, tint = MaterialTheme.colorScheme.primary, contentDescription = null)
             Spacer(Modifier.width(Space.sm))
             Column(Modifier.weight(1f)) {
-                SectionLabel("Analysing")
+                SectionLabel(stringResource(R.string.analysing))
                 Text(
-                    focus?.name ?: "Whole portfolio",
+                    focus?.name ?: stringResource(R.string.whole_portfolio),
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -183,7 +184,7 @@ private fun ContextBar(state: PorticoState, focus: Property?) {
                 TextButton(onClick = {
                     state.activeConversationId = null
                     state.assistantError = null
-                }) { Text("New") }
+                }) { Text(stringResource(R.string.new_label)) }
             }
             PorticoIcon(
                 if (expanded) Glyph.UP else Glyph.DOWN,
@@ -194,9 +195,9 @@ private fun ContextBar(state: PorticoState, focus: Property?) {
         }
         if (expanded) {
             Panel(Modifier.padding(horizontal = Space.lg)) {
-                PanelHeader("Choose what to analyse")
+                PanelHeader(stringResource(R.string.choose_what_to_analyse))
                 DataRow(
-                    "Whole portfolio",
+                    stringResource(R.string.whole_portfolio),
                     if (focus == null) "Selected" else "",
                     valueColor = MaterialTheme.colorScheme.primary,
                     onClick = { state.assistantContextPropertyId = null; expanded = false }
@@ -240,8 +241,8 @@ private fun AssistantHome(
 
         if (results.isEmpty()) {
             EmptyState(
-                title = "Nothing to analyse yet",
-                body = "Add a property and I can work through its return, tax and cashflow with you.",
+                title = stringResource(R.string.nothing_to_analyse_yet),
+                body = stringResource(R.string.add_a_property_and_i_can_work_through_its_retu),
                 glyph = Glyph.ASSISTANT,
                 actionLabel = "Add a property",
                 onAction = { state.resetDraft(); state.navigate(Route.ADD_PROPERTY) }
@@ -253,7 +254,7 @@ private fun AssistantHome(
         val weakest = results.minByOrNull { it.netYield }
         if (weakest != null) {
             Panel(Modifier.padding(horizontal = Space.lg), accent = true) {
-                PanelHeader("Worth a look")
+                PanelHeader(stringResource(R.string.worth_a_look))
                 Text(
                     if (weakest.monthlyCashflow < 0)
                         "${weakest.property.name} is running at ${Money.format(weakest.monthlyCashflow, currency)} a month after tax. Its value has grown ${Money.format(weakest.appreciation, currency)}, so the question is whether the appreciation justifies the drag."
@@ -264,7 +265,7 @@ private fun AssistantHome(
                 )
                 Spacer(Modifier.height(Space.md))
                 Box(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
-                    SecondaryButton("Ask about ${weakest.property.name}") {
+                    SecondaryButton(stringResource(R.string.q_ask_about, weakest.property.name)) {
                         state.assistantContextPropertyId = weakest.property.id
                         onAsk("Why does ${weakest.property.name} earn least after tax?")
                     }
@@ -274,10 +275,22 @@ private fun AssistantHome(
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Ask about", supporting = "Answers come with the working, so you can check them")
-            Analyst.defaultQuestions(results).forEachIndexed { index, question ->
+            PanelHeader(stringResource(R.string.ask_about), supporting = stringResource(R.string.answers_come_with_the_working_so_you_can_check))
+            val suggestions = buildList {
+                add(stringResource(R.string.q_least_after_tax) to stringResource(R.string.which_property_earns_least_after_tax))
+                add(stringResource(R.string.q_tax_share) to stringResource(R.string.how_much_of_my_income_goes_to_tax))
+                add(stringResource(R.string.q_net_yield) to stringResource(R.string.what_is_my_portfolio_s_net_yield))
+                results.firstOrNull()?.let {
+                    add(
+                        stringResource(R.string.q_roi_at_rent, it.property.name) to
+                            "What ROI would ${it.property.name} get at \$2,400 a month?"
+                    )
+                }
+                add(stringResource(R.string.q_maintenance_up) to stringResource(R.string.what_if_maintenance_rose_20))
+            }
+            suggestions.forEachIndexed { index, (question, query) ->
                 if (index > 0) Hairline()
-                DataRow(question, "", onClick = { onAsk(question) }, trailing = {
+                DataRow(question, "", onClick = { onAsk(query) }, trailing = {
                     PorticoIcon(Glyph.FORWARD, size = 14.dp, tint = PorticoTheme.semantic.tertiaryText, contentDescription = null)
                 })
             }
@@ -285,7 +298,7 @@ private fun AssistantHome(
 
         if (store.conversations.isNotEmpty()) {
             Panel(Modifier.padding(horizontal = Space.lg)) {
-                PanelHeader("Earlier conversations")
+                PanelHeader(stringResource(R.string.earlier_conversations))
                 store.conversations.take(6).forEachIndexed { index, conv ->
                     if (index > 0) Hairline()
                     DataRow(
@@ -307,7 +320,7 @@ private fun AssistantHome(
         }
 
         SyntheticNote(
-            "Analysis runs on this device from your own records. It is information, not financial advice."
+            stringResource(R.string.analysis_runs_on_this_device_from_your_own_rec)
         )
         Spacer(Modifier.height(Space.lg))
     }
@@ -347,7 +360,7 @@ private fun MessageBubble(message: AiMessage, currency: String) {
             if (message.workings.isNotEmpty()) {
                 Spacer(Modifier.height(Space.sm))
                 Panel {
-                    PanelHeader("Working")
+                    PanelHeader(stringResource(R.string.working))
                     Column(Modifier.padding(start = Space.lg, end = Space.lg, bottom = Space.md)) {
                         message.workings.forEach { line ->
                             Text(
@@ -372,7 +385,7 @@ private fun ThinkingRow() {
     ) {
         CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
         Text(
-            "Working through your figures",
+            stringResource(R.string.working_through_your_figures),
             style = MaterialTheme.typography.bodySmall,
             color = PorticoTheme.semantic.tertiaryText
         )
@@ -419,7 +432,7 @@ private fun Composer(state: PorticoState, onSend: (String) -> Unit) {
                 value = state.assistantInput,
                 onValueChange = { state.assistantInput = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Ask about your portfolio") },
+                placeholder = { Text(stringResource(R.string.ask_about_your_portfolio)) },
                 shape = ControlShape,
                 maxLines = 4,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -438,7 +451,7 @@ private fun Composer(state: PorticoState, onSend: (String) -> Unit) {
                     Glyph.FORWARD,
                     size = 20.dp,
                     tint = MaterialTheme.colorScheme.onPrimary,
-                    contentDescription = "Send question"
+                    contentDescription = stringResource(R.string.send_question)
                 )
             }
         }

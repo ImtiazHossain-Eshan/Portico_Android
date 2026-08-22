@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -31,8 +32,8 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
     if (results.isEmpty()) {
         EmptyState(
-            title = "No properties to tax",
-            body = "Add a property and Portico will model its tax under your chosen jurisdiction.",
+            title = stringResource(R.string.no_properties_to_tax),
+            body = stringResource(R.string.add_a_property_and_portico_will_model_its_tax),
             glyph = Glyph.TAX,
             actionLabel = "Add a property",
             onAction = { state.resetDraft(); state.navigate(Route.ADD_PROPERTY) },
@@ -51,7 +52,7 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Column(Modifier.padding(horizontal = Space.lg)) {
             MetricReadout(
-                label = "Net income after tax",
+                label = stringResource(R.string.net_income_after_tax),
                 value = Money.format(portfolio.annualNetIncome, currency),
                 delta = portfolio.annualNetIncome,
                 deltaText = "${Money.percent(portfolio.netYield)} net yield",
@@ -61,21 +62,21 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
-                "Jurisdiction",
+                stringResource(R.string.jurisdiction),
                 supporting = profile.jurisdiction.countryName,
-                action = "Change",
+                action = stringResource(R.string.change),
                 onAction = { state.navigate(Route.TAX_ASSUMPTIONS) }
             )
-            DataRow("Region", profile.jurisdiction.name)
+            DataRow(stringResource(R.string.region), profile.jurisdiction.name)
             Hairline()
-            DataRow("Rules applied", "${lines.size}")
+            DataRow(stringResource(R.string.rules_applied), "${lines.size}")
             if (profile.hasOverrides) {
                 Hairline()
                 Row(
                     Modifier.fillMaxWidth().padding(horizontal = Space.lg, vertical = Space.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    StatusChip("Edited", tone = MaterialTheme.colorScheme.primary, glyph = Glyph.EDIT)
+                    StatusChip(stringResource(R.string.edited), tone = MaterialTheme.colorScheme.primary, glyph = Glyph.EDIT)
                     Spacer(Modifier.width(Space.sm))
                     Text(
                         "You've changed ${profile.overrides.size} rate from the default.",
@@ -87,7 +88,7 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Gross to net", supporting = "Annual, across the portfolio")
+            PanelHeader(stringResource(R.string.gross_to_net), supporting = stringResource(R.string.annual_across_the_portfolio))
             WaterfallLedger(
                 steps = portfolio.waterfall(),
                 currency = currency,
@@ -97,7 +98,7 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("What each rule takes")
+            PanelHeader(stringResource(R.string.what_each_rule_takes))
             lines.forEachIndexed { index, line ->
                 if (index > 0) Hairline()
                 DataRow(
@@ -108,22 +109,22 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 )
             }
             TotalRule()
-            DataRow("Total tax", Money.format(portfolio.annualTaxes, currency), emphasise = true, valueColor = semantic.loss)
+            DataRow(stringResource(R.string.total_tax), Money.format(portfolio.annualTaxes, currency), emphasise = true, valueColor = semantic.loss)
             Spacer(Modifier.height(Space.sm))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("The cost of tax", supporting = "Gross against net, side by side")
-            DataRow("Gross yield", Money.percent(portfolio.grossYield))
+            PanelHeader(stringResource(R.string.the_cost_of_tax), supporting = stringResource(R.string.gross_against_net_side_by_side))
+            DataRow(stringResource(R.string.gross_yield), Money.percent(portfolio.grossYield))
             Hairline()
-            DataRow("Net yield", Money.percent(portfolio.netYield), emphasise = true)
+            DataRow(stringResource(R.string.net_yield), Money.percent(portfolio.netYield), emphasise = true)
             Hairline()
-            DataRow("Difference", Money.percent(portfolio.grossYield - portfolio.netYield), valueColor = semantic.loss)
+            DataRow(stringResource(R.string.difference), Money.percent(portfolio.grossYield - portfolio.netYield), valueColor = semantic.loss)
             Hairline()
-            DataRow("Net ROI on cash in", Money.percent(portfolio.totalRoi), emphasise = true)
+            DataRow(stringResource(R.string.net_roi_on_cash_in), Money.percent(portfolio.totalRoi), emphasise = true)
             Hairline()
             DataRow(
-                "Tax as share of gross income",
+                stringResource(R.string.tax_as_share_of_gross_income),
                 Money.percent(
                     if (portfolio.annualGrossIncome > 0)
                         portfolio.annualTaxes / portfolio.annualGrossIncome * 100 else 0.0
@@ -133,7 +134,7 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("By property")
+            PanelHeader(stringResource(R.string.by_property))
             results.forEachIndexed { index, result ->
                 if (index > 0) Hairline()
                 DataRow(
@@ -151,7 +152,7 @@ fun TaxScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Box(Modifier.padding(horizontal = Space.lg)) {
-            SecondaryButton("Edit tax assumptions", Modifier.fillMaxWidth(), glyph = Glyph.SETTINGS) {
+            SecondaryButton(stringResource(R.string.edit_tax_assumptions), Modifier.fillMaxWidth(), glyph = Glyph.SETTINGS) {
                 state.navigate(Route.TAX_ASSUMPTIONS)
             }
         }
@@ -172,9 +173,9 @@ fun TaxAssumptionsScreen(state: PorticoState, modifier: Modifier = Modifier) {
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
         Column(Modifier.padding(horizontal = Space.lg)) {
-            Text("Where is this portfolio taxed?", style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.where_is_this_portfolio_taxed), style = MaterialTheme.typography.titleLarge)
             Text(
-                "Pick a jurisdiction, then adjust any rate that doesn't match your situation.",
+                stringResource(R.string.pick_a_jurisdiction_then_adjust_any_rate_that),
                 style = MaterialTheme.typography.bodySmall,
                 color = semantic.tertiaryText
             )
@@ -201,7 +202,7 @@ fun TaxAssumptionsScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                     Glyph.CHECK,
                                     size = 18.dp,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    contentDescription = "Selected"
+                                    contentDescription = stringResource(R.string.selected)
                                 )
                             }
                         } else null
@@ -213,12 +214,12 @@ fun TaxAssumptionsScreen(state: PorticoState, modifier: Modifier = Modifier) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
             PanelHeader(
                 "Rates for ${profile.jurisdiction.name}",
-                supporting = "Drag to change. These are your assumptions, not filed figures.",
+                supporting = stringResource(R.string.drag_to_change_these_are_your_assumptions_not),
                 action = if (profile.hasOverrides) "Reset" else null,
                 onAction = if (profile.hasOverrides) {
                     {
                         store.setTaxProfile { it.clearOverrides() }
-                        state.notify("Rates reset to defaults")
+                        state.notify(R.string.rates_reset_to_defaults)
                     }
                 } else null
             )
@@ -255,20 +256,20 @@ fun TaxAssumptionsScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     )
                     if (profile.overrides.containsKey(rule.id)) {
                         Spacer(Modifier.height(Space.sm))
-                        StatusChip("Changed from default", tone = MaterialTheme.colorScheme.primary, glyph = Glyph.EDIT)
+                        StatusChip(stringResource(R.string.changed_from_default), tone = MaterialTheme.colorScheme.primary, glyph = Glyph.EDIT)
                     }
                 }
             }
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Effect on this portfolio")
+            PanelHeader(stringResource(R.string.effect_on_this_portfolio))
             val portfolio = store.portfolio()
-            DataRow("Annual tax", Money.format(portfolio.annualTaxes, store.profile.currency), valueColor = semantic.loss)
+            DataRow(stringResource(R.string.annual_tax), Money.format(portfolio.annualTaxes, store.profile.currency), valueColor = semantic.loss)
             Hairline()
-            DataRow("Net yield", Money.percent(portfolio.netYield), emphasise = true)
+            DataRow(stringResource(R.string.net_yield), Money.percent(portfolio.netYield), emphasise = true)
             Hairline()
-            DataRow("Net income", Money.format(portfolio.annualNetIncome, store.profile.currency))
+            DataRow(stringResource(R.string.net_income), Money.format(portfolio.annualNetIncome, store.profile.currency))
         }
 
         SyntheticNote(TAX_DISCLAIMER)

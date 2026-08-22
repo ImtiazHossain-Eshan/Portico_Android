@@ -1,4 +1,6 @@
 package com.portico.android.ui.design
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -88,7 +90,7 @@ suspend fun openPdf(context: Context, uri: Uri): Result<PdfDocumentHandle> =
                 )
             } else {
                 requireNotNull(context.contentResolver.openFileDescriptor(uri, "r")) {
-                    "This document could not be opened"
+                    context.getString(R.string.this_document_could_not_be_opened_2)
                 }
             }
             PdfDocumentHandle(descriptor, PdfRenderer(descriptor))

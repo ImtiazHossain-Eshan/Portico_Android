@@ -1,7 +1,8 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -55,12 +56,12 @@ fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             Text(stepTitles[step], style = MaterialTheme.typography.titleLarge)
             Text(
                 when (step) {
-                    0 -> "Where it is and what kind of property it is."
-                    1 -> "What you paid, and how much of it was your own cash."
-                    2 -> "What it collects each month."
-                    3 -> "What it costs to run each month."
-                    4 -> "What those numbers mean as a return."
-                    else -> "Check it over, then save."
+                    0 -> stringResource(R.string.where_it_is_and_what_kind_of_property_it_is)
+                    1 -> stringResource(R.string.what_you_paid_and_how_much_of_it_was_your_own)
+                    2 -> stringResource(R.string.what_it_collects_each_month)
+                    3 -> stringResource(R.string.what_it_costs_to_run_each_month)
+                    4 -> stringResource(R.string.what_those_numbers_mean_as_a_return)
+                    else -> stringResource(R.string.check_it_over_then_save)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = PorticoTheme.semantic.tertiaryText
@@ -76,7 +77,8 @@ fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
             else -> StepReview(state, currency)
         }
 
-        draft.validationHint(step)?.let { hint ->
+        draft.validationHint(step)?.let { hintRes ->
+            val hint = stringResource(hintRes)
             Box(Modifier.padding(horizontal = Space.lg)) { InlineError(hint) }
         }
 
@@ -117,7 +119,7 @@ fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                 ) {
                                     state.showPaywall = true
                                 } else {
-                                    state.notify(error.message ?: "Property could not be saved")
+                                    state.notify(error.message ?: store.string(R.string.property_could_not_be_saved))
                                 }
                             }
                         saving = false
@@ -130,17 +132,17 @@ fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
     if (state.showDiscardDraftDialog) {
         AlertDialog(
             onDismissRequest = { state.showDiscardDraftDialog = false },
-            title = { Text("Discard this property?") },
-            text = { Text("Nothing you've entered will be saved.") },
+            title = { Text(stringResource(R.string.discard_this_property)) },
+            text = { Text(stringResource(R.string.nothing_you_ve_entered_will_be_saved)) },
             confirmButton = {
                 TextButton(onClick = {
                     state.showDiscardDraftDialog = false
                     state.resetDraft()
                     state.selectDestination(Route.PORTFOLIO)
-                }) { Text("Discard", color = MaterialTheme.colorScheme.error) }
+                }) { Text(stringResource(R.string.discard), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { state.showDiscardDraftDialog = false }) { Text("Keep editing") }
+                TextButton(onClick = { state.showDiscardDraftDialog = false }) { Text(stringResource(R.string.keep_editing)) }
             },
             containerColor = PorticoTheme.semantic.panel
         )
@@ -222,7 +224,7 @@ private fun StepProperty(state: PorticoState) {
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(
-                    "Optional. It appears on the register and the property page.",
+                    stringResource(R.string.optional_it_appears_on_the_register_and_the_pr),
                     style = MaterialTheme.typography.bodySmall,
                     color = PorticoTheme.semantic.tertiaryText
                 )
@@ -241,32 +243,32 @@ private fun StepProperty(state: PorticoState) {
             }
         }
         Hairline()
-        PorticoField(draft.name, { v -> state.updateDraft { it.copy(name = v) } }, "Property name", placeholder = "Harbor House")
-        PorticoField(draft.address, { v -> state.updateDraft { it.copy(address = v) } }, "Street address", placeholder = "Bulevar España 2340")
-        PorticoField(draft.region, { v -> state.updateDraft { it.copy(region = v) } }, "City and neighbourhood", placeholder = "Montevideo · Pocitos")
+        PorticoField(draft.name, { v -> state.updateDraft { it.copy(name = v) } }, "Property name", placeholder = stringResource(R.string.harbor_house))
+        PorticoField(draft.address, { v -> state.updateDraft { it.copy(address = v) } }, "Street address", placeholder = stringResource(R.string.bulevar_espan_a_2340))
+        PorticoField(draft.region, { v -> state.updateDraft { it.copy(region = v) } }, "City and neighbourhood", placeholder = stringResource(R.string.montevideo_pocitos))
         PorticoField(
             draft.sizeSqm,
             { v -> state.updateDraft { it.copy(sizeSqm = v.filter { c -> c.isDigit() || c == '.' }) } },
             "Size",
             placeholder = "184",
             keyboardType = KeyboardType.Decimal,
-            supporting = "Square metres"
+            supporting = stringResource(R.string.square_metres)
         )
     }
     Spacer(Modifier.height(Space.md))
-    ChoiceRow("Country", countries, draft.country) { v -> state.updateDraft { it.copy(country = v) } }
+    ChoiceRow(stringResource(R.string.country), countries, draft.country) { v -> state.updateDraft { it.copy(country = v) } }
     Spacer(Modifier.height(Space.md))
-    ChoiceRow("Property type", PropertyType.entries.map { it.label }, draft.type) { v ->
+    ChoiceRow(stringResource(R.string.property_type), PropertyType.entries.map { it.label }, draft.type) { v ->
         state.updateDraft { it.copy(type = v) }
     }
     Spacer(Modifier.height(Space.md))
-    ChoiceRow("Figures entered in", Money.currencies, draft.currency) { v ->
+    ChoiceRow(stringResource(R.string.figures_entered_in), Money.currencies, draft.currency) { v ->
         state.updateDraft { it.copy(currency = v) }
     }
     if (draft.currency != state.store.profile.currency) {
         SyntheticNote(
             "Entered in ${draft.currency}; the portfolio displays ${state.store.profile.currency}. " +
-                "Conversion uses the rate you set in Preferences."
+                stringResource(R.string.conversion_uses_the_rate_you_set_in_preference)
         )
     }
 }
@@ -283,7 +285,7 @@ private fun StepPurchase(state: PorticoState, currency: String) {
             { v -> state.updateDraft { it.copy(purchaseDate = v) } },
             "Purchase date",
             placeholder = SimpleDate.today().format(),
-            supporting = "Format: 14 Mar 2022"
+            supporting = stringResource(R.string.format_14_mar_2022)
         )
         CurrencyField(
             draft.purchasePrice,
@@ -296,14 +298,14 @@ private fun StepPurchase(state: PorticoState, currency: String) {
             { v -> state.updateDraft { it.copy(initialInvestment = v) } },
             "Cash invested",
             currency,
-            supporting = "Your own money in. Leave blank if you paid the full price in cash. Return is measured against this."
+            supporting = stringResource(R.string.your_own_money_in_leave_blank_if_you_paid_the)
         )
         CurrencyField(
             draft.financing,
             { v -> state.updateDraft { it.copy(financing = v) } },
             "Financed amount",
             currency,
-            supporting = "Mortgage or loan. Record the repayment as an expense on the next steps."
+            supporting = stringResource(R.string.mortgage_or_loan_record_the_repayment_as_an_ex)
         )
     }
 }
@@ -326,12 +328,12 @@ private fun StepIncome(state: PorticoState, currency: String) {
             { v -> state.updateDraft { it.copy(otherIncome = v) } },
             "Other monthly income",
             currency,
-            supporting = "Parking, storage, services"
+            supporting = stringResource(R.string.parking_storage_services)
         )
         Panel {
-            DataRow("Monthly gross", Money.format(draft.monthlyIncomeTotal, currency), emphasise = true)
+            DataRow(stringResource(R.string.monthly_gross), Money.format(draft.monthlyIncomeTotal, currency), emphasise = true)
             Hairline()
-            DataRow("Annual gross", Money.format(draft.monthlyIncomeTotal * 12, currency))
+            DataRow(stringResource(R.string.annual_gross), Money.format(draft.monthlyIncomeTotal * 12, currency))
         }
     }
 }
@@ -345,24 +347,24 @@ private fun StepExpenses(state: PorticoState, currency: String) {
     ) {
         CurrencyField(draft.maintenance, { v -> state.updateDraft { it.copy(maintenance = v) } }, "Maintenance", currency)
         CurrencyField(draft.insurance, { v -> state.updateDraft { it.copy(insurance = v) } }, "Insurance", currency)
-        CurrencyField(draft.managementFees, { v -> state.updateDraft { it.copy(managementFees = v) } }, "Management and building fees", currency)
+        CurrencyField(draft.managementFees, { v -> state.updateDraft { it.copy(managementFees = v) } }, stringResource(R.string.management_and_building_fees), currency)
         CurrencyField(
             draft.propertyTax,
             { v -> state.updateDraft { it.copy(propertyTax = v) } },
             "Property tax",
             currency,
-            supporting = "Leave at zero to use your jurisdiction's assumed rate instead"
+            supporting = stringResource(R.string.leave_at_zero_to_use_your_jurisdiction_s_assum)
         )
         CurrencyField(
             draft.otherExpenses,
             { v -> state.updateDraft { it.copy(otherExpenses = v) } },
             "Other recurring costs",
             currency,
-            supporting = "Mortgage servicing, utilities, anything else monthly"
+            supporting = stringResource(R.string.mortgage_servicing_utilities_anything_else_mon)
         )
         Panel {
             DataRow(
-                "Monthly operating cost",
+                stringResource(R.string.monthly_operating_cost),
                 Money.format(-draft.monthlyOperatingTotal, currency),
                 emphasise = true,
                 valueColor = PorticoTheme.semantic.loss
@@ -380,7 +382,7 @@ private fun StepAnalysis(state: PorticoState, currency: String) {
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg), accent = true) {
             Column(Modifier.padding(Space.lg)) {
-                SectionLabel("Monthly cashflow")
+                SectionLabel(stringResource(R.string.monthly_cashflow))
                 Spacer(Modifier.height(Space.xs))
                 Text(
                     Money.format(result.monthlyCashflow, currency),
@@ -390,9 +392,9 @@ private fun StepAnalysis(state: PorticoState, currency: String) {
                 Spacer(Modifier.height(Space.xs))
                 Text(
                     if (result.monthlyCashflow >= 0)
-                        "This property covers its costs and returns cash each month."
+                        stringResource(R.string.this_property_covers_its_costs_and_returns_cas)
                     else
-                        "This property costs more to run than it collects. It can still be worth holding if the value grows, but it will draw on your cash.",
+                        stringResource(R.string.this_property_costs_more_to_run_than_it_collec),
                     style = MaterialTheme.typography.bodySmall,
                     color = PorticoTheme.semantic.tertiaryText
                 )
@@ -400,20 +402,20 @@ private fun StepAnalysis(state: PorticoState, currency: String) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Return")
+            PanelHeader(stringResource(R.string.return_label))
             MetricGrid(
                 metrics = listOf(
-                    Metric("Cap rate", Money.percent(result.capRate), "on purchase price"),
-                    Metric("Gross yield", Money.percent(result.grossYield), "before costs"),
-                    Metric("Net yield", Money.percent(result.netYield), "after costs and tax"),
-                    rateMetric("Cash on cash", result.cashOnCash)
+                    Metric(stringResource(R.string.cap_rate), Money.percent(result.capRate), "on purchase price"),
+                    Metric(stringResource(R.string.gross_yield), Money.percent(result.grossYield), "before costs"),
+                    Metric(stringResource(R.string.net_yield), Money.percent(result.netYield), stringResource(R.string.after_costs_and_tax)),
+                    rateMetric(stringResource(R.string.cash_on_cash), result.cashOnCash)
                 ),
                 columns = 2
             )
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Gross to net", supporting = "Annual, ${store.taxProfile.jurisdiction.name}")
+            PanelHeader(stringResource(R.string.gross_to_net), supporting = "Annual, ${store.taxProfile.jurisdiction.name}")
             WaterfallLedger(
                 steps = result.waterfall(),
                 currency = currency,
@@ -423,7 +425,7 @@ private fun StepAnalysis(state: PorticoState, currency: String) {
         }
 
         SyntheticNote(
-            "Tax is estimated from your jurisdiction's assumptions. Change them any time in Tax assumptions."
+            stringResource(R.string.tax_is_estimated_from_your_jurisdiction_s_assu)
         )
     }
 }
@@ -435,39 +437,39 @@ private fun StepReview(state: PorticoState, currency: String) {
 
     Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Property", action = "Edit", onAction = { state.addStep = 0 })
-            DataRow("Name", draft.name.ifBlank { "-" })
+            PanelHeader(stringResource(R.string.property), action = stringResource(R.string.edit), onAction = { state.addStep = 0 })
+            DataRow(stringResource(R.string.name), draft.name.ifBlank { "-" })
             Hairline()
-            DataRow("Address", draft.address.ifBlank { "-" }, supporting = draft.region)
+            DataRow(stringResource(R.string.address), draft.address.ifBlank { "-" }, supporting = draft.region)
             Hairline()
-            DataRow("Country", draft.country)
+            DataRow(stringResource(R.string.country), draft.country)
             Hairline()
-            DataRow("Type", draft.type)
+            DataRow(stringResource(R.string.type), draft.type)
             Hairline()
-            DataRow("Size", "${draft.number(draft.sizeSqm).toInt()} m²")
+            DataRow(stringResource(R.string.size), "${draft.number(draft.sizeSqm).toInt()} m²")
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Purchase", action = "Edit", onAction = { state.addStep = 1 })
-            DataRow("Purchase price", Money.format(draft.purchasePriceValue, currency))
+            PanelHeader(stringResource(R.string.purchase), action = stringResource(R.string.edit), onAction = { state.addStep = 1 })
+            DataRow(stringResource(R.string.purchase_price), Money.format(draft.purchasePriceValue, currency))
             Hairline()
-            DataRow("Cash invested", Money.format(draft.investmentValue, currency))
+            DataRow(stringResource(R.string.cash_invested), Money.format(draft.investmentValue, currency))
             Hairline()
-            DataRow("Financed", Money.format(draft.number(draft.financing), currency))
+            DataRow(stringResource(R.string.financed), Money.format(draft.number(draft.financing), currency))
             Hairline()
-            DataRow("Purchase date", draft.purchaseDate.ifBlank { SimpleDate.today().format() })
+            DataRow(stringResource(R.string.purchase_date), draft.purchaseDate.ifBlank { SimpleDate.today().format() })
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Monthly", action = "Edit", onAction = { state.addStep = 2 })
-            DataRow("Income", Money.format(draft.monthlyIncomeTotal, currency), valueColor = PorticoTheme.semantic.gain)
+            PanelHeader(stringResource(R.string.monthly), action = stringResource(R.string.edit), onAction = { state.addStep = 2 })
+            DataRow(stringResource(R.string.income), Money.format(draft.monthlyIncomeTotal, currency), valueColor = PorticoTheme.semantic.gain)
             Hairline()
-            DataRow("Operating cost", Money.format(-draft.monthlyOperatingTotal, currency), valueColor = PorticoTheme.semantic.loss)
+            DataRow(stringResource(R.string.operating_cost), Money.format(-draft.monthlyOperatingTotal, currency), valueColor = PorticoTheme.semantic.loss)
             Hairline()
-            DataRow("Tax", Money.format(-result.monthlyTaxes, currency), valueColor = PorticoTheme.semantic.loss)
+            DataRow(stringResource(R.string.tax), Money.format(-result.monthlyTaxes, currency), valueColor = PorticoTheme.semantic.loss)
             TotalRule()
             DataRow(
-                "Net cashflow",
+                stringResource(R.string.net_cashflow),
                 Money.format(result.monthlyCashflow, currency),
                 emphasise = true,
                 valueColor = PorticoTheme.semantic.forDelta(result.monthlyCashflow)
@@ -476,13 +478,13 @@ private fun StepReview(state: PorticoState, currency: String) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Return")
+            PanelHeader(stringResource(R.string.return_label))
             MetricGrid(
                 metrics = listOf(
-                    Metric("Cap rate", Money.percent(result.capRate), "on purchase price"),
-                    Metric("Net yield", Money.percent(result.netYield), "after costs and tax"),
-                    Metric("Gross yield", Money.percent(result.grossYield), "before costs"),
-                    rateMetric("Cash on cash", result.cashOnCash)
+                    Metric(stringResource(R.string.cap_rate), Money.percent(result.capRate), "on purchase price"),
+                    Metric(stringResource(R.string.net_yield), Money.percent(result.netYield), stringResource(R.string.after_costs_and_tax)),
+                    Metric(stringResource(R.string.gross_yield), Money.percent(result.grossYield), "before costs"),
+                    rateMetric(stringResource(R.string.cash_on_cash), result.cashOnCash)
                 ),
                 columns = 2
             )

@@ -452,6 +452,10 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         }
     }
 
+    /** Resource lookup for code that runs outside a composition. */
+    fun string(resId: Int): String = appContext.getString(resId)
+    fun string(resId: Int, vararg args: Any): String = appContext.getString(resId, *args)
+
     fun propertyById(id: String?): Property? = properties.firstOrNull { it.id == id }
 
     fun updateValuation(propertyId: String, newValue: Double, source: String) {

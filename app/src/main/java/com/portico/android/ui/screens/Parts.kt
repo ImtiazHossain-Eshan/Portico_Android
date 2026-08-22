@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -130,10 +131,10 @@ fun PropertyRow(
 
         // Three figures every property is judged on.
         Row(horizontalArrangement = Arrangement.spacedBy(Space.xl)) {
-            InlineFigure("Net yield", Money.percent(result.netYield))
-            InlineFigure("Cap rate", Money.percent(result.capRate))
+            InlineFigure(stringResource(R.string.net_yield), Money.percent(result.netYield))
+            InlineFigure(stringResource(R.string.cap_rate), Money.percent(result.capRate))
             InlineFigure(
-                "Cashflow",
+                stringResource(R.string.cashflow),
                 Money.format(cashflow, currency),
                 valueColor = semantic.forDelta(cashflow)
             )
@@ -142,9 +143,9 @@ fun PropertyRow(
         if (detailed) {
             Spacer(Modifier.height(Space.md))
             Row(horizontalArrangement = Arrangement.spacedBy(Space.xl)) {
-                InlineFigure("Purchase", Money.compact(property.purchasePrice, currency))
-                InlineFigure("Size", "${property.sizeSqm.toInt()} m²")
-                InlineFigure("Held", "${"%.1f".format(result.holdingYears)} yr")
+                InlineFigure(stringResource(R.string.purchase), Money.compact(property.purchasePrice, currency))
+                InlineFigure(stringResource(R.string.size), "${property.sizeSqm.toInt()} m²")
+                InlineFigure(stringResource(R.string.held), "${"%.1f".format(java.util.Locale.ROOT, result.holdingYears)} yr")
             }
         }
 
@@ -156,7 +157,7 @@ fun PropertyRow(
             ) {
                 if (onEdit != null) {
                     SecondaryButton(
-                        label = "Edit",
+                        label = stringResource(R.string.edit),
                         modifier = Modifier.weight(1f),
                         glyph = Glyph.EDIT,
                         onClick = onEdit
@@ -164,7 +165,7 @@ fun PropertyRow(
                 }
                 if (onDelete != null) {
                     SecondaryButton(
-                        label = "Delete",
+                        label = stringResource(R.string.delete),
                         modifier = Modifier.weight(1f),
                         glyph = Glyph.DELETE,
                         destructive = true,
@@ -176,7 +177,7 @@ fun PropertyRow(
 
         if (cashflow < 0) {
             Spacer(Modifier.height(Space.md))
-            StatusChip("Negative cashflow", tone = semantic.loss, glyph = Glyph.WARNING)
+            StatusChip(stringResource(R.string.negative_cashflow), tone = semantic.loss, glyph = Glyph.WARNING)
         }
     }
 }
@@ -197,7 +198,7 @@ fun PropertyDeleteDialog(state: PorticoState) {
         title = { Text("Delete ${property.name}?") },
         text = {
             Text(
-                "This permanently removes the property and all income, expenses, valuations, documents, activity and assistant conversations attached to it."
+                stringResource(R.string.this_permanently_removes_the_property_and_all)
             )
         },
         confirmButton = {
@@ -210,16 +211,16 @@ fun PropertyDeleteDialog(state: PorticoState) {
                                 state.selectDestination(Route.PORTFOLIO)
                                 state.notify("${property.name} deleted")
                             }
-                            .onFailure { state.notify(it.message ?: "Property could not be deleted") }
+                            .onFailure { state.notify(it.message ?: state.store.string(R.string.property_could_not_be_deleted)) }
                     }
                 }
             ) {
-                Text("Delete property", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.delete_property), color = MaterialTheme.colorScheme.error)
             }
         },
         dismissButton = {
             TextButton(onClick = { state.pendingDeletePropertyId = null }) {
-                Text("Keep property")
+                Text(stringResource(R.string.keep_property))
             }
         },
         containerColor = PorticoTheme.semantic.panel
@@ -345,10 +346,10 @@ fun DocumentRow(
         }
         Spacer(Modifier.width(Space.sm))
         when (document.status) {
-            DocumentStatus.UPLOADING -> StatusChip("Uploading", tone = MaterialTheme.colorScheme.primary)
-            DocumentStatus.FAILED -> StatusChip("Failed", tone = semantic.loss, glyph = Glyph.WARNING)
-            DocumentStatus.UNAVAILABLE -> StatusChip("Unavailable", tone = semantic.tertiaryText)
-            DocumentStatus.RESTRICTED -> StatusChip("Restricted", tone = semantic.tertiaryText, glyph = Glyph.LOCK)
+            DocumentStatus.UPLOADING -> StatusChip(stringResource(R.string.uploading), tone = MaterialTheme.colorScheme.primary)
+            DocumentStatus.FAILED -> StatusChip(stringResource(R.string.failed), tone = semantic.loss, glyph = Glyph.WARNING)
+            DocumentStatus.UNAVAILABLE -> StatusChip(stringResource(R.string.unavailable), tone = semantic.tertiaryText)
+            DocumentStatus.RESTRICTED -> StatusChip(stringResource(R.string.restricted), tone = semantic.tertiaryText, glyph = Glyph.LOCK)
             DocumentStatus.READY -> Text(
                 document.uploadedAt,
                 style = MaterialTheme.typography.labelSmall,

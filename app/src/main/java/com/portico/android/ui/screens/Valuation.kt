@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,8 +38,8 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
     if (property == null) {
         EmptyState(
-            title = "Nothing to value",
-            body = "Add a property first and Portico can compare it against the market.",
+            title = stringResource(R.string.nothing_to_value),
+            body = stringResource(R.string.add_a_property_first_and_portico_can_compare_i),
             glyph = Glyph.VALUATION,
             actionLabel = "Add a property",
             onAction = { state.resetDraft(); state.navigate(Route.ADD_PROPERTY) },
@@ -82,7 +83,7 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         // ---- the three numbers ------------------------------------------------
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Estimated value", supporting = "Median price per m² from ${comparables.size} comparables")
+            PanelHeader(stringResource(R.string.estimated_value), supporting = "Median price per m² from ${comparables.size} comparables")
             Column(Modifier.padding(horizontal = Space.lg, vertical = Space.sm)) {
                 Text(Money.format(estimatedValue, currency), style = MaterialTheme.typography.displaySmall)
                 Spacer(Modifier.height(Space.xs))
@@ -100,22 +101,22 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("If you let it at market")
-            DataRow("Estimated monthly rent", Money.format(estimatedRent, currency))
+            PanelHeader(stringResource(R.string.if_you_let_it_at_market))
+            DataRow(stringResource(R.string.estimated_monthly_rent), Money.format(estimatedRent, currency))
             Hairline()
-            DataRow("Gross rental yield", Money.percent(estimatedYield))
+            DataRow(stringResource(R.string.gross_rental_yield), Money.percent(estimatedYield))
             Hairline()
-            DataRow("Your current net yield", Money.percent(result.netYield), emphasise = true)
+            DataRow(stringResource(R.string.your_current_net_yield), Money.percent(result.netYield), emphasise = true)
             Hairline()
-            DataRow("Price per m²", Money.format(
+            DataRow(stringResource(R.string.price_per_m2), Money.format(
                 if (property.sizeSqm > 0) property.currentValue / property.sizeSqm else 0.0, currency
             ))
             Hairline()
-            DataRow("Market median per m²", Money.format(medianPerSqm, currency))
+            DataRow(stringResource(R.string.market_median_per_m2), Money.format(medianPerSqm, currency))
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Comparable properties", supporting = "Nearby, similar size and type")
+            PanelHeader(stringResource(R.string.comparable_properties), supporting = stringResource(R.string.nearby_similar_size_and_type))
             comparables.forEachIndexed { index, comparable ->
                 if (index > 0) Hairline()
                 DataRow(
@@ -127,7 +128,7 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
         }
 
         Panel(Modifier.padding(horizontal = Space.lg)) {
-            PanelHeader("Market signals", supporting = "Trailing twelve months")
+            PanelHeader(stringResource(R.string.market_signals), supporting = stringResource(R.string.trailing_twelve_months))
             market.signals
                 .filter { it.region.substringBefore(" ·") == property.region.substringBefore(" ·") }
                 .ifEmpty { market.signals.take(2) }
@@ -150,18 +151,18 @@ fun ValuationScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
         Box(Modifier.padding(horizontal = Space.lg)) {
             PrimaryButton(
-                "Use estimate as current value",
+                stringResource(R.string.use_estimate_as_current_value),
                 Modifier.fillMaxWidth(),
                 glyph = Glyph.CHECK
             ) {
                 store.updateValuation(property.id, estimatedValue, "Comparable model")
-                state.notify("Valuation updated to comparable estimate")
+                state.notify(R.string.valuation_updated_to_comparable_estimate)
             }
         }
 
         SyntheticNote(
             "${market.provider.disclosure}. " +
-                "The estimate is a median price-per-m² model, shown so you can judge it."
+                stringResource(R.string.the_estimate_is_a_median_price_per_m2_model_sh)
         )
     }
 }
@@ -243,16 +244,16 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     PorticoField(
                         value = query,
                         onValueChange = { query = it },
-                        label = "Search listings",
-                        placeholder = "Region, street or city"
+                        label = stringResource(R.string.search_listings),
+                        placeholder = stringResource(R.string.region_street_or_city)
                     )
                 }
                 Panel(Modifier.padding(horizontal = Space.lg)) {
-                    PanelHeader("Available listings", supporting = "${listings.size} on file")
+                    PanelHeader(stringResource(R.string.available_listings), supporting = "${listings.size} on file")
                     if (listings.isEmpty()) {
                         EmptyState(
-                            title = "No listings match",
-                            body = "Try a different region or clear the search.",
+                            title = stringResource(R.string.no_listings_match),
+                            body = stringResource(R.string.try_a_different_region_or_clear_the_search),
                             glyph = Glyph.SEARCH,
                             actionLabel = "Clear search",
                             onAction = { query = "" }
@@ -273,14 +274,14 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         }
                     }
                 }
-                SyntheticNote("Listings are illustrative sample data. No property portal is connected.")
+                SyntheticNote(stringResource(R.string.listings_are_illustrative_sample_data_no_prope))
             }
 
             else -> {
                 if (listing == null) {
                     EmptyState(
-                        title = "Choose a listing first",
-                        body = "Pick a property from the search step to analyse it.",
+                        title = stringResource(R.string.choose_a_listing_first),
+                        body = stringResource(R.string.pick_a_property_from_the_search_step_to_analys),
                         glyph = Glyph.ACQUISITION,
                         actionLabel = "Back to search",
                         onAction = { state.acquisitionStep = 0 }
@@ -318,24 +319,24 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                 when (step) {
                     1 -> Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
                         Panel(Modifier.padding(horizontal = Space.lg)) {
-                            PanelHeader("Listing")
-                            DataRow("Address", listing.address)
+                            PanelHeader(stringResource(R.string.listing))
+                            DataRow(stringResource(R.string.address), listing.address)
                             Hairline()
-                            DataRow("Region", listing.region)
+                            DataRow(stringResource(R.string.region), listing.region)
                             Hairline()
-                            DataRow("Type", listing.type)
+                            DataRow(stringResource(R.string.type), listing.type)
                             Hairline()
-                            DataRow("Size", "${listing.sizeSqm.toInt()} m²")
+                            DataRow(stringResource(R.string.size), "${listing.sizeSqm.toInt()} m²")
                             Hairline()
-                            DataRow("Asking price", Money.format(listing.askingPrice, currency), emphasise = true)
+                            DataRow(stringResource(R.string.asking_price), Money.format(listing.askingPrice, currency), emphasise = true)
                             Hairline()
-                            DataRow("Price per m²", Money.format(listing.askingPrice / listing.sizeSqm, currency))
+                            DataRow(stringResource(R.string.price_per_m2), Money.format(listing.askingPrice / listing.sizeSqm, currency))
                         }
                         Box(Modifier.padding(horizontal = Space.lg)) {
                             CurrencyField(
                                 value = state.acquisitionRent,
                                 onValueChange = { state.acquisitionRent = it },
-                                label = "Rent you expect to charge",
+                                label = stringResource(R.string.rent_you_expect_to_charge),
                                 currency = currency,
                                 supporting = "Listing suggests ${Money.format(listing.estimatedMonthlyRent, currency)}"
                             )
@@ -344,7 +345,7 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
                     2 -> Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
                         Panel(Modifier.padding(horizontal = Space.lg)) {
-                            PanelHeader("Asking against comparables")
+                            PanelHeader(stringResource(R.string.asking_against_comparables))
                             val peak = maxOf(listing.askingPrice, modelValue)
                             ValuationBar("Asking price", listing.askingPrice, peak, currency, MaterialTheme.colorScheme.primary)
                             ValuationBar("Comparable estimate", modelValue, peak, currency, semantic.gain)
@@ -356,7 +357,7 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                             )
                         }
                         Panel(Modifier.padding(horizontal = Space.lg)) {
-                            PanelHeader("Comparables", supporting = "${comparables.size} nearby")
+                            PanelHeader(stringResource(R.string.comparables), supporting = "${comparables.size} nearby")
                             comparables.forEachIndexed { index, comparable ->
                                 if (index > 0) Hairline()
                                 DataRow(
@@ -370,7 +371,7 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
 
                     3 -> Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
                         Panel(Modifier.padding(horizontal = Space.lg)) {
-                            PanelHeader("If you bought at asking", supporting = "Costs assumed at 25% of gross rent")
+                            PanelHeader(stringResource(R.string.if_you_bought_at_asking), supporting = stringResource(R.string.costs_assumed_at_25_of_gross_rent))
                             WaterfallLedger(
                                 steps = candidateAnalysis.waterfall(),
                                 currency = currency,
@@ -379,13 +380,13 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                             Spacer(Modifier.height(Space.md))
                         }
                         Panel(Modifier.padding(horizontal = Space.lg)) {
-                            PanelHeader("Return")
+                            PanelHeader(stringResource(R.string.return_label))
                             MetricGrid(
                                 metrics = listOf(
-                                    Metric("Cap rate", Money.percent(candidateAnalysis.capRate), "on asking price"),
-                                    Metric("Gross yield", Money.percent(candidateAnalysis.grossYield), "before costs"),
-                                    Metric("Net yield", Money.percent(candidateAnalysis.netYield), "after costs and tax"),
-                                    rateMetric("Cash on cash", candidateAnalysis.cashOnCash)
+                                    Metric(stringResource(R.string.cap_rate), Money.percent(candidateAnalysis.capRate), "on asking price"),
+                                    Metric(stringResource(R.string.gross_yield), Money.percent(candidateAnalysis.grossYield), "before costs"),
+                                    Metric(stringResource(R.string.net_yield), Money.percent(candidateAnalysis.netYield), stringResource(R.string.after_costs_and_tax)),
+                                    rateMetric(stringResource(R.string.cash_on_cash), candidateAnalysis.cashOnCash)
                                 ),
                                 columns = 2
                             )
@@ -401,13 +402,13 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         Column(verticalArrangement = Arrangement.spacedBy(Space.lg)) {
                             Panel(Modifier.padding(horizontal = Space.lg), accent = true) {
                                 Column(Modifier.padding(Space.lg)) {
-                                    SectionLabel("On these assumptions")
+                                    SectionLabel(stringResource(R.string.on_these_assumptions))
                                     Spacer(Modifier.height(Space.xs))
                                     Text(
                                         when {
-                                            beatsPortfolio && positiveCash && underAsking -> "Worth a closer look"
-                                            positiveCash -> "Covers its costs, but doesn't beat what you hold"
-                                            else -> "Would draw on your cash"
+                                            beatsPortfolio && positiveCash && underAsking -> stringResource(R.string.worth_a_closer_look)
+                                            positiveCash -> stringResource(R.string.covers_its_costs_but_doesn_t_beat_what_you_hol)
+                                            else -> stringResource(R.string.would_draw_on_your_cash)
                                         },
                                         style = MaterialTheme.typography.headlineSmall
                                     )
@@ -423,16 +424,16 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                             }
 
                             Panel(Modifier.padding(horizontal = Space.lg)) {
-                                PanelHeader("Decision checks")
-                                DecisionRow("Beats your portfolio net yield", beatsPortfolio)
+                                PanelHeader(stringResource(R.string.decision_checks))
+                                DecisionRow(stringResource(R.string.beats_your_portfolio_net_yield), beatsPortfolio)
                                 Hairline()
                                 DecisionRow("Positive monthly cashflow", positiveCash)
                                 Hairline()
-                                DecisionRow("Priced at or below comparables", underAsking)
+                                DecisionRow(stringResource(R.string.priced_at_or_below_comparables), underAsking)
                             }
 
                             Box(Modifier.padding(horizontal = Space.lg)) {
-                                PrimaryButton("Add to portfolio", Modifier.fillMaxWidth(), glyph = Glyph.ADD) {
+                                PrimaryButton(stringResource(R.string.add_to_portfolio), Modifier.fillMaxWidth(), glyph = Glyph.ADD) {
                                     if (!store.canAddProperty) {
                                         state.showPaywall = true
                                         return@PrimaryButton
@@ -456,7 +457,7 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                 }
                             }
                             SyntheticNote(
-                                "A decision aid built from illustrative listings and your own tax assumptions. Not investment advice."
+                                stringResource(R.string.a_decision_aid_built_from_illustrative_listing)
                             )
                         }
                     }
@@ -466,9 +467,9 @@ fun AcquisitionScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     Modifier.fillMaxWidth().padding(horizontal = Space.lg),
                     horizontalArrangement = Arrangement.spacedBy(Space.sm)
                 ) {
-                    SecondaryButton("Back", Modifier.weight(1f)) { state.acquisitionStep = (step - 1).coerceAtLeast(0) }
+                    SecondaryButton(stringResource(R.string.back), Modifier.weight(1f)) { state.acquisitionStep = (step - 1).coerceAtLeast(0) }
                     if (step < acquisitionSteps.lastIndex) {
-                        PrimaryButton("Next", Modifier.weight(1f)) { state.acquisitionStep = step + 1 }
+                        PrimaryButton(stringResource(R.string.next), Modifier.weight(1f)) { state.acquisitionStep = step + 1 }
                     }
                 }
             }

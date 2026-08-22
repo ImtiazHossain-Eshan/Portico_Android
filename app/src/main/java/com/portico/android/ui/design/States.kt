@@ -1,5 +1,6 @@
 package com.portico.android.ui.design
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -44,12 +45,12 @@ fun SkeletonBlock(
     height: Dp = 16.dp,
     widthFraction: Float = 1f
 ) {
-    val transition = rememberInfiniteTransition(label = "skeleton")
+    val transition = rememberInfiniteTransition(label = stringResource(R.string.skeleton))
     val alpha by transition.animateFloat(
         initialValue = 0.35f,
         targetValue = 0.75f,
         animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-        label = "skeleton-alpha"
+        label = stringResource(R.string.skeleton_alpha)
     )
     Box(
         modifier
@@ -63,7 +64,9 @@ fun SkeletonBlock(
 /** Panel-shaped placeholder matching the real content's rhythm. */
 @Composable
 fun LoadingPanel(modifier: Modifier = Modifier, rows: Int = 3) {
-    Panel(modifier.semantics { contentDescription = "Loading" }) {
+    // Hoisted: a semantics block is not a composable scope.
+    val loading = stringResource(R.string.loading)
+    Panel(modifier.semantics { contentDescription = loading }) {
         Column(Modifier.padding(Space.lg), verticalArrangement = Arrangement.spacedBy(Space.md)) {
             SkeletonBlock(height = 12.dp, widthFraction = 0.35f)
             SkeletonBlock(height = 30.dp, widthFraction = 0.65f)
@@ -215,7 +218,7 @@ fun InlineError(message: String, modifier: Modifier = Modifier, onRetry: (() -> 
         )
         if (onRetry != null) {
             Text(
-                "Retry",
+                stringResource(R.string.retry),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier
@@ -267,14 +270,14 @@ fun OfflineBanner(modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) 
     ) {
         PorticoIcon(Glyph.OFFLINE, size = 15.dp, tint = semantic.tertiaryText, contentDescription = null)
         Text(
-            "Offline. Cached records remain available; cloud sync, sign-in and market data need a connection.",
+            stringResource(R.string.offline_cached_records_remain_available_cloud),
             style = MaterialTheme.typography.bodySmall,
             color = semantic.tertiaryText,
             modifier = Modifier.weight(1f)
         )
         if (onRetry != null) {
             Text(
-                "Retry",
+                stringResource(R.string.retry),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = Space.xs)
@@ -293,7 +296,7 @@ fun PermissionDeniedState(
 ) = StateMessage(
     glyph = Glyph.LOCK,
     title = "You don't have access to $what",
-    body = "This record belongs to another member of the workspace. An administrator can grant you access from Members and roles.",
+    body = stringResource(R.string.this_record_belongs_to_another_member_of_the_w),
     modifier = modifier,
     tone = PorticoTheme.semantic.neutral,
     primaryAction = if (onBack != null) "Go back" else null,
@@ -309,13 +312,13 @@ fun SessionExpiredState(
     onUseDemo: (() -> Unit)? = null
 ) = StateMessage(
     glyph = Glyph.KEY,
-    title = "Your session ended",
-    body = "You were signed out to keep your financial records private. Sign in again to pick up where you left off.",
+    title = stringResource(R.string.your_session_ended),
+    body = stringResource(R.string.you_were_signed_out_to_keep_your_financial_rec),
     modifier = modifier,
     tone = MaterialTheme.colorScheme.primary,
     primaryAction = "Sign in",
     onPrimary = onSignIn,
-    secondaryAction = if (onUseDemo != null) "Continue with demo data" else null,
+    secondaryAction = if (onUseDemo != null) stringResource(R.string.continue_with_demo_data) else null,
     onSecondary = onUseDemo
 )
 
@@ -330,8 +333,8 @@ fun PlanLimitState(
     onDismiss: (() -> Unit)? = null
 ) = StateMessage(
     glyph = Glyph.SUBSCRIPTION,
-    title = "Free covers $limit properties",
-    body = "You've reached the Free plan's register limit. Pro removes it and unlocks advanced reports, deeper tax modelling and document storage.",
+    title = stringResource(R.string.free_covers_n, limit),
+    body = stringResource(R.string.you_ve_reached_the_free_plan_s_register_limit),
     modifier = modifier,
     tone = MaterialTheme.colorScheme.primary,
     primaryAction = "See Pro",

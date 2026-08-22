@@ -1,4 +1,6 @@
 package com.portico.android.ui
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -65,7 +67,10 @@ enum class ReportSection(val label: String) {
 }
 
 enum class ChartRange(val label: String, val months: Int) {
-    M1("1M", 1), M6("6M", 6), Y1("1Y", 12), Y5("5Y", 60), ALL("All", 120)
+    M1("1M", 1), M6("6M", 6), Y1("1Y", 12), Y5("5Y", 60), ALL("All", 120);
+
+    /** "All" is the only range with a word in it; the rest are unit codes. */
+    val isAll: Boolean get() = this == ALL
 }
 
 /** In-flight draft for the six-step capture. Strings because fields are text. */
@@ -106,10 +111,11 @@ data class PropertyDraft(
         else -> true
     }
 
-    fun validationHint(step: Int): String? = when {
+    /** Resource id rather than prose: this is not a composable scope. */
+    fun validationHint(step: Int): Int? = when {
         isStepValid(step) -> null
-        step == 0 -> "Add a name, address, region and size to continue."
-        step == 1 -> "A purchase date and price are needed to calculate return."
+        step == 0 -> R.string.add_a_name_address_region_and_size_to_continue
+        step == 1 -> R.string.a_purchase_date_and_price_are_needed_to_calcul
         else -> null
     }
 }
@@ -231,6 +237,16 @@ class PorticoState(val store: PorticoStore) {
     var toast by mutableStateOf<String?>(null)
 
     fun notify(message: String) { toast = message }
+
+    /**
+     * Toasts by resource id.
+     *
+     * Click handlers are not composable scopes, so stringResource cannot be
+     * called inside one. Resolving through the store's context works anywhere
+     * and keeps every message translatable.
+     */
+    fun notify(resId: Int) { toast = store.string(resId) }
+    fun notify(resId: Int, vararg args: Any) { toast = store.string(resId, *args) }
 
     // ---------------------------------------------------------------- draft
 

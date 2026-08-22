@@ -1,5 +1,6 @@
 package com.portico.android.ui.screens
-
+import com.portico.android.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -125,22 +126,22 @@ private fun AuthBrandPanel(modifier: Modifier = Modifier) {
         PorticoLockup(markSize = 52.dp)
         Spacer(Modifier.height(Space.xxl))
         Text(
-            "Know what your\nproperties actually\nearn.",
+            stringResource(R.string.know_what_your_nproperties_actually_nearn),
             style = MaterialTheme.typography.displayMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(Modifier.height(Space.lg))
         Text(
-            "Portico works out ROI, cap rate, yields and cashflow from your own records, then shows what survives expenses and tax.",
+            stringResource(R.string.portico_works_out_roi_cap_rate_yields_and_cash_2),
             style = MaterialTheme.typography.bodyLarge,
             color = semantic.tertiaryText,
             modifier = Modifier.widthIn(max = 420.dp)
         )
         Spacer(Modifier.height(Space.xxl))
         listOf(
-            "Gross to net, on every property",
-            "Tax modelling for Bangladesh, Uruguay and Argentina",
-            "Documents and records sync to your private workspace"
+            stringResource(R.string.gross_to_net_on_every_property),
+            stringResource(R.string.tax_modelling_for_bangladesh_uruguay_and_argen),
+            stringResource(R.string.documents_and_records_sync_to_your_private_wor)
         ).forEach { line ->
             Row(Modifier.padding(vertical = Space.sm), verticalAlignment = Alignment.CenterVertically) {
                 PorticoIcon(Glyph.CHECK, size = 15.dp, tint = MaterialTheme.colorScheme.primary, contentDescription = null)
@@ -202,11 +203,11 @@ private fun AuthForm(
 
         // Network trouble surfaces as a transport exception with no API error.
         if (apiError == null && throwableMessage != null) {
-            val looksOffline = listOf("unable to resolve host", "failed to connect", "timeout", "network")
+            val looksOffline = listOf(state.store.string(R.string.unable_to_resolve_host), "failed to connect", "timeout", "network")
                 .any { throwableMessage.contains(it, ignoreCase = true) }
             if (looksOffline) {
-                recoveryAction = "Continue with demo data" to onUseDemo
-                return "Can't reach the sign-in service. Check your connection. Your saved records are still available offline."
+                recoveryAction = state.store.string(R.string.continue_with_demo_data) to onUseDemo
+                return state.store.string(R.string.can_t_reach_the_sign_in_service_check_your_con)
             }
         }
 
@@ -216,45 +217,45 @@ private fun AuthForm(
 
             "form_password_pwned" -> if (signingIn) {
                 recoveryAction = "Reset password" to { state.navigate(Route.FORGOT) }
-                "This password has appeared in a known data breach, so it can't be used to sign in. Reset it to continue."
+                state.store.string(R.string.this_password_has_appeared_in_a_known_data_bre_2)
             } else {
-                "This password has appeared in a known data breach. Choose a different one."
+                state.store.string(R.string.this_password_has_appeared_in_a_known_data_bre)
             }
 
             "form_identifier_exists" -> {
                 recoveryAction = "Sign in instead" to { state.navigate(Route.LOGIN) }
-                "An account already exists for that email."
+                state.store.string(R.string.an_account_already_exists_for_that_email)
             }
 
             "form_identifier_not_found" -> {
                 recoveryAction = "Create an account" to { state.navigate(Route.REGISTER) }
-                "No account found for that email."
+                state.store.string(R.string.no_account_found_for_that_email)
             }
 
             "form_password_incorrect", "form_param_format_invalid" ->
-                "That email and password don't match. Check both and try again."
+                state.store.string(R.string.that_email_and_password_don_t_match_check_both)
 
             "user_locked", "too_many_requests", "account_locked" -> {
-                recoveryAction = "Continue with demo data" to onUseDemo
-                "Too many failed attempts, so this account is locked for 60 minutes. You can still explore with demo data."
+                recoveryAction = state.store.string(R.string.continue_with_demo_data) to onUseDemo
+                state.store.string(R.string.too_many_failed_attempts_so_this_account_is_lo)
             }
 
             "session_exists" -> {
                 onAuthenticated()
-                "You're already signed in."
+                state.store.string(R.string.you_re_already_signed_in)
             }
 
-            "form_param_missing" -> "Fill in every required field and try again."
+            "form_param_missing" -> state.store.string(R.string.fill_in_every_required_field_and_try_again)
 
             "verification_expired", "verification_failed" ->
-                "That code has expired. Ask for a new one."
+                state.store.string(R.string.that_code_has_expired_ask_for_a_new_one)
 
-            "form_code_incorrect" -> "That code doesn't match. Check your email and try again."
+            "form_code_incorrect" -> state.store.string(R.string.that_code_doesn_t_match_check_your_email_and_t)
 
             else -> apiError?.longMessage
                 ?: apiError?.message
                 ?: throwableMessage
-                ?: "That didn't go through. Check the details and try again."
+                ?: state.store.string(R.string.that_didn_t_go_through_check_the_details_and_t)
         }
     }
 
@@ -266,8 +267,8 @@ private fun AuthForm(
             try {
                 block()
             } catch (throwable: Throwable) {
-                recoveryAction = "Continue with demo data" to onUseDemo
-                error = "Something went wrong reaching the sign-in service. Your saved records are still available offline."
+                recoveryAction = state.store.string(R.string.continue_with_demo_data) to onUseDemo
+                error = state.store.string(R.string.something_went_wrong_reaching_the_sign_in_serv)
             } finally {
                 loading = false
             }
@@ -279,7 +280,7 @@ private fun AuthForm(
             SignIn.Status.COMPLETE -> onAuthenticated()
             SignIn.Status.NEEDS_NEW_PASSWORD -> phase = AuthPhase.RESET_PASSWORD
             SignIn.Status.NEEDS_FIRST_FACTOR -> phase = AuthPhase.SIGN_IN_CODE
-            else -> error = "This account needs another step before it can open. Try an email code instead."
+            else -> error = state.store.string(R.string.this_account_needs_another_step_before_it_can)
         }
     }
 
@@ -295,7 +296,7 @@ private fun AuthForm(
                         signIn?.status == SignIn.Status.COMPLETE -> onAuthenticated()
                         signUp?.status == SignUp.Status.COMPLETE -> onAuthenticated()
                         Clerk.user != null -> onAuthenticated()
-                        else -> error = "That provider didn't finish signing you in. Try again or use email."
+                        else -> error = state.store.string(R.string.that_provider_didn_t_finish_signing_you_in_try)
                     }
                 }
                 is ClerkResult.Failure<*> -> error = explain(result, signingIn = !isRegister)
@@ -306,7 +307,7 @@ private fun AuthForm(
     fun submit() {
         val cleanEmail = email.trim()
         if (!cleanEmail.contains("@") || !cleanEmail.contains(".")) {
-            error = "Enter a valid email address."
+            error = state.store.string(R.string.enter_a_valid_email_address)
             return
         }
         if (isRecovery) {
@@ -332,11 +333,11 @@ private fun AuthForm(
 
         if (isRegister) {
             if (firstName.trim().length < 2) {
-                error = "Add your first name so the workspace knows who you are."
+                error = state.store.string(R.string.add_your_first_name_so_the_workspace_knows_who)
                 return
             }
             if (!termsAccepted) {
-                error = "Accept the terms and privacy notice to create an account."
+                error = state.store.string(R.string.accept_the_terms_and_privacy_notice_to_create)
                 return
             }
             run(signingIn = false) {
@@ -377,7 +378,7 @@ private fun AuthForm(
     fun sendEmailCode() {
         val cleanEmail = email.trim()
         if (!cleanEmail.contains("@")) {
-            error = "Enter the email on your workspace first."
+            error = state.store.string(R.string.enter_the_email_on_your_workspace_first)
             return
         }
         run {
@@ -390,28 +391,28 @@ private fun AuthForm(
 
     fun verify() {
         if (code.trim().length < 6) {
-            error = "Enter the six-digit code from your email."
+            error = state.store.string(R.string.enter_the_six_digit_code_from_your_email)
             return
         }
         run {
             when (phase) {
                 AuthPhase.VERIFY_EMAIL -> when (val result = signUpFlow?.verifySignUpCode(code.trim(), com.clerk.api.auth.types.VerificationType.EMAIL)) {
                     is ClerkResult.Success -> if (result.value.status == SignUp.Status.COMPLETE) onAuthenticated()
-                    else error = "One more account detail is needed before this can finish."
+                    else error = state.store.string(R.string.one_more_account_detail_is_needed_before_this)
                     is ClerkResult.Failure<*> -> error = explain(result, false)
-                    null -> error = "That sign-up session expired. Start again."
+                    null -> error = state.store.string(R.string.that_sign_up_session_expired_start_again)
                 }
                 AuthPhase.SIGN_IN_CODE -> when (val result = signInFlow?.verifyCode(code.trim())) {
                     is ClerkResult.Success -> completeOrExplain(result.value.status)
                     is ClerkResult.Failure<*> -> error = explain(result, true)
-                    null -> error = "That session expired. Start sign-in again."
+                    null -> error = state.store.string(R.string.that_session_expired_start_sign_in_again)
                 }
                 AuthPhase.RESET_CODE -> when (val result = signInFlow?.verifyCode(code.trim())) {
                     is ClerkResult.Success -> { signInFlow = result.value; phase = AuthPhase.RESET_PASSWORD }
                     is ClerkResult.Failure<*> -> error = explain(result, true)
-                    null -> error = "That recovery session expired. Start again."
+                    null -> error = state.store.string(R.string.that_recovery_session_expired_start_again)
                 }
-                else -> error = "Enter the code to continue."
+                else -> error = state.store.string(R.string.enter_the_code_to_continue)
             }
         }
     }
@@ -425,7 +426,7 @@ private fun AuthForm(
             when (val result = signInFlow?.resetPassword(password, signOutOfOtherSessions = true)) {
                 is ClerkResult.Success -> { onAuthenticated() }
                 is ClerkResult.Failure<*> -> error = explain(result, true)
-                null -> error = "That recovery session expired. Start again."
+                null -> error = state.store.string(R.string.that_recovery_session_expired_start_again)
             }
         }
     }
@@ -440,8 +441,8 @@ private fun AuthForm(
                     when {
                         phase == AuthPhase.VERIFY_EMAIL -> "Verify your email"
                         phase == AuthPhase.SIGN_IN_CODE -> "Check your inbox"
-                        phase == AuthPhase.RESET_CODE -> "Enter the recovery code"
-                        phase == AuthPhase.RESET_PASSWORD -> "Choose a new password"
+                        phase == AuthPhase.RESET_CODE -> stringResource(R.string.enter_the_recovery_code)
+                        phase == AuthPhase.RESET_PASSWORD -> stringResource(R.string.choose_a_new_password)
                         isRecovery -> "Recover your account"
                         isRegister -> "Create your account"
                         else -> "Sign in"
@@ -455,8 +456,8 @@ private fun AuthForm(
                             "We sent a six-digit code to ${email.trim()}."
                         phase == AuthPhase.RESET_CODE -> "A recovery code is on its way to ${email.trim()}."
                         phase == AuthPhase.RESET_PASSWORD -> PasswordPolicy.summary
-                        isRecovery -> "We'll email you a code to set a new password."
-                        isRegister -> "Your private workspace is created after verification."
+                        isRecovery -> stringResource(R.string.we_ll_email_you_a_code_to_set_a_new_password)
+                        isRegister -> stringResource(R.string.your_private_workspace_is_created_after_verifi)
                         else -> "Welcome back."
                     },
                     style = MaterialTheme.typography.bodyMedium,
@@ -466,8 +467,8 @@ private fun AuthForm(
 
             if (!configured) {
                 // Not a dead end: the product still works without an account.
-                InlineError("Account sign-in isn't configured in this build.")
-                PrimaryButton("Continue with demo data", Modifier.fillMaxWidth(), glyph = Glyph.FORWARD, onClick = onUseDemo)
+                InlineError(stringResource(R.string.account_sign_in_isn_t_configured_in_this_build))
+                PrimaryButton(stringResource(R.string.continue_with_demo_data), Modifier.fillMaxWidth(), glyph = Glyph.FORWARD, onClick = onUseDemo)
                 return@Column
             }
 
@@ -475,13 +476,13 @@ private fun AuthForm(
                 AuthPhase.FORM -> {
                     if (!isRecovery) {
                         Row(horizontalArrangement = Arrangement.spacedBy(Space.sm)) {
-                            SecondaryButton("Google", Modifier.weight(1f), enabled = !loading) { oauth(OAuthProvider.GOOGLE) }
-                            SecondaryButton("GitHub", Modifier.weight(1f), enabled = !loading) { oauth(OAuthProvider.GITHUB) }
+                            SecondaryButton(stringResource(R.string.google), Modifier.weight(1f), enabled = !loading) { oauth(OAuthProvider.GOOGLE) }
+                            SecondaryButton(stringResource(R.string.github), Modifier.weight(1f), enabled = !loading) { oauth(OAuthProvider.GITHUB) }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             HorizontalDivider(Modifier.weight(1f), color = semantic.hairline)
                             Text(
-                                "or",
+                                stringResource(R.string.or),
                                 Modifier.padding(horizontal = Space.md),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = semantic.tertiaryText
@@ -500,7 +501,7 @@ private fun AuthForm(
                     PorticoField(
                         value = email,
                         onValueChange = { email = it; error = null },
-                        label = "Email",
+                        label = stringResource(R.string.email),
                         keyboardType = KeyboardType.Email
                     )
 
@@ -508,7 +509,7 @@ private fun AuthForm(
                         PorticoField(
                             value = password,
                             onValueChange = { password = it; error = null },
-                            label = "Password",
+                            label = stringResource(R.string.password),
                             keyboardType = KeyboardType.Password,
                             isPassword = true,
                             supporting = if (!isRegister) PasswordPolicy.summary else null
@@ -548,8 +549,8 @@ private fun AuthForm(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            TextButton(onClick = ::sendEmailCode, enabled = !loading) { Text("Email me a code") }
-                            TextButton(onClick = { state.navigate(Route.FORGOT) }) { Text("Forgot password?") }
+                            TextButton(onClick = ::sendEmailCode, enabled = !loading) { Text(stringResource(R.string.email_me_a_code)) }
+                            TextButton(onClick = { state.navigate(Route.FORGOT) }) { Text(stringResource(R.string.forgot_password)) }
                         }
                     }
                 }
@@ -558,28 +559,28 @@ private fun AuthForm(
                     PorticoField(
                         value = password,
                         onValueChange = { password = it; error = null },
-                        label = "New password",
+                        label = stringResource(R.string.new_password),
                         keyboardType = KeyboardType.Password,
                         isPassword = true
                     )
                     PasswordCriteria(password)
                     error?.let { InlineError(it) }
-                    PrimaryButton("Set password and continue", Modifier.fillMaxWidth(), loading = loading, onClick = ::applyNewPassword)
+                    PrimaryButton(stringResource(R.string.set_password_and_continue), Modifier.fillMaxWidth(), loading = loading, onClick = ::applyNewPassword)
                 }
 
                 else -> {
                     PorticoField(
                         value = code,
                         onValueChange = { code = it.filter(Char::isDigit).take(6); error = null },
-                        label = "Six-digit code",
+                        label = stringResource(R.string.six_digit_code),
                         keyboardType = KeyboardType.Number
                     )
                     error?.let { InlineError(it) }
-                    PrimaryButton("Verify and continue", Modifier.fillMaxWidth(), loading = loading, onClick = ::verify)
+                    PrimaryButton(stringResource(R.string.verify_and_continue), Modifier.fillMaxWidth(), loading = loading, onClick = ::verify)
                     TextButton(
                         onClick = { phase = AuthPhase.FORM; code = ""; error = null },
                         modifier = Modifier.align(Alignment.CenterHorizontally)
-                    ) { Text("Use a different account") }
+                    ) { Text(stringResource(R.string.use_a_different_account)) }
                 }
             }
 
@@ -591,7 +592,7 @@ private fun AuthForm(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (isRegister) "Already have an account?" else "New to Portico?",
+                        if (isRegister) stringResource(R.string.already_have_an_account) else "New to Portico?",
                         style = MaterialTheme.typography.bodySmall,
                         color = semantic.tertiaryText
                     )
@@ -600,13 +601,13 @@ private fun AuthForm(
                     }) { Text(if (isRegister) "Sign in" else "Create an account") }
                 }
                 SecondaryButton(
-                    "Explore with demo data",
+                    stringResource(R.string.explore_with_demo_data),
                     Modifier.fillMaxWidth(),
                     glyph = Glyph.PORTFOLIO,
                     onClick = onUseDemo
                 )
                 Text(
-                    "Demo data is a sample portfolio. Nothing you enter is sent anywhere.",
+                    stringResource(R.string.demo_data_is_a_sample_portfolio_nothing_you_en),
                     style = MaterialTheme.typography.labelSmall,
                     color = semantic.tertiaryText,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -632,7 +633,7 @@ private fun PasswordCriteria(password: String) {
         )
         Spacer(Modifier.width(Space.sm))
         Text(
-            if (met) "Meets your workspace policy"
+            if (met) stringResource(R.string.meets_your_workspace_policy)
             else "At least ${PasswordPolicy.MIN_LENGTH} characters (${password.length}/${PasswordPolicy.MIN_LENGTH})",
             style = MaterialTheme.typography.bodySmall,
             color = if (met) semantic.gain else semantic.tertiaryText
@@ -653,7 +654,7 @@ private fun TermsCheckbox(accepted: Boolean, onChange: (Boolean) -> Unit) {
         Checkbox(checked = accepted, onCheckedChange = onChange)
         Spacer(Modifier.width(Space.sm))
         Text(
-            "I accept the terms of use and privacy notice.",
+            stringResource(R.string.i_accept_the_terms_of_use_and_privacy_notice),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

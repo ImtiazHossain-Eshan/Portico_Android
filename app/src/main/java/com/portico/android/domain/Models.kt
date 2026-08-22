@@ -182,7 +182,7 @@ data class PortfolioDocument(
 ) {
     val readableSize: String
         get() = when {
-            sizeBytes >= 1_048_576 -> "%.1f MB".format(sizeBytes / 1_048_576.0)
+            sizeBytes >= 1_048_576 -> "%.1f MB".format(java.util.Locale.ROOT, sizeBytes / 1_048_576.0)
             sizeBytes >= 1024 -> "${sizeBytes / 1024} KB"
             else -> "$sizeBytes B"
         }
