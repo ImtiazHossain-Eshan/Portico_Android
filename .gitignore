@@ -25,6 +25,12 @@ bridge/.env*
 bridge/node_modules/
 bridge/.vercel/
 
+# Build keys. Publishable or not, no key is tracked. See keys.properties.example.
+/keys.properties
+*.env
+secrets.properties
+apikeys.properties
+
 # Release signing. The keystore and its passwords never enter the repository.
 /keystore.properties
 *.jks

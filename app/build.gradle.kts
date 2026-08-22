@@ -21,6 +21,25 @@ if (file("google-services.json").isFile) {
  * uploaded to Play. Create the keystore yourself with keytool -- no build file
  * should ever contain a password.
  */
+/*
+ * Build keys live in keys.properties, which is gitignored, so no key of any kind
+ * is tracked. keys.properties.example documents what belongs there. Values may
+ * also come from -P or the environment, which is how CI supplies them.
+ * Missing values are empty rather than fatal: the project still builds, the app
+ * simply cannot reach Clerk or the bridge.
+ */
+val keyProperties = Properties().apply {
+    val file = rootProject.file("keys.properties")
+    if (file.isFile) file.inputStream().use { load(it) }
+}
+
+fun buildKey(name: String): String =
+    keyProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+        ?: providers.gradleProperty(name)
+            .orElse(providers.environmentVariable(name))
+            .orElse("")
+            .get()
+
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("keystore.properties")
     if (file.isFile) file.inputStream().use { load(it) }
@@ -40,25 +59,17 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        val clerkPublishableKey = providers.gradleProperty("CLERK_PUBLISHABLE_KEY")
-            .orElse(providers.environmentVariable("CLERK_PUBLISHABLE_KEY"))
-            .orElse("")
-            .get()
+        val clerkPublishableKey = buildKey("CLERK_PUBLISHABLE_KEY")
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
         buildConfigField("String", "CLERK_PUBLISHABLE_KEY", "\"$clerkPublishableKey\"")
 
-        val firebaseBridgeUrl = providers.gradleProperty("FIREBASE_TOKEN_BRIDGE_URL")
-            .orElse(providers.environmentVariable("FIREBASE_TOKEN_BRIDGE_URL"))
-            .orElse("")
-            .get()
+        val firebaseBridgeUrl = buildKey("FIREBASE_TOKEN_BRIDGE_URL")
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
         buildConfigField("String", "FIREBASE_TOKEN_BRIDGE_URL", "\"$firebaseBridgeUrl\"")
-        val fileApiUrl = providers.gradleProperty("PORTICO_FILE_API_URL")
-            .orElse(providers.environmentVariable("PORTICO_FILE_API_URL"))
-            .orElse(firebaseBridgeUrl.replace("/firebase-token", "/files"))
-            .get()
+        val fileApiUrl = buildKey("PORTICO_FILE_API_URL")
+            .ifEmpty { firebaseBridgeUrl.replace("/firebase-token", "/files") }
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
         buildConfigField("String", "PORTICO_FILE_API_URL", "\"$fileApiUrl\"")

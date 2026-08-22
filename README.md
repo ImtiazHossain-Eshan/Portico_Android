@@ -398,6 +398,7 @@ not language.
 - Implemented visual system: [DESIGN.md](DESIGN.md)
 - Direction contract: the header comment in `ui/PorticoApp.kt`
 - Milestone 1 wireframes and schema: `diagrams/`
+- Final submission report, AI usage declaration and diagrams: `Doc/`
 
 ---
 
