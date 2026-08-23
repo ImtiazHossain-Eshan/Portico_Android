@@ -1,2 +1,7 @@
 .vercel
 .env*
+
+# The example carries no secret, only the names, and the README tells you to
+# copy it. A .gitignore nested here outranks the root one, so the root's
+# negation could never reach this file and the example was never tracked.
+!.env.example

@@ -27,9 +27,18 @@ bridge/.vercel/
 
 # Build keys. Publishable or not, no key is tracked. See keys.properties.example.
 /keys.properties
-*.env
 secrets.properties
 apikeys.properties
+
+# Environment files anywhere in the tree. `*.env` alone missed the common
+# names: it matches `foo.env` and `.env`, but not `.env.local`, which is
+# exactly what a local run writes.
+*.env
+.env
+.env.*
+!.env.example
+!**/.env.example
+secrets.json
 
 # Release signing. The keystore and its passwords never enter the repository.
 /keystore.properties
