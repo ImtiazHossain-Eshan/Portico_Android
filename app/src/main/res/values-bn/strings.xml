@@ -911,4 +911,5 @@
     <string name="admin_note_this_workspace">এই ওয়ার্কস্পেসের নিজস্ব রেকর্ড থেকে পড়া।</string>
     <string name="admin_note_audit_trail">অডিট লগ এই ওয়ার্কস্পেসে প্রকৃতপক্ষে রেকর্ড হওয়া কাজ থেকে তৈরি। নিচের নিরাপত্তা ঘটনাগুলো উদাহরণমাত্র।</string>
     <string name="per_month_gateway_sandbox">প্রতি মাস · SSLCommerz স্যান্ডবক্স</string>
+    <string name="organisations_need_a_portico_account">প্রতিষ্ঠান একাউন্টের মধ্যে ভাগ করা হয়, তাই এর জন্য একটি Portico অ্যাকাউন্ট দরকার। তৈরি করতে সাইন ইন করুন।</string>
 </resources>

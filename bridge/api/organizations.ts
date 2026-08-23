@@ -168,9 +168,14 @@ export default async function handler(request: VercelRequest, response: VercelRe
         });
         await batch.commit();
 
+        // The read path spreads the stored document, so it carries ownerId and
+        // createdAt. This one is hand-built and was missing both, which left
+        // the Created row blank on screen until something forced a refresh.
         response.status(201).json({
           id: organizationId,
           name,
+          ownerId: userId,
+          createdAt: now,
           role: "OWNER",
           members: await listMembers(organizationId),
         });

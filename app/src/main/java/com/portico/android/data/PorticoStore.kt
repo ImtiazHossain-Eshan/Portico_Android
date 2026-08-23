@@ -1,5 +1,6 @@
 package com.portico.android.data
 
+import com.portico.android.R
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
@@ -946,7 +947,23 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         organizationsLoading = false
     }
 
+    /**
+     * Refuses before the request leaves the device when there is no account.
+     *
+     * [refreshOrganizations] already returns early without one, so the screen
+     * renders, but the write paths did not, and the call reached the server and
+     * came back as "no active Clerk session". That reads as an expired login to
+     * somebody browsing the demo who never had one. Unlike the document
+     * library there is no on-device equivalent to fall back to, because an
+     * organization is shared between accounts by definition, so the honest
+     * answer is to say an account is needed.
+     */
+    private fun requireAccountForOrganizations() {
+        check(usesSecureBackend) { string(R.string.organisations_need_a_portico_account) }
+    }
+
     suspend fun createOrganization(name: String) {
+        requireAccountForOrganizations()
         organization = PorticoBackend.createOrganization(
             name = name,
             memberName = profile.name,
@@ -955,18 +972,21 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
     }
 
     suspend fun inviteMember(email: String, role: OrgRole) {
+        requireAccountForOrganizations()
         val current = organization ?: error("Create an organization first")
         val members = PorticoBackend.inviteMember(current.id, email, role.name)
         organization = current.copy(members = members)
     }
 
     suspend fun setMemberRole(userId: String, role: OrgRole) {
+        requireAccountForOrganizations()
         val current = organization ?: return
         val members = PorticoBackend.setMemberRole(current.id, userId, role.name)
         organization = current.copy(members = members)
     }
 
     suspend fun removeMember(userId: String) {
+        requireAccountForOrganizations()
         val current = organization ?: return
         val members = PorticoBackend.removeMember(current.id, userId)
         organization = if (userId == profile.userId) null else current.copy(members = members)
