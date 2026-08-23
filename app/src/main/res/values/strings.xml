@@ -896,4 +896,5 @@
     <string name="admin_note_this_workspace">Read from this workspace’s own records.</string>
     <string name="admin_note_audit_trail">The audit log is derived from actions actually recorded in this workspace. The security events below are illustrative.</string>
     <string name="per_month_gateway_sandbox">per month · SSLCommerz sandbox</string>
+    <string name="organisations_need_a_portico_account">Organisations are shared between accounts, so this needs a Portico account. Sign in to create one.</string>
 </resources>
