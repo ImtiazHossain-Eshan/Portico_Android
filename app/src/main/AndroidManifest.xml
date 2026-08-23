@@ -16,10 +16,22 @@
             android:value="true" />
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTop"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!--
+                Return hop from the payment gateway. singleTop above matters:
+                without it the redirect would start a second MainActivity on top
+                of the first and the member would come back to a fresh app.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="portico" android:host="payment" />
             </intent-filter>
         </activity>
         <service

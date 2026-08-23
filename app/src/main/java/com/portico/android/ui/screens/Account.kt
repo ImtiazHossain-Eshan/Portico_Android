@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import com.portico.android.R
 import com.portico.android.ui.AppLanguage
 import com.portico.android.ui.PorticoState
+import com.portico.android.ui.humanError
 import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.Appearance

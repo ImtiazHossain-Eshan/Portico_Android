@@ -30,6 +30,12 @@
     },
     "api/organizations.ts": {
       "maxDuration": 30
+    },
+    "api/payment.ts": {
+      "maxDuration": 30
+    },
+    "api/ipn.ts": {
+      "maxDuration": 30
     }
   },
   "headers": [

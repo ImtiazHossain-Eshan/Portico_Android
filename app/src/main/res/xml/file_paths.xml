@@ -6,4 +6,8 @@
     <!-- Authenticated downloads are staged here only long enough to hand the
          private file to the user's chosen viewer. -->
     <cache-path name="documents" path="documents/" />
+    <!-- Documents kept on the device when there is no server to hold them.
+         Written by storeLocally and opened straight from here, so they are
+         shared by content URI like anything else the reader is handed. -->
+    <files-path name="local_documents" path="local/documents/" />
 </paths>

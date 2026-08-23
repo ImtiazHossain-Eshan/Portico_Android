@@ -90,6 +90,33 @@ data class BillingResult(
 )
 
 @Serializable
+data class GatewaySession(
+    val tranId: String,
+    val gatewayPageUrl: String,
+    val amountBdt: Long,
+    val currency: String = "BDT",
+    val sandbox: Boolean = true
+)
+
+@Serializable
+private data class GatewayCheckoutRequest(val planId: String)
+
+@Serializable
+private data class GatewayConfirmRequest(val tranId: String)
+
+@Serializable
+private data class GatewayConfirm(
+    val outcome: String = "unavailable",
+    val gatewayStatus: String? = null
+)
+
+@Serializable
+private data class GatewayStatus(
+    val billingMode: String = "sandbox",
+    val configured: Boolean = false
+)
+
+@Serializable
 private data class PropertyCreateRequest(val records: List<PropertyCreateBundle>)
 
 @Serializable
@@ -143,6 +170,85 @@ object PorticoBackend {
                 )
             )
         )
+
+    /**
+     * Opens a gateway session and hands back the page to send the member to.
+     *
+     * Returning a URL rather than a result is the point: nothing is decided
+     * here. The payment is settled by the gateway's callback to the server, and
+     * the app finds out by re-syncing, not by trusting this response.
+     */
+    suspend fun startGatewayCheckout(plan: SubscriptionPlan): GatewaySession =
+        json.decodeFromString(
+            request(
+                path = "payment?mode=init",
+                method = "POST",
+                payload = json.encodeToString(GatewayCheckoutRequest(planId = plan.id))
+            )
+        )
+
+    /**
+     * Whether the server is configured to route checkout through the gateway.
+     *
+     * Unauthenticated on purpose: this is a non-secret health check, and asking
+     * for a Clerk token here made the answer depend on whether the session had
+     * finished restoring. Losing that race silently downgraded checkout to the
+     * built-in sandbox with nothing on screen to explain it.
+     *
+     * Retried, because one dropped request should not decide which payment flow
+     * the member is offered.
+     */
+    /**
+     * Asks the server to settle a transaction now, rather than waiting for the
+     * gateway's callback.
+     *
+     * The app supplies only the transaction id. The server checks the order is
+     * the caller's and asks SSLCommerz what happened; nothing about the outcome
+     * comes from the client.
+     */
+    suspend fun confirmGatewayPayment(transactionId: String): String = runCatching {
+        json.decodeFromString<GatewayConfirm>(
+            request(
+                path = "payment?mode=confirm",
+                method = "POST",
+                payload = json.encodeToString(GatewayConfirmRequest(transactionId))
+            )
+        ).outcome
+    }.getOrDefault("unavailable")
+
+    /**
+     * Reads the platform console: counts across every tenant and the member
+     * list.
+     *
+     * Nothing here is derivable on the device. The security rules refuse a
+     * client any read outside its own account, so this is one of the few calls
+     * whose answer the app could not check for itself even in principle.
+     */
+    suspend fun platformAdmin(): PlatformSnapshot =
+        json.decodeFromString(request(path = "account?mode=admin", method = "GET"))
+
+    /** Change a member's plan, or lock and unlock their sign-in. */
+    suspend fun platformAction(action: String, userId: String, tier: String? = null): PlatformSnapshot =
+        json.decodeFromString(
+            request(
+                path = "account?mode=admin",
+                method = "POST",
+                payload = json.encodeToString(PlatformActionRequest(action, userId, tier))
+            )
+        )
+
+    suspend fun gatewayBillingEnabled(): Boolean {
+        repeat(3) { attempt ->
+            if (attempt > 0) kotlinx.coroutines.delay(700L * attempt)
+            val status = runCatching {
+                json.decodeFromString<GatewayStatus>(
+                    request(path = "payment", method = "GET", authenticated = false)
+                )
+            }.getOrNull()
+            if (status != null) return status.billingMode == "sslcommerz" && status.configured
+        }
+        return false
+    }
 
     private fun sandboxToken(digits: String): String = when (digits) {
         "4242424242424242" -> "succeeds"
@@ -288,13 +394,24 @@ object PorticoBackend {
         }.getOrDefault(false)
     }
 
-    private suspend fun request(path: String, method: String, payload: String? = null): String =
+    /**
+     * @param authenticated attach a Clerk session token. The non-secret health
+     * checks do not need one, and demanding one makes them fail whenever the
+     * session has not been restored yet, which is a race the caller cannot see.
+     */
+    private suspend fun request(
+        path: String,
+        method: String,
+        payload: String? = null,
+        authenticated: Boolean = true
+    ): String =
         withContext(Dispatchers.IO) {
+            val token = if (authenticated) FirebaseBackend.sessionToken() else null
             val connection = (URL(endpoint(path)).openConnection() as HttpURLConnection).apply {
                 requestMethod = method
                 connectTimeout = 15_000
                 readTimeout = 20_000
-                setRequestProperty("Authorization", "Bearer ${FirebaseBackend.sessionToken()}")
+                if (token != null) setRequestProperty("Authorization", "Bearer $token")
                 setRequestProperty("Accept", "application/json")
                 if (payload != null) {
                     doOutput = true

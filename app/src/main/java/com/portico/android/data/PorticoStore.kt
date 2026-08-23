@@ -520,6 +520,21 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
         persist()
     }
 
+    /**
+     * Stores a picked document, on the server when there is one and on the
+     * device when there is not.
+     *
+     * The caller does not choose. Which of the two applies depends on whether
+     * this workspace is signed in, which is the store's business and not a
+     * screen's, and the Free plan promises a document library either way.
+     */
+    suspend fun storeDocument(source: Uri, documentId: String): StoredPortfolioFile =
+        if (usesSecureBackend) {
+            PorticoFiles.upload(appContext, source, documentId)
+        } else {
+            PorticoFiles.storeLocally(appContext, source, documentId)
+        }
+
     fun documentsFor(propertyId: String) = documents.filter { it.propertyId == propertyId }
 
     // -------------------------------------------------------- preferences
@@ -586,6 +601,76 @@ class PorticoStore(private val appContext: Context, private val scope: Coroutine
                 "Nothing was charged. Use another sandbox card and try again."
             )
         }
+    }
+
+    /**
+     * True only when the server is configured to take real gateway payments.
+     * Offline or unconfigured, checkout stays on the built-in sandbox, so the
+     * app never offers a payment route that cannot complete.
+     */
+    // ---------------------------------------------------- platform admin
+
+    var platform by mutableStateOf<PlatformSnapshot?>(null)
+        private set
+    var platformLoading by mutableStateOf(false)
+        private set
+
+    /** Loads the console. Failures surface, because an empty admin screen that
+     *  looks like a working one is worse than an error. */
+    suspend fun refreshPlatform() {
+        if (!usesSecureBackend) {
+            platform = null
+            return
+        }
+        platformLoading = true
+        try {
+            platform = PorticoBackend.platformAdmin()
+        } finally {
+            platformLoading = false
+        }
+    }
+
+    suspend fun platformAction(action: String, userId: String, tier: String? = null) {
+        check(usesSecureBackend) { "Platform administration needs the secure backend" }
+        platform = PorticoBackend.platformAction(action, userId, tier)
+    }
+
+    suspend fun gatewayCheckoutAvailable(): Boolean =
+        usesSecureBackend && PorticoBackend.gatewayBillingEnabled()
+
+    /** Opens a gateway session. The returned page is where the member pays. */
+    suspend fun startGatewayCheckout(plan: SubscriptionPlan): GatewaySession {
+        check(usesSecureBackend) { "Gateway checkout needs the secure backend" }
+        val session = PorticoBackend.startGatewayCheckout(plan)
+        // The pending receipt is already written server side; pull it in so the
+        // billing history shows the attempt even if the member never returns.
+        syncCloud(force = true)
+        return session
+    }
+
+    /**
+     * Re-reads billing state after the member comes back from the gateway.
+     *
+     * Returns the payment if one is recorded, whatever its state. A PENDING
+     * result is a real answer here and not a failure: the callback that decides
+     * it may still be in flight, and reporting failure early would be a lie the
+     * member acts on.
+     */
+    suspend fun refreshGatewayPayment(transactionId: String): Payment? {
+        if (!usesSecureBackend) return null
+        syncCloud(force = true)
+        return payments.firstOrNull { it.id == transactionId }
+    }
+
+    /**
+     * Settle the transaction now instead of waiting for the gateway callback.
+     *
+     * The callback is a push and can be late or, in the sandbox, absent. Asking
+     * on return turns "wait and hope" into a question with an answer.
+     */
+    suspend fun confirmGatewayPayment(transactionId: String): String {
+        if (!usesSecureBackend) return "unavailable"
+        return PorticoBackend.confirmGatewayPayment(transactionId)
     }
 
     suspend fun cancelSubscription() {

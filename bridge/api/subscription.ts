@@ -42,7 +42,14 @@ function rootUpdate() {
 }
 
 async function checkout(userId: string, body: Record<string, unknown>) {
-  if ((process.env.PORTICO_BILLING_MODE ?? "sandbox") !== "sandbox") {
+  const mode = process.env.PORTICO_BILLING_MODE ?? "sandbox";
+  if (mode === "sslcommerz") {
+    // The gateway flow cannot complete in one request: it needs a redirect and
+    // an IPN. Say so rather than failing as if nothing were configured.
+    throw new ApiError(409, "gateway_checkout_required",
+      "Billing runs through SSLCommerz. Start checkout at /api/payment-init");
+  }
+  if (mode !== "sandbox") {
     throw new ApiError(503, "billing_provider_not_configured");
   }
   const planId = typeof body.planId === "string" ? body.planId : "";

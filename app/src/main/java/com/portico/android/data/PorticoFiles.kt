@@ -83,6 +83,25 @@ object PorticoFiles {
 
     suspend fun download(context: Context, document: PortfolioDocument): Uri = withContext(Dispatchers.IO) {
         check(document.storagePath.isNotBlank()) { "This document has no stored file" }
+
+        /*
+         * A document stored on the device is already where it needs to be.
+         *
+         * storeLocally writes an absolute path rather than a blob pathname, so
+         * asking the file API for it would fetch a key the server has never
+         * seen. Reading has to branch the same way writing does, or a document
+         * saves successfully and then refuses to open, which is the worse
+         * half of the same bug.
+         */
+        val local = File(document.storagePath)
+        if (local.isFile) {
+            return@withContext FileProvider.getUriForFile(
+                context,
+                "${'$'}{context.packageName}.fileprovider",
+                local
+            )
+        }
+
         val query = URLEncoder.encode(document.storagePath, StandardCharsets.UTF_8.name())
         val connection = authenticatedConnection("${apiUrl()}?path=$query", "GET")
         try {
@@ -142,6 +161,40 @@ object PorticoFiles {
         } finally {
             connection.disconnect()
         }
+    }
+
+    /**
+     * Copies a picked file into app storage and describes it like an upload.
+     *
+     * Used when there is no server to send it to. The bytes are copied rather
+     * than the content:// URI kept, because the read grant the picker hands out
+     * is scoped to this process and does not survive a restart: the reference
+     * would still look valid and the file would no longer open.
+     */
+    suspend fun storeLocally(
+        context: Context,
+        source: Uri,
+        resourceId: String,
+        kind: String = "documents"
+    ): StoredPortfolioFile = withContext(Dispatchers.IO) {
+        val metadata = metadata(context, source)
+        val bytes = context.contentResolver.openInputStream(source)?.use(::readBounded)
+            ?: error("The selected file can no longer be read")
+        val contentType = context.contentResolver.getType(source)
+            ?.substringBefore(';')
+            ?.lowercase()
+            ?: contentTypeFromName(metadata.first)
+
+        val directory = File(context.filesDir, "local/$kind").apply { mkdirs() }
+        val target = File(directory, "$resourceId-${metadata.first}")
+        target.outputStream().use { it.write(bytes) }
+
+        StoredPortfolioFile(
+            pathname = target.absolutePath,
+            fileName = metadata.first,
+            contentType = contentType,
+            sizeBytes = bytes.size.toLong()
+        )
     }
 
     /** True when [reference] is a blob pathname rather than a local picker URI. */

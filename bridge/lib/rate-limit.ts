@@ -36,6 +36,11 @@ export const RATE_LIMITS = {
   assistant: {limit: 20, windowMillis: 60_000},
   market: {limit: 60, windowMillis: 60_000},
   organizations: {limit: 40, windowMillis: 60_000},
+  // Opening a gateway session writes an order and calls out to SSLCommerz, so
+  // it is deliberately tighter than ordinary reads.
+  // One checkout now makes several settle attempts, because the gateway is
+  // not immediately ready to answer for a transaction it just redirected from.
+  payment: {limit: 40, windowMillis: 300_000},
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitRoute = keyof typeof RATE_LIMITS;

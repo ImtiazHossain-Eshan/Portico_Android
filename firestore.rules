@@ -100,6 +100,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    /*
+     * Gateway orders. Closed to the client in both directions, which the
+     * catch-all below would do anyway; it is spelled out because the reason
+     * matters. This is the record an SSLCommerz IPN is checked against, so if a
+     * client could write here it could authorise its own payment, and if it
+     * could read here it would learn other members' transaction ids. The app
+     * follows its own copy under users/{uid}/payments/{tranId} instead.
+     */
+    match /orders/{transactionId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
