@@ -44,3 +44,6 @@ secrets.json
 /keystore.properties
 *.jks
 *.keystore
+
+# Word owner files. Orphaned whenever Word exits badly, and never wanted.
+~$*
