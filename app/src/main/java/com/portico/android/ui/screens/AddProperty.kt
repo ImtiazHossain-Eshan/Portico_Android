@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
+import com.portico.android.ui.humanError
 import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
@@ -40,6 +41,7 @@ private val stepTitles = listOf("Property", "Purchase", "Income", "Expenses", "A
  */
 @Composable
 fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
     val store = state.store
     val currency = store.profile.currency
     val step = state.addStep.coerceIn(0, stepTitles.lastIndex)
@@ -119,7 +121,7 @@ fun AddPropertyScreen(state: PorticoState, modifier: Modifier = Modifier) {
                                 ) {
                                     state.showPaywall = true
                                 } else {
-                                    state.notify(error.message ?: store.string(R.string.property_could_not_be_saved))
+                                    state.notify(humanError(context, error))
                                 }
                             }
                         saving = false

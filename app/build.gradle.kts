@@ -161,6 +161,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+    // Custom Tabs for the payment gateway page. A WebView would work, but the
+    // member would be typing a card into a page with no address bar and no way
+    // to see whose page it is.
+    implementation("androidx.browser:browser:1.8.0")
     implementation("io.coil-kt.coil3:coil-compose:3.0.4")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
 

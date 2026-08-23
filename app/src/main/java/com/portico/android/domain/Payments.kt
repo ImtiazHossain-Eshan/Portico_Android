@@ -30,7 +30,14 @@ data class SubscriptionPlan(
     val priceMinor: Long,
     val currency: String,
     val interval: String,
-    val propertyLimit: Int
+    val propertyLimit: Int,
+    /*
+     * Whole taka, priced rather than converted. A gateway settles in BDT and
+     * converts other currencies at its own rate, so a dollar price would mean
+     * the amount charged never quite equals the amount shown, and the server
+     * could not verify a payment by comparing the two.
+     */
+    val priceTaka: Long = 0
 ) {
     /** Formatted from minor units, so no floating point ever touches money. */
     val displayPrice: String
@@ -39,18 +46,30 @@ data class SubscriptionPlan(
 
     val displayPricePerInterval: String get() = "$displayPrice / $interval"
 
+    /** What a gateway charge shows, in taka rather than a converted figure. */
+    val displayPriceTaka: String get() = Money.symbolFor("BDT") + priceTaka.toString()
+
+    val displayPriceTakaPerInterval: String get() = "$displayPriceTaka / $interval"
+
     companion object {
         /** Sandbox pricing. Not a commercial offer; the UI says so. */
-        val FREE = SubscriptionPlan("plan_free", "Free", 0, "USD", "month", 2)
-        val PRO_MONTHLY = SubscriptionPlan("plan_pro_monthly", "Pro", 1_200, "USD", "month", Int.MAX_VALUE)
-        val PRO_YEARLY = SubscriptionPlan("plan_pro_yearly", "Pro annual", 12_000, "USD", "year", Int.MAX_VALUE)
+        val FREE = SubscriptionPlan("plan_free", "Free", 0, "USD", "month", 2, priceTaka = 0)
+        val PRO_MONTHLY = SubscriptionPlan("plan_pro_monthly", "Pro", 1_200, "USD", "month", Int.MAX_VALUE, priceTaka = 1_200)
+        val PRO_YEARLY = SubscriptionPlan("plan_pro_yearly", "Pro annual", 12_000, "USD", "year", Int.MAX_VALUE, priceTaka = 12_000)
 
         val paid = listOf(PRO_MONTHLY, PRO_YEARLY)
         fun byId(id: String) = (paid + FREE).firstOrNull { it.id == id }
     }
 }
 
-enum class PaymentStatus { SUCCEEDED, DECLINED, FAILED, REFUNDED }
+/*
+ * PENDING exists because a hosted gateway settles out of band. The member
+ * returns from the payment page over a browser redirect, which proves nothing,
+ * while the real result arrives separately as a server-to-server callback. The
+ * gap between those two is a genuine state, not a loading spinner, and a
+ * receipt sitting in it must not read as either paid or failed.
+ */
+enum class PaymentStatus { PENDING, SUCCEEDED, DECLINED, FAILED, REFUNDED }
 
 @Serializable
 data class Payment(

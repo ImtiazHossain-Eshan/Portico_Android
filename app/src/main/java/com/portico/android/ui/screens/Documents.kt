@@ -19,6 +19,7 @@ import com.portico.android.data.PorticoFiles
 import com.portico.android.data.PorticoStore
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
+import com.portico.android.ui.humanError
 import com.portico.android.ui.UploadStage
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
@@ -234,7 +235,7 @@ private fun DocumentViewer(state: PorticoState, document: PortfolioDocument, mod
                                         context.startActivity(intent)
                                     }
                                 }.onFailure { error ->
-                                    state.notify(error.message ?: store.string(R.string.this_document_could_not_be_opened))
+                                    state.notify(humanError(context, error))
                                 }
                                 opening = false
                             }
@@ -318,11 +319,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
         state.uploadStage = UploadStage.UPLOADING
         scope.launch {
             runCatching {
-                PorticoFiles.upload(
-                    context = context,
-                    source = uri,
-                    resourceId = documentId
-                )
+                store.storeDocument(source = uri, documentId = documentId)
             }.onSuccess { stored ->
                 state.uploadFileName = stored.fileName
                 val document = PortfolioDocument(
@@ -340,7 +337,7 @@ fun UploadSheet(state: PorticoState, onDismiss: () -> Unit) {
                 state.uploadStage = UploadStage.DONE
             }.onFailure { error ->
                 failed = true
-                failureMessage = error.message ?: store.string(R.string.the_private_upload_did_not_finish)
+                failureMessage = humanError(context, error)
                 state.uploadStage = UploadStage.FAILED
             }
         }

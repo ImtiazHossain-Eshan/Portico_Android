@@ -13,7 +13,7 @@
   <img alt="Android 8.0+" src="https://img.shields.io/badge/Android-8.0%2B-E8A33D?style=flat-square&logo=android&logoColor=white&labelColor=141416" />
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-Jetpack%20Compose-E8A33D?style=flat-square&logo=kotlin&logoColor=white&labelColor=141416" />
   <img alt="Firebase" src="https://img.shields.io/badge/Data-Firebase-E8A33D?style=flat-square&logo=firebase&logoColor=white&labelColor=141416" />
-  <img alt="Tests" src="https://img.shields.io/badge/Tests-105%20passing-E8A33D?style=flat-square&labelColor=141416" />
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-116%20passing-E8A33D?style=flat-square&labelColor=141416" />
   <img alt="English and Bangla" src="https://img.shields.io/badge/Languages-English%20%C2%B7%20%E0%A6%AC%E0%A6%BE%E0%A6%82%E0%A6%B2%E0%A6%BE-E8A33D?style=flat-square&labelColor=141416" />
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/License-MIT-E8A33D?style=flat-square&labelColor=141416" /></a>
 </p>
@@ -81,10 +81,10 @@ Every screenshot below is the release build running on a device, not a mockup.
 
 ### Tax and payments
 
-| Bangladesh tax rules | Sandbox checkout |
+| Bangladesh tax rules | Gateway checkout |
 | --- | --- |
-| <img src="docs/screenshots/11-tax-bangladesh.png" width="290" alt="Editable Bangladesh tax rates with their working shown" /> | <img src="docs/screenshots/12-checkout.png" width="290" alt="Sandbox checkout with order summary and test cards" /> |
-| Every rate is an editable assumption carrying its own working. `0.75 x 12% = 9% of gross rent` makes the 25% maintenance allowance auditable. | Card validation, processing, decline paths, receipts and billing history. Nothing is charged and no provider is contacted. |
+| <img src="docs/screenshots/11-tax-bangladesh.png" width="290" alt="Editable Bangladesh tax rates with their working shown" /> | <img src="docs/screenshots/12-checkout.png" width="290" alt="Checkout priced in taka, naming SSLCommerz as the destination" /> |
+| Every rate is an editable assumption carrying its own working. `0.75 x 12% = 9% of gross rent` makes the 25% maintenance allowance auditable. | Two routes, both sandboxes. The built-in one validates cards and walks every decline path without contacting a provider. The SSLCommerz route hands off to the real gateway and settles a real sandbox transaction. |
 
 ### Bangla
 
@@ -108,12 +108,19 @@ wider working area with three-column metrics from 840dp.
 
 <div align="center">
 <img src="docs/screenshots/16-tablet-dashboard.png" width="420" alt="Tablet dashboard with navigation rail" />
-<img src="docs/screenshots/17-tablet-admin.png" width="420" alt="Admin platform with section rail and multi-column tables" />
+<img src="docs/screenshots/17-tablet-admin.png" width="420" alt="Platform console showing counts across every account" />
 </div>
 
-The admin platform gets a desk layout, with its own section rail and real
+The platform console gets a desk layout, with its own section rail and real
 multi-column tables, and it is reachable on a phone too, so it is demonstrable
-on any device.
+on any device. The figures above are counted across every tenant by the server,
+and each section states whether it is reading the platform or your own
+workspace.
+
+<div align="center">
+<img src="docs/screenshots/18-tablet-admin-users.png" width="420" alt="Member list drawn from Clerk with plan and property counts from Firestore" />
+<img src="docs/screenshots/19-admin-actions.png" width="200" alt="Administrator actions on a selected member" />
+</div>
 
 ---
 
@@ -128,7 +135,7 @@ on any device.
 | **Documents** | Private library, Android system picker, upload/download/delete, categories, an in-app PDF reader and recovery states. |
 | **Portico Intelligence** | On-device portfolio analysis, comparisons and what-if scenarios with the working shown. Cloud analysis via Gemma is opt-in and sends computed figures only. |
 | **Valuation and acquisition** | Comparable-based estimates and a search-to-decision flow using the same finance engine as owned properties. |
-| **Plans and payments** | Free/Pro rules, server-owned sandbox checkout, receipts, billing history, cancellation and resume,without charging a card. |
+| **Plans and payments** | Free/Pro rules, receipts, billing history, cancellation and resume. Checkout runs either the built-in sandbox or SSLCommerz's hosted gateway, chosen by the server. No card is charged on either. |
 | **Account and workspace** | Clerk email/OAuth authentication, in-app password change, live session management, account deletion, organisations with server-enforced roles, and admin surfaces. |
 | **Portability** | CSV export/import with duplicate detection and line-level rejection reporting. |
 | **Languages** | English and Bangla across 770 interface strings, switchable in-app and from Android's per-app language settings. Assistant prose and backend messages remain English. |
@@ -158,10 +165,17 @@ plausible-looking one you cannot check.
 
 ## Sandbox payments
 
-Checkout is a working server-verified sandbox flow: Luhn validation, expiry and
-CVC checks, a processing state, distinct decline paths, a receipt, persisted
-billing history, and cancel-at-period-end with resume. The authenticated bridge,
-not the Android client, writes subscription and payment state.
+Portico ships two checkout routes and the server decides which is live. The app
+asks rather than assumes, so an unconfigured build never offers a payment route
+it cannot complete, and both the plan card and the checkout screen quote the
+currency that route actually charges.
+
+### Built-in sandbox
+
+The default. A working server-verified flow: Luhn validation, expiry and CVC
+checks, a processing state, distinct decline paths, a receipt, persisted billing
+history, and cancel-at-period-end with resume. The authenticated bridge, not the
+Android client, writes subscription and payment state.
 
 **No money moves and no payment provider is contacted.** Outcomes are driven by
 the published, non-functional test card numbers, tappable in the app:
@@ -176,10 +190,26 @@ the published, non-functional test card numbers, tappable in the app:
 
 Any future expiry and any 3-digit code work. A typed number is matched locally
 to one of these published test outcomes; only a non-sensitive outcome token is
-sent to the bridge. A full number is never transmitted or persisted. Pro is
-priced at $12.00/month as **sandbox pricing**, labelled as such in the UI.
-Production billing replaces that outcome token with a verified Play Billing or
-processor purchase token.
+sent to the bridge. A full number is never transmitted or persisted. In this
+mode Pro is priced at $12.00/month as **sandbox pricing**, labelled as such in
+the UI. Production billing replaces that outcome token with a verified Play
+Billing or processor purchase token.
+
+### SSLCommerz gateway
+
+Switched on with `PORTICO_BILLING_MODE=sslcommerz` and store credentials. The
+bridge opens a session, the member pays on SSLCommerz's own page in a Custom
+Tab, and the plan activates once SSLCommerz confirms the payment. Pricing is
+stated in taka, because SSLCommerz settles in BDT and converting at request time
+would leave the amount charged different from the amount shown.
+
+<div align="center">
+<img src="docs/screenshots/12-checkout.png" width="260" alt="Checkout priced in taka, naming SSLCommerz as the destination" />
+<img src="docs/screenshots/12b-sslcommerz-gateway.png" width="260" alt="SSLCommerz hosted payment page on the sandbox host" />
+</div>
+
+How settlement is verified, and why the app asks as well as waits, is described
+under [What is real and what is illustrative](#what-is-real-and-what-is-illustrative).
 
 ---
 
@@ -193,8 +223,9 @@ Three ways in:
 - **Google or GitHub**, both enabled on the Clerk instance.
 - **Demo data.** A sample portfolio, no account, works fully offline.
 
-The Clerk publishable key lives in `gradle.properties`. Without it the app
-offers the demo path rather than a dead end.
+The Clerk publishable key lives in `keys.properties`, which is ignored by Git.
+Copy `keys.properties.example` over it and fill in your own. Without the key the
+app offers the demo path rather than a dead end.
 
 Clerk's development instance also accepts test addresses of the form
 `you+clerk_test@example.com` with verification code `424242`, which is the most
@@ -223,8 +254,12 @@ The APK is written to `app/build/outputs/apk/debug/app-debug.apk`. You can also
 open the repository in Android Studio and run the `app` configuration.
 
 The complete demo cockpit works without an account. Authenticated cloud flows
-use the Clerk publishable key and Firebase bridge URL resolved from Gradle
-properties or environment variables:
+need a `keys.properties` in the repository root. Copy the tracked example and
+fill in your own values:
+
+```powershell
+copy keys.properties.example keys.properties
+```
 
 ```properties
 CLERK_PUBLISHABLE_KEY=pk_test_or_pk_live_...
@@ -232,11 +267,35 @@ FIREBASE_TOKEN_BRIDGE_URL=https://your-bridge.vercel.app/api/firebase-token
 PORTICO_FILE_API_URL=https://your-bridge.vercel.app/api/files
 ```
 
+`keys.properties` is ignored by Git so that no key reaches the repository. Each
+name also falls back to a Gradle property and then an environment variable, which
+is how CI supplies them without a file on disk.
+
 `app/google-services.json` enables Firebase Android services when present. It is
 intentionally ignored by Git: after cloning, download the Android configuration
 from **Firebase Console → Project settings → Your apps → Portico**, then place it
 at that path. Never put a Firebase service-account JSON or private backend key
 inside the APK or repository.
+
+### Bridge environment
+
+The serverless bridge holds every secret the app is not allowed to carry. Copy
+`bridge/.env.example` to `bridge/.env.local` for local work, and set the same
+names as Vercel project environment variables for a deployment.
+
+| Variable | Purpose |
+|---|---|
+| `CLERK_ISSUER` | Issuer the bridge validates session JWTs against. |
+| `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Service-account credentials for Firestore. Never shipped to Android. |
+| `CLERK_SECRET_KEY` | Required for account deletion and for the admin member list. |
+| `GEMMA_API_KEY`, `GEMMA_MODEL` | Cloud analysis. Absent, the endpoint reports `not_configured` and the app uses its on-device analyst. |
+| `PORTICO_BILLING_MODE` | `sandbox` for the built-in fake-card flow, `sslcommerz` to route checkout through the gateway. |
+| `SSLCZ_STORE_ID`, `SSLCZ_STORE_PASSWD`, `SSLCZ_SANDBOX` | Gateway store credentials. Anything other than an explicit `false` stays on the sandbox host. |
+| `PORTICO_PUBLIC_URL` | Absolute origin of the deployment. SSLCommerz calls back to it, so it cannot be relative; falls back to `VERCEL_URL`. |
+| `PORTICO_ADMIN_USER_IDS` | Comma-separated Clerk user ids allowed to read across every tenant and change plans or lock sign-in. Empty disables the admin surface entirely. |
+
+`BLOB_READ_WRITE_TOKEN` is injected by Vercel when a Blob store is linked to the
+project, so it is not listed in the example file.
 
 ---
 
@@ -250,7 +309,7 @@ inside the APK or repository.
 ./gradlew :app:connectedDebugAndroidTest
 ```
 
-**105 tests: 98 on the JVM and 7 on a device.** The unit suites cover the domain
+**116 tests: 109 on the JVM and 7 on a device.** The unit suites cover the domain
 layer, which is pure Kotlin with no Android dependency and therefore testable
 without an emulator.
 
@@ -263,6 +322,7 @@ without an emulator.
 | `AnalystTest` | 11 | That an answer names the property its own arithmetic points at, that a question outside the records is refused rather than guessed, and that every answer carries its working |
 | `FinanceTest` | 8 | The gross-to-net chain reconciling, cap rate excluding tax where net yield does not, negative cashflow surviving unclamped, and portfolio rates recomputed from totals rather than averaged |
 | `AssistantPrivacyTest` | 7 | That the fact sheet sent to a cloud model can never contain a street address, a private note or a record id |
+| `GatewayCheckoutTest` | 11 | That a gateway redirect with an unknown result reads as failure rather than success, that a foreign scheme is refused, that an unrecognised payment status degrades to failed, and that every paid plan carries a taka price inside SSLCommerz's accepted band |
 | `PorticoImportTest` | 7 | Quoted commas, header-order independence, duplicate skipping, and rejected rows reported with their line number |
 | `PorticoJourneyTest` | 7 | On a device: launch, demo entry, every primary destination, the register, property detail, the waterfall reaching the screen, and the assistant answering |
 
@@ -313,8 +373,22 @@ identity all go, behind a typed confirmation the server re-checks. The audit
 trail is derived from activity actually recorded in the workspace.
 
 **Illustrative, and labelled as such in the app.** The seeded properties,
-comparable properties, market signals, acquisition listings and admin platform
-metrics. Every tax rate and every exchange rate is an assumption you can edit.
+comparable properties, market signals, acquisition listings, and the security
+events on the admin activity page. Every tax rate and every exchange rate is an
+assumption you can edit.
+
+**Platform administration is real, and gated outside the app.** The console's
+Overview and Users sections read across every tenant: counts come from Firestore
+collection-group aggregates, the member list from Clerk, and plan and property
+figures per member from Firestore. An administrator can move a member between
+Free and Pro and can ban or unban sign-in, which Clerk applies. Admin is granted
+by the `PORTICO_ADMIN_USER_IDS` deployment variable and nothing else. It cannot
+be requested through an endpoint, set from inside the app, or written to
+Firestore by any client, because a privilege the governed thing can grant itself
+is not a privilege. Deleting another member's account is deliberately absent:
+banning is reversible and leaves their records intact, which is why it is the
+strongest action offered. The Subscriptions and Analytics sections still read
+your own workspace, and each section states which of the two it is.
 
 Market reference data is served by a provider record rather than baked into the
 app: `/api/market` reads Firestore's `public` tree, and every response states
@@ -322,9 +396,51 @@ whether its figures were observed or modelled. Today it reports `modelled`,
 because claiming otherwise would be the dishonest half of the feature. Pointing
 it at a real portal is a change of one collection, not a change of shape.
 
-**Not connected.** Real payment processing. Checkout is labelled sandbox on
-every surface and never charges a card; swapping in a processor means replacing
-`SandboxProcessor.authorise` and nothing else.
+**Real, against SSLCommerz's sandbox.** Gateway checkout runs end to end:
+the bridge opens a session (`/api/payment?mode=init`), the member pays on
+SSLCommerz's own page in a Custom Tab, and the plan activates once SSLCommerz
+confirms the payment. Verified with a live bKash sandbox transaction, which
+settled in about ten seconds: order `PENDING` to `VALID`, gateway status
+`VALIDATED`, BDT 1200 matched against the order, Pro active.
+
+**Settlement is asked for as well as waited for.** SSLCommerz reports a payment
+two ways, and only one of them is trustworthy on its own. The IPN
+(`/api/ipn`) is a server-to-server callback, and the browser redirect
+(`?mode=return`) is not evidence of anything, since it can be replayed or typed
+by hand. So the redirect carries only a transaction id, and the app then asks
+the server to settle (`?mode=confirm`), which queries SSLCommerz directly by
+transaction id. Both routes end in the same function, so what may be credited,
+and on what evidence, does not depend on which arrived first.
+
+That redundancy is not belt-and-braces. In the sandbox the IPN did not arrive at
+all during testing, and the gateway is not ready to answer for a transaction it
+has only just redirected from, so the first settle attempt reliably returns
+"nothing here yet". Checkout therefore asks repeatedly across a short poll
+rather than once.
+
+Every rule their documentation calls out is enforced server-side: the val_id or
+transaction id is checked with SSLCommerz rather than trusted from the request,
+the amount is compared in whole poisha against the order written before the
+member ever reached the gateway, currency must match, and a settled order is a
+no-op so a repeated callback cannot credit twice.
+
+Prices are stated in taka rather than converted at request time. SSLCommerz
+settles in BDT and converts other currencies at its own rate, which would leave
+the amount charged different from the amount shown and make the amount check
+impossible to write as an equality.
+
+All of it shares one function dispatching on `?mode=`, plus a thin `/api/ipn`
+alias, because Vercel's Hobby plan allows twelve Serverless Functions per
+deployment and separate endpoints put the project over.
+
+It stays switched off unless `PORTICO_BILLING_MODE=sslcommerz` and store
+credentials are set, and the app asks the server which mode it is in rather than
+assuming, so an unconfigured build silently keeps the built-in sandbox instead of
+offering a payment route that cannot complete.
+
+**Not connected.** Real money. Both paths are sandboxes: the built-in one
+contacts no provider at all, and the gateway one runs against SSLCommerz's
+sandbox host with test cards. No card is charged on either.
 
 **Optional.** Cloud analysis. The assistant answers on-device by default, and
 that stays the answer of record: its arithmetic is what the working panel shows.

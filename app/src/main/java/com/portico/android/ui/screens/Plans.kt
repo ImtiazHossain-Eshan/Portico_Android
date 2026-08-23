@@ -19,6 +19,7 @@ import com.portico.android.data.PorticoExport
 import com.portico.android.data.PorticoImport
 import com.portico.android.domain.*
 import com.portico.android.ui.PorticoState
+import com.portico.android.ui.humanError
 import com.portico.android.ui.Route
 import com.portico.android.ui.design.*
 import com.portico.android.ui.theme.PorticoTheme
@@ -38,6 +39,13 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
     val semantic = PorticoTheme.semantic
     var showPlanHistory by remember { mutableStateOf(false) }
     val planEvents = store.activity.filter { it.kind == ActivityKind.PLAN_CHANGED }
+
+    // Asked once, the same way checkout asks: the server owns which billing
+    // mode is live, and a build that guesses would quote the wrong currency.
+    var gatewayMode by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        gatewayMode = runCatching { store.gatewayCheckoutAvailable() }.getOrDefault(false)
+    }
 
     Column(modifier.padding(bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(Space.lg)) {
 
@@ -127,6 +135,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
         PlanPanel(
             tier = PlanTier.FREE,
             current = current,
+            gatewayMode = gatewayMode,
             features = listOf(
                 stringResource(R.string.up_to_2_properties) to true,
                 stringResource(R.string.roi_cap_rate_yields_and_cashflow) to true,
@@ -148,6 +157,7 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
         PlanPanel(
             tier = PlanTier.PRO,
             current = current,
+            gatewayMode = gatewayMode,
             features = listOf(
                 "Unlimited properties" to true,
                 stringResource(R.string.roi_cap_rate_yields_and_cashflow) to true,
@@ -198,7 +208,12 @@ fun SubscriptionScreen(state: PorticoState, modifier: Modifier = Modifier) {
             }
         }
 
-        SyntheticNote(SANDBOX_NOTICE)
+        // Checkout already tells the truth about which sandbox is in play; this
+        // screen was still promising that no provider is contacted and pointing
+        // at test cards that only exist on the built-in form.
+        SyntheticNote(
+            if (gatewayMode) stringResource(R.string.sandbox_gateway_notice) else SANDBOX_NOTICE
+        )
     }
 
 }
@@ -208,6 +223,7 @@ private fun PlanPanel(
     tier: PlanTier,
     current: PlanTier,
     features: List<Pair<String, Boolean>>,
+    gatewayMode: Boolean,
     onSelect: () -> Unit
 ) {
     val semantic = PorticoTheme.semantic
@@ -229,12 +245,26 @@ private fun PlanPanel(
             }
             if (tier == PlanTier.PRO) {
                 Column(horizontalAlignment = Alignment.End) {
+                    /*
+                     * The price shown is the price charged.
+                     *
+                     * This card used to state the dollar figure unconditionally
+                     * while checkout, in gateway mode, billed the taka one.
+                     * SSLCommerz settles in BDT, so quoting dollars here meant
+                     * advertising an amount no member would ever be charged.
+                     */
                     Text(
-                        SubscriptionPlan.PRO_MONTHLY.displayPrice,
+                        if (gatewayMode) SubscriptionPlan.PRO_MONTHLY.displayPriceTaka
+                        else SubscriptionPlan.PRO_MONTHLY.displayPrice,
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Text(stringResource(R.string.per_month_sandbox), style = MaterialTheme.typography.labelSmall, color = semantic.tertiaryText)
+                    Text(
+                        if (gatewayMode) stringResource(R.string.per_month_gateway_sandbox)
+                        else stringResource(R.string.per_month_sandbox),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = semantic.tertiaryText
+                    )
                 }
             }
         }
@@ -323,7 +353,7 @@ fun EnterpriseScreen(state: PorticoState, modifier: Modifier = Modifier) {
                         if (error is com.portico.android.data.PorticoBackendException &&
                             error.code == "plan_limit_reached"
                         ) state.showPaywall = true
-                        else state.notify(error.message ?: store.string(R.string.import_could_not_be_completed))
+                        else state.notify(humanError(context, error))
                     }
             }
         }
