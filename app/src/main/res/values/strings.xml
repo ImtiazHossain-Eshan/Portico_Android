@@ -897,4 +897,5 @@
     <string name="admin_note_audit_trail">The audit log is derived from actions actually recorded in this workspace. The security events below are illustrative.</string>
     <string name="per_month_gateway_sandbox">per month · SSLCommerz sandbox</string>
     <string name="organisations_need_a_portico_account">Organisations are shared between accounts, so this needs a Portico account. Sign in to create one.</string>
+    <string name="some_details_could_not_be_saved_check_and_retry">Some of these details could not be saved. Check the entries and try again.</string>
 </resources>

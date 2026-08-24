@@ -129,4 +129,43 @@ class FinanceTest {
         val naiveMean = (small.netYield + large.netYield) / 2
         assertTrue("weighted result must differ from the naive mean", kotlin.math.abs(naiveMean - portfolio.netYield) > 0.01)
     }
+
+    /**
+     * The range selector used to vary only the sample count, which resamples an
+     * identical curve: 1M and All reported the same low, high and change, and
+     * nothing here noticed for the life of the project.
+     */
+    @Test
+    fun `a chart range windows the series rather than resampling it`() {
+        val subject = property(price = 400_000.0, value = 500_000.0)
+
+        val month = Finance.valueSeries(subject, points = 12, windowMonths = 1)
+        val everything = Finance.valueSeries(subject, points = 12, windowMonths = Int.MAX_VALUE)
+
+        // Both windows end at today, so today's value is common to them.
+        assertEquals(everything.last(), month.last(), 0.01)
+
+        // The full history opens at the purchase price. One month opens just
+        // short of today, because that is all the interval covers.
+        assertEquals(400_000.0, everything.first(), 0.01)
+        assertTrue(
+            "a one month window should open near the current value",
+            month.first() > 495_000.0
+        )
+
+        // The reported change is what a member reads off the chart.
+        assertTrue(
+            "a shorter range must report a smaller change",
+            (month.last() - month.first()) < (everything.last() - everything.first())
+        )
+    }
+
+    /** A property younger than the window is shown whole, never stretched. */
+    @Test
+    fun `a window longer than the holding period shows the full history`() {
+        val subject = property(price = 400_000.0, value = 500_000.0)
+        val fiveYears = Finance.valueSeries(subject, points = 12, windowMonths = 600)
+        assertEquals(400_000.0, fiveYears.first(), 0.01)
+        assertEquals(500_000.0, fiveYears.last(), 0.01)
+    }
 }

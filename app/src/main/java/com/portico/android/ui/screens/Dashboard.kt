@@ -95,7 +95,8 @@ fun DashboardScreen(state: PorticoState, modifier: Modifier = Modifier) {
                     store.properties.toList(),
                     points = pointsFor(state.chartRange),
                     rates = store.exchangeRates,
-                    displayCurrency = currency
+                    displayCurrency = currency,
+                    windowMonths = state.chartRange.months
                 ),
                 currency = currency,
                 rangeLabel = state.chartRange.label,

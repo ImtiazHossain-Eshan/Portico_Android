@@ -86,7 +86,8 @@ private fun PerformanceReport(state: PorticoState, results: List<PropertyFinanci
             ValueChart(
                 series = Finance.portfolioValueSeries(
                     store.properties.toList(), pointsFor(state.chartRange),
-                    store.exchangeRates, store.profile.currency
+                    store.exchangeRates, store.profile.currency,
+                    windowMonths = state.chartRange.months
                 ),
                 currency = currency,
                 rangeLabel = state.chartRange.label,

@@ -24,6 +24,16 @@ fun humanError(context: Context, error: Throwable): String {
                 context.getString(R.string.your_session_has_expired_sign_in_again)
             "insufficient_role", "role_exceeds_your_own", "target_outranks_you" ->
                 error.message.ifBlank { context.getString(R.string.your_role_does_not_allow_that) }
+            /*
+             * The one code whose message is not written for a member. Its text
+             * names the field that failed by its path on the wire, so
+             * "property.currency is invalid" reached the screen of somebody who
+             * had simply left the currency at its default. The path is worth
+             * keeping in a log and worth hiding from a person, so the message is
+             * replaced rather than passed through.
+             */
+            "invalid_request" ->
+                context.getString(R.string.some_details_could_not_be_saved_check_and_retry)
             else -> error.message.ifBlank { context.getString(R.string.that_change_could_not_be_saved) }
         }
     }

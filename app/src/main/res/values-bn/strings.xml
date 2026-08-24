@@ -912,4 +912,5 @@
     <string name="admin_note_audit_trail">অডিট লগ এই ওয়ার্কস্পেসে প্রকৃতপক্ষে রেকর্ড হওয়া কাজ থেকে তৈরি। নিচের নিরাপত্তা ঘটনাগুলো উদাহরণমাত্র।</string>
     <string name="per_month_gateway_sandbox">প্রতি মাস · SSLCommerz স্যান্ডবক্স</string>
     <string name="organisations_need_a_portico_account">প্রতিষ্ঠান একাউন্টের মধ্যে ভাগ করা হয়, তাই এর জন্য একটি Portico অ্যাকাউন্ট দরকার। তৈরি করতে সাইন ইন করুন।</string>
+    <string name="some_details_could_not_be_saved_check_and_retry">এই তথ্যের কিছু অংশ সংরক্ষণ করা যায়নি। গুলো যাচাই করে আবার চেষ্টা করুন।</string>
 </resources>
