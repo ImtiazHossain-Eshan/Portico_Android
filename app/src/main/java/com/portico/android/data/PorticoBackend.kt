@@ -141,9 +141,24 @@ private data class DeviceRequest(
  * quota enforcement, billing state and push-device registration.
  */
 object PorticoBackend {
-    private val json = Json {
+    /*
+     * Defaults are encoded, because a field the server needs cannot be allowed
+     * to vanish for having an ordinary value.
+     *
+     * kotlinx omits a property equal to its declared default unless told
+     * otherwise, so a USD property sent no `currency` at all: the field's value
+     * was the default, and the server rejected the record as invalid. The same
+     * silence applied to an empty note, zero financing and no photos, which the
+     * bridge had each been taught to tolerate one at a time.
+     *
+     * `explicitNulls` stays off. A null is genuinely absent; a default is not.
+     */
+    // Visible to the test that guards this contract: the encoding rule is the
+    // thing that broke, so it is asserted against the real instance.
+    internal val json = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
+        encodeDefaults = true
     }
 
     suspend fun createProperties(records: List<PropertyCreateBundle>) {

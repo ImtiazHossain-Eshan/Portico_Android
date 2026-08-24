@@ -321,7 +321,25 @@ class FirestoreWorkspaceRepository(
         serializer: KSerializer<T>
     ): T? = decode(document.get().await().data, serializer)
 
-    private suspend fun <T> collectEntityDiff(
+    /**
+     * Turns one collection's local state into writes, and deletes only what it
+     * can prove was removed.
+     *
+     * A deletion needs evidence that a record was here and is now gone, and the
+     * baseline is the only thing carrying it. Without one, absence from the
+     * local snapshot is equally well explained by a cloud read that never
+     * landed, and this used to resolve that ambiguity by listing the whole
+     * remote collection and deleting everything the local copy lacked. So a
+     * signed-in workspace that came up empty erased the records it was supposed
+     * to be restoring: a first read failing is common, and the next edit turned
+     * that failure into data loss.
+     *
+     * With no baseline it now writes what it holds and removes nothing. A real
+     * deletion still reaches the server on the following sync, by which point a
+     * baseline exists. The cost is a stale document living one sync longer; the
+     * alternative cost was somebody's portfolio.
+     */
+    private fun <T> collectEntityDiff(
         collection: com.google.firebase.firestore.CollectionReference,
         previous: List<T>?,
         current: List<T>,
@@ -332,12 +350,9 @@ class FirestoreWorkspaceRepository(
         val previousById = previous?.associateBy(id)
         val currentById = current.associateBy(id)
 
-        val staleIds = if (previousById == null) {
-            collection.get().await().documents.map { it.id }.filterNot(currentById::containsKey)
-        } else {
-            previousById.keys - currentById.keys
+        staleIds(previousById, currentById).forEach { staleId ->
+            operations += WriteOperation.Delete(collection.document(staleId))
         }
-        staleIds.forEach { operations += WriteOperation.Delete(collection.document(it)) }
 
         currentById.forEach { (entityId, entity) ->
             if (previousById == null || previousById[entityId] != entity) {
@@ -457,4 +472,20 @@ class FirestoreWorkspaceRepository(
         private const val FIELD_ENTITY_COUNTS = "entityCounts"
         private const val FIELD_LEGACY_SNAPSHOT = "snapshot"
     }
+}
+
+/**
+ * Which remote records a sync is entitled to delete.
+ *
+ * Separate from the repository, and free of Firestore, because this is the rule
+ * that lost a portfolio and a rule worth being able to test directly. [previous]
+ * is the last snapshot known to be on the server; null means there isn't one.
+ *
+ * Returns nothing without a baseline. An id missing from [current] proves a
+ * deletion only against a known prior state; against nothing it proves only
+ * that the local copy is empty, which a failed read explains just as well.
+ */
+internal fun <T> staleIds(previous: Map<String, T>?, current: Map<String, T>): Set<String> {
+    if (previous == null) return emptySet()
+    return previous.keys - current.keys
 }

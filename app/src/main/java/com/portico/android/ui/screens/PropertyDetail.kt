@@ -162,7 +162,8 @@ private fun PropertyOverviewTab(state: PorticoState, result: PropertyFinancials)
             ValueChart(
                 series = Finance.valueSeries(
                     property, pointsFor(state.chartRange),
-                    store.exchangeRates, currency
+                    store.exchangeRates, currency,
+                    windowMonths = state.chartRange.months
                 ),
                 currency = currency,
                 rangeLabel = state.chartRange.label,

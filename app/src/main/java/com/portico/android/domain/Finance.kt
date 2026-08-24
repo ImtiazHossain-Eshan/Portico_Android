@@ -263,33 +263,61 @@ object Finance {
      * has a defensible shape: linear interpolation between purchase price at
      * the purchase date and current value now. It is an interpolation, not a
      * price history, and the UI says so.
+     *
+     * [windowMonths] is the span ending today that the chart should show, which
+     * is what a range selector actually means. Varying only [points] samples the
+     * same curve more or less densely, and since both ends and the easing stay
+     * put, every range drew an identical line: 1M and All reported the same low,
+     * high and change. The window moves the *start* of the interval instead, so
+     * a shorter range shows the recent slice rather than a coarser whole.
+     *
+     * A property younger than the window is shown in full. Two years of history
+     * cannot fill five, and stretching it would invent the difference.
      */
     fun valueSeries(
         property: Property,
         points: Int = 24,
         rates: ExchangeRates = ExchangeRates(),
-        displayCurrency: String = property.currency
+        displayCurrency: String = property.currency,
+        windowMonths: Int
     ): List<Double> {
         val fx = { amount: Double -> rates.convert(amount, property.currency, displayCurrency) }
         if (points <= 1) return listOf(fx(property.currentValue))
         val from = fx(property.purchasePrice)
         val to = fx(property.currentValue)
+
+        val heldMonths = SimpleDate.parse(property.purchaseDate)
+            ?.yearsUntil(SimpleDate.today())
+            ?.times(12)
+            ?: 0.0
+        val start = if (heldMonths <= 0.0 || windowMonths >= heldMonths) 0.0
+        else ((heldMonths - windowMonths) / heldMonths).coerceIn(0.0, 1.0)
+
         return List(points) { index ->
-            val t = index.toDouble() / (points - 1)
+            val t = start + (1.0 - start) * (index.toDouble() / (points - 1))
             // Slight ease so the line reads as a market, not a ruler.
             val eased = t * t * (3 - 2 * t)
             from + (to - from) * eased
         }
     }
 
+    /**
+     * The same window applied across the register.
+     *
+     * Each property is windowed against its own age rather than a shared start,
+     * so a recent purchase contributes its whole short history while an older
+     * one contributes only the matching tail. Summing at each index then lines
+     * the points up in time.
+     */
     fun portfolioValueSeries(
         properties: List<Property>,
         points: Int = 24,
         rates: ExchangeRates = ExchangeRates(),
-        displayCurrency: String = ExchangeRates.BASE
+        displayCurrency: String = ExchangeRates.BASE,
+        windowMonths: Int
     ): List<Double> {
         if (properties.isEmpty()) return List(points) { 0.0 }
-        val series = properties.map { valueSeries(it, points, rates, displayCurrency) }
+        val series = properties.map { valueSeries(it, points, rates, displayCurrency, windowMonths) }
         return List(points) { index -> series.sumOf { it[index] } }
     }
 
